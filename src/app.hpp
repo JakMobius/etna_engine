@@ -27,17 +27,22 @@ class HelloTriangleApplication {
     VkQueue m_device_graphics_queue {};
     VkQueue m_device_present_queue {};
     VkSurfaceKHR m_surface {};
-    VkQueue m_present_queue {};
 
     VkSwapchainKHR m_swap_chain {};
-    std::vector<VkImage> m_swap_chain_images;
+    std::vector<VkImage> m_swap_chain_images {};
     VkFormat m_swap_chain_image_format {};
     VkExtent2D m_swap_chain_extent {};
     std::vector<VkImageView> m_swap_chain_image_views {};
-    VkRenderPass m_render_pass;
-    VkPipelineLayout m_pipeline_layout;
+    VkRenderPass m_render_pass {};
+    VkPipelineLayout m_pipeline_layout {};
+    VkPipeline m_graphics_pipeline {};
+    std::vector<VkFramebuffer> m_swap_chain_framebuffers {};
+    VkCommandPool m_command_pool {};
+    std::vector<VkCommandBuffer> m_command_buffers {};
+    VkSemaphore m_image_available_semaphore {};
+    VkSemaphore m_render_finished_semaphore {};
 
-    std::unique_ptr<VkQueueFamilyIndices> m_family_indices = {};
+    std::unique_ptr<VkQueueFamilyIndices> m_family_indices {};
 
     const std::vector<const char*> required_validation_layers = {
         "VK_LAYER_KHRONOS_validation"
@@ -71,6 +76,12 @@ private:
     void create_image_views();
     void create_graphics_pipeline();
     void create_render_pass();
+    void create_framebuffers();
+    void create_command_pool();
+    void create_command_buffers();
+    void create_semaphores();
+
+    void draw_frame();
 
     VkPhysicalDevice select_best_gpu(const std::vector<VkPhysicalDevice>& devices);
 
