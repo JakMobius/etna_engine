@@ -46,6 +46,10 @@ class HelloTriangleApplication {
     std::unique_ptr<VkQueueFamilyIndices> m_family_indices {};
     std::vector<VkFence> m_in_flight_fences {};
     std::vector<VkFence> m_in_flight_images {};
+    VkBuffer m_vertex_buffer {};
+    VkDeviceMemory m_vertex_buffer_memory {};
+
+    std::vector<float> m_vertex_buffer_storage {};
 
     size_t m_current_frame = 0;
 
@@ -86,7 +90,8 @@ private:
     void create_framebuffers();
     void create_command_pool();
     void create_command_buffers();
-    void create_semaphores();
+    void create_sync_objects();
+    void create_vertex_buffer();
 
     void cleanup_swap_chain();
     void recreate_swap_chain();
@@ -114,4 +119,6 @@ private:
     bool check_device_extension_support(VkPhysicalDevice physical_device);
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
+
+    uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 };

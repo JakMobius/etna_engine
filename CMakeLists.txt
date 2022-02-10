@@ -7,6 +7,7 @@ find_package(Vulkan REQUIRED)
 find_package(GLFW REQUIRED)
 
 set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_FLAGS "-O0 -fsanitize=address")
 
 file(GLOB_RECURSE files "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.hpp")
 add_executable(vk_test ${files})
