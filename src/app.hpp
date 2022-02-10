@@ -17,6 +17,8 @@
 
 class HelloTriangleApplication {
 
+    const int MAX_FRAMES_IN_FLIGHT = 2;
+
     VkDebugCallbackHandler m_debug_callback_handler {};
     GLFWwindow* m_window = nullptr;
     const uint32_t m_window_width = 800;
@@ -39,10 +41,13 @@ class HelloTriangleApplication {
     std::vector<VkFramebuffer> m_swap_chain_framebuffers {};
     VkCommandPool m_command_pool {};
     std::vector<VkCommandBuffer> m_command_buffers {};
-    VkSemaphore m_image_available_semaphore {};
-    VkSemaphore m_render_finished_semaphore {};
-
+    std::vector<VkSemaphore> m_image_available_semaphores {};
+    std::vector<VkSemaphore> m_render_finished_semaphores {};
     std::unique_ptr<VkQueueFamilyIndices> m_family_indices {};
+    std::vector<VkFence> m_in_flight_fences {};
+    std::vector<VkFence> m_in_flight_images {};
+
+    size_t m_current_frame = 0;
 
     const std::vector<const char*> required_validation_layers = {
         "VK_LAYER_KHRONOS_validation"
@@ -57,6 +62,8 @@ class HelloTriangleApplication {
 
 
 public:
+
+    bool m_framebuffer_resized = false;
 
     void run() {
         init_window();
@@ -80,6 +87,9 @@ private:
     void create_command_pool();
     void create_command_buffers();
     void create_semaphores();
+
+    void cleanup_swap_chain();
+    void recreate_swap_chain();
 
     void draw_frame();
 
