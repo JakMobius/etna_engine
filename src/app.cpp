@@ -1222,14 +1222,14 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
     glfwGetCursorPos(m_window, &mouse_x, &mouse_y);
 
     float yaw = (float)mouse_x / (float) m_swap_chain_extent.width * 3;
-    float height = (float)mouse_y / (float) m_swap_chain_extent.height * 2 + 0.5;
+    float height = (float)mouse_y / (float) m_swap_chain_extent.height * 2;
 
     auto camera_position = glm::vec3((float)sin(yaw), cos(yaw), height);
-    camera_position *= 6.0f / camera_position.length();
+    camera_position *= 7.0f / camera_position.length();
 
     UniformBufferObject ubo {};
     ubo.model = glm::rotate(glm::mat4(1.0f), m_time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(camera_position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(camera_position, glm::vec3(0.0f, 0.0f, 0.2f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), m_swap_chain_extent.width / (float) m_swap_chain_extent.height, 0.1f, 10.0f);
 
     ubo.proj[1][1] *= -1;
