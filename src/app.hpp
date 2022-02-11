@@ -68,6 +68,10 @@ class HelloTriangleApplication {
     VkImageView m_texture_image_view {};
     VkSampler m_texture_sampler {};
 
+    VkImage m_depth_image {};
+    VkDeviceMemory m_depth_image_memory {};
+    VkImageView m_depth_image_view {};
+
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
 
@@ -122,6 +126,7 @@ private:
     void create_mesh();
     void create_index_buffer();
     void create_vertex_buffer();
+    void create_depth_resources();
     void create_texture_image();
     void create_texture_image_view();
     void create_texture_sampler();
@@ -164,42 +169,20 @@ private:
     void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                       VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &image_memory);
 
-    VkCommandBuffer begin_single_time_commands() {
-        VkCommandBufferAllocateInfo alloc_info {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandPool = m_command_pool;
-        alloc_info.commandBufferCount = 1;
+    VkCommandBuffer begin_single_time_commands();
 
-        VkCommandBuffer command_buffer;
-        vkAllocateCommandBuffers(m_device, &alloc_info, &command_buffer);
-
-        VkCommandBufferBeginInfo begin_info {};
-        begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-        begin_info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-
-        vkBeginCommandBuffer(command_buffer, &begin_info);
-
-        return command_buffer;
-    }
-
-    void end_single_time_commands(VkCommandBuffer command_buffer) {
-        vkEndCommandBuffer(command_buffer);
-
-        VkSubmitInfo submit_info {};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-        submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &command_buffer;
-
-        vkQueueSubmit(m_device_graphics_queue, 1, &submit_info, nullptr);
-        vkQueueWaitIdle(m_device_graphics_queue);
-
-        vkFreeCommandBuffers(m_device, m_command_pool, 1, &command_buffer);
-    }
+    void end_single_time_commands(VkCommandBuffer command_buffer);
 
     void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-    VkImageView create_image_view(VkImage image, VkFormat format);
+    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
+
+    VkFormat
+    find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
+
+    VkFormat find_depth_format();
+
+    bool has_stencil_component(VkFormat format);
 };
