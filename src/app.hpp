@@ -91,7 +91,7 @@ class HelloTriangleApplication {
     const bool m_enable_validation_layers = true;
     const bool m_enable_debug_messenger = true;
 
-    float m_time = 0;
+    float m_time = 0;;
 
 public:
 

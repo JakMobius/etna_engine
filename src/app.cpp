@@ -12,6 +12,9 @@
 #include <chrono>
 #include <thread>
 
+#define TINYOBJLOADER_IMPLEMENTATION
+#include "tiny_obj_loader.h"
+
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
     appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -240,21 +243,6 @@ void HelloTriangleApplication::main_loop() {
 void HelloTriangleApplication::cleanup() {
 
     cleanup_swap_chain();
-
-    if(m_depth_image_view) {
-        vkDestroyImageView(m_device, m_depth_image_view, nullptr);
-        m_depth_image_view = nullptr;
-    }
-
-    if(m_depth_image_memory) {
-        vkFreeMemory(m_device, m_depth_image_memory, nullptr);
-        m_depth_image_memory = nullptr;
-    }
-
-    if(m_depth_image) {
-        vkDestroyImage(m_device, m_depth_image, nullptr);
-        m_depth_image = nullptr;
-    }
 
     if(m_texture_sampler) {
         vkDestroySampler(m_device, m_texture_sampler, nullptr);
@@ -948,6 +936,21 @@ void HelloTriangleApplication::draw_frame() {
 
 void HelloTriangleApplication::cleanup_swap_chain() {
 
+    if(m_depth_image_view) {
+        vkDestroyImageView(m_device, m_depth_image_view, nullptr);
+        m_depth_image_view = nullptr;
+    }
+
+    if(m_depth_image_memory) {
+        vkFreeMemory(m_device, m_depth_image_memory, nullptr);
+        m_depth_image_memory = nullptr;
+    }
+
+    if(m_depth_image) {
+        vkDestroyImage(m_device, m_depth_image, nullptr);
+        m_depth_image = nullptr;
+    }
+
     for(auto uniform_buffer : m_uniform_buffers) {
         if(uniform_buffer) {
             vkDestroyBuffer(m_device, uniform_buffer, nullptr);
@@ -1019,6 +1022,7 @@ void HelloTriangleApplication::recreate_swap_chain() {
     create_image_views();
     create_render_pass();
     create_graphics_pipeline();
+    create_depth_resources();
     create_framebuffers();
     create_uniform_buffers();
     create_descriptor_pool();
@@ -1040,71 +1044,35 @@ uint32_t HelloTriangleApplication::find_memory_type(uint32_t type_filter, VkMemo
 }
 
 void HelloTriangleApplication::create_mesh() {
-//    std::mt19937 random { 0 };
-//
-//    int index = 0;
-//
-//    for(int i = 0; i < 10000; i++) {
-//
-//        float rx = random() / (float)std::mt19937::max() * 1 - 0.5;
-//        float ry = random() / (float)std::mt19937::max() * 1 - 0.5;
-//
-//        float triangle[] = {
-//                rx + 0.00f, ry - 0.05f, 0.0f, 1.0f, 0.0f,
-//                rx + 0.05f, ry + 0.05f, 1.0f, 0.0f, 0.0f,
-//                rx - 0.05f, ry + 0.05f, 0.0f, 0.0f, 1.0f
-//        };
-//
-//        for(int j = 0; j < 15; j++) {
-//            m_vertex_buffer_storage.push_back(triangle[j]);
-//        }
-//        m_index_buffer_storage.push_back(index);
-//        m_index_buffer_storage.push_back(index + 1);
-//        m_index_buffer_storage.push_back(index + 2);
-//
-//        index += 3;
-//    }
+    tinyobj::attrib_t attrib;
+    std::vector<tinyobj::shape_t> shapes;
+    std::vector<tinyobj::material_t> materials;
+    std::string warn, err;
+    std::string model_path = "resources/models/viking_room.obj";
 
-    m_vertex_buffer_storage.assign({
-        -0.5f, -0.5f, 0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.5f,  -0.5f, 0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.5f,  0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, 0.5f,  0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+    if (!tinyobj::LoadObj(&attrib, &shapes, &materials, &err, model_path.c_str())) {
+        throw std::runtime_error(warn + err);
+    }
 
-        -0.5f, -0.5f, -0.5f, 1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.5f,  -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.5f,  0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, 0.5f,  -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+    for (const auto& shape : shapes) {
+        for (const auto& index : shape.mesh.indices) {
 
-        0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.5f, 0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        0.5f, 0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            float vertex[] = {
+                attrib.vertices[3 * index.vertex_index + 0],
+                attrib.vertices[3 * index.vertex_index + 1],
+                attrib.vertices[3 * index.vertex_index + 2],
+                1.0f, 1.0f, 1.0f,
+                attrib.texcoords[2 * index.texcoord_index + 0],
+                1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
+            };
 
-        -0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        -0.5f, 0.5f,  -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        -0.5f, 0.5f,  0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            for(auto num : vertex) {
+                m_vertex_buffer_storage.push_back(num);
+            }
 
-        -0.5f, 0.5f, 0.5f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        -0.5f, 0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.5f,  0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        0.5f,  0.5f, 0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-
-        -0.5f, -0.5f, 0.5f,  1.0f, 0.0f, 0.0f, 1.0f, 0.0f,
-        -0.5f, -0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f,
-        0.5f,  -0.5f, -0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-        0.5f,  -0.5f, 0.5f,  1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-    });
-
-    m_index_buffer_storage.assign({
-          0, 1, 2, 2, 3, 0,
-          4, 6, 4, 6, 4, 7,
-          8, 9, 10, 10, 11, 8,
-          12, 14, 13, 14, 12, 15,
-          16, 18, 17, 18, 16, 19,
-          20, 21, 22, 22, 23, 20,
-    });
+            m_index_buffer_storage.push_back(m_index_buffer_storage.size());
+        }
+    }
 }
 
 void HelloTriangleApplication::create_index_buffer() {
@@ -1248,11 +1216,20 @@ void HelloTriangleApplication::create_uniform_buffers() {
 void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
 
 //    std::this_thread::sleep_for(std::chrono::milliseconds(1000 / 60));
-    m_time += 1.0f / 60.0f;
+//    m_time += 1.0f / 60.0f;
+
+    double mouse_x = 0, mouse_y = 0;
+    glfwGetCursorPos(m_window, &mouse_x, &mouse_y);
+
+    float yaw = (float)mouse_x / (float) m_swap_chain_extent.width * 3;
+    float height = (float)mouse_y / (float) m_swap_chain_extent.height * 2 + 0.5;
+
+    auto camera_position = glm::vec3((float)sin(yaw), cos(yaw), height);
+    camera_position *= 6.0f / camera_position.length();
 
     UniformBufferObject ubo {};
     ubo.model = glm::rotate(glm::mat4(1.0f), m_time * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-    ubo.view = glm::lookAt(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+    ubo.view = glm::lookAt(camera_position, glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
     ubo.proj = glm::perspective(glm::radians(45.0f), m_swap_chain_extent.width / (float) m_swap_chain_extent.height, 0.1f, 10.0f);
 
     ubo.proj[1][1] *= -1;
@@ -1376,7 +1353,7 @@ void HelloTriangleApplication::create_image(uint32_t width, uint32_t height, VkF
 }
 
 void HelloTriangleApplication::create_texture_image() {
-    const char* path = "resources/img/texture-2.png";
+    const char* path = "resources/models/viking_room.png";
     FIBITMAP* bitmap = FreeImage_Load(FreeImage_GetFileType(path, 0), path);
     FIBITMAP* converted = FreeImage_ConvertTo32Bits(bitmap);
     FreeImage_Unload(bitmap);
@@ -1444,6 +1421,7 @@ void HelloTriangleApplication::transition_image_layout(VkImage image, VkFormat f
     } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
         barrier.srcAccessMask = 0;
         barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
 
         source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destination_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
@@ -1501,7 +1479,6 @@ VkImageView HelloTriangleApplication::create_image_view(VkImage image, VkFormat 
     view_info.image = image;
     view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
     view_info.format = format;
-    view_info.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     view_info.subresourceRange.baseMipLevel = 0;
     view_info.subresourceRange.levelCount = 1;
     view_info.subresourceRange.baseArrayLayer = 0;
@@ -1523,11 +1500,11 @@ void HelloTriangleApplication::create_texture_image_view() {
 void HelloTriangleApplication::create_texture_sampler() {
     VkSamplerCreateInfo sampler_info {};
     sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-//    sampler_info.magFilter = VK_FILTER_LINEAR;
-//    sampler_info.minFilter = VK_FILTER_LINEAR;
+    sampler_info.magFilter = VK_FILTER_LINEAR;
+    sampler_info.minFilter = VK_FILTER_LINEAR;
 
-    sampler_info.magFilter = VK_FILTER_NEAREST;
-    sampler_info.minFilter = VK_FILTER_NEAREST;
+//    sampler_info.magFilter = VK_FILTER_NEAREST;
+//    sampler_info.minFilter = VK_FILTER_NEAREST;
 
     sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
     sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
