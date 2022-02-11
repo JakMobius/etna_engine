@@ -5,13 +5,23 @@
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
+#include <vector>
 
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
-#include <vector>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/matrix.hpp>
 #include "codes/vk-version-code.hpp"
 #include "vk-debug-callback-handler.hpp"
 #include "vk-queue-family-indices.hpp"
+
+struct UniformBufferObject {
+    glm::mat4 model;
+    glm::mat4 view;
+    glm::mat4 proj;
+    glm::vec3 color;
+};
 
 // TODO: Check if exceptions are used safely in this class
 
@@ -48,8 +58,17 @@ class HelloTriangleApplication {
     std::vector<VkFence> m_in_flight_images {};
     VkBuffer m_vertex_buffer {};
     VkDeviceMemory m_vertex_buffer_memory {};
+    VkBuffer m_index_buffer {};
+    VkDeviceMemory m_index_buffer_memory {};
+    VkDescriptorSetLayout m_descriptor_set_layout = {};
+    VkDescriptorPool m_descriptor_pool {};
+    std::vector<VkDescriptorSet> m_descriptor_sets {};
 
     std::vector<float> m_vertex_buffer_storage {};
+    std::vector<uint32_t> m_index_buffer_storage {};
+
+    std::vector<VkBuffer> m_uniform_buffers {};
+    std::vector<VkDeviceMemory> m_uniform_buffers_memory {};
 
     size_t m_current_frame = 0;
 
@@ -61,9 +80,10 @@ class HelloTriangleApplication {
         VK_KHR_SWAPCHAIN_EXTENSION_NAME
     };
 
-    const bool enable_validation_layers = true;
-    const bool enable_debug_messenger = true;
+    const bool m_enable_validation_layers = true;
+    const bool m_enable_debug_messenger = true;
 
+    float m_time = 0;
 
 public:
 
@@ -77,32 +97,43 @@ public:
     }
 
 private:
+
     void init_window();
     void init_vulkan();
+
+    void setup_validation_layers();
+    void create_instance();
+    void setup_debug_messenger();
+    void create_surface();
     void pick_gpu();
     void get_families();
     void create_logical_device();
-    void create_surface();
     void create_swap_chain();
     void create_image_views();
-    void create_graphics_pipeline();
     void create_render_pass();
+    void create_descriptor_set_layout();
+    void create_graphics_pipeline();
     void create_framebuffers();
     void create_command_pool();
+    void create_mesh();
+    void create_index_buffer();
+    void create_vertex_buffer();
+    void create_uniform_buffers();
+    void create_descriptor_pool();
+    void create_descriptor_sets();
     void create_command_buffers();
     void create_sync_objects();
-    void create_vertex_buffer();
 
     void cleanup_swap_chain();
     void recreate_swap_chain();
+
+    void update_uniform_buffer(uint32_t image_index);
 
     void draw_frame();
 
     VkPhysicalDevice select_best_gpu(const std::vector<VkPhysicalDevice>& devices);
 
     std::vector<const char*> get_required_extensions();
-
-    void create_instance();
 
     bool check_validation_layer_support();
 
@@ -112,13 +143,14 @@ private:
 
     bool is_device_suitable(VkPhysicalDevice device, VkPhysicalDeviceProperties* properties);
 
-    void setup_debug_messenger();
-
-    void setup_validation_layers();
-
     bool check_device_extension_support(VkPhysicalDevice physical_device);
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
 
     uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
+
+    void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
+                       VkDeviceMemory &bufferMemory);
+
+    void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 };
