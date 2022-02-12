@@ -35,7 +35,7 @@ class HelloTriangleApplication {
     const uint32_t m_window_height = 600;
     VkInstance m_instance {};
     VkPhysicalDevice m_gpu {};
-    VkDevice m_device {};
+    VK::Device m_device {};
     VkQueue m_device_graphics_queue {};
     VkQueue m_device_present_queue {};
     VkSurfaceKHR m_surface {};
@@ -83,7 +83,7 @@ class HelloTriangleApplication {
     std::vector<uint32_t> m_index_buffer_storage {};
 
     std::vector<VkBuffer> m_uniform_buffers {};
-    std::vector<VK::Memory> m_uniform_buffers_memory {};
+    std::vector<VK::Memory*> m_uniform_buffers_memory {};
 
     size_t m_current_frame = 0;
 
@@ -98,7 +98,7 @@ class HelloTriangleApplication {
     const bool m_enable_validation_layers = true;
     const bool m_enable_debug_messenger = true;
 
-    float m_time = 0;;
+    float m_time = 0;
 
 public:
 
@@ -165,8 +165,6 @@ private:
     bool check_device_extension_support(VkPhysicalDevice physical_device);
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
-
-    uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
                        VK::Memory &buffer_memory);
