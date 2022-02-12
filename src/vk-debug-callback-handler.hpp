@@ -2,10 +2,10 @@
 
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
-#include "codes/vk-result-code.hpp"
-#include "codes/vk-object-type-code.hpp"
-#include "codes/vk-severity-code.hpp"
-#include "codes/vk-message-type-code.hpp"
+#include "vulkan/codes/vk-result-code.hpp"
+#include "vulkan/codes/vk-object-type-code.hpp"
+#include "vulkan/codes/vk-severity-code.hpp"
+#include "vulkan/codes/vk-message-type-code.hpp"
 
 struct vk_callback_parameters {
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity;
@@ -44,7 +44,7 @@ public:
 
     void dump_object(const VkDebugUtilsObjectNameInfoEXT* object) {
 
-        std::cout << VkObjectTypeCode(object->objectType);
+        std::cout << VK::ObjectTypeCode(object->objectType);
 
         if(object->pObjectName == nullptr) {
             std::cout << " ( unnamed )\n";
@@ -57,8 +57,8 @@ public:
         if(callback_parameters->message_severity < m_min_severity) return false;
 
         std::cout << "Vulkan ["
-                  << VkSeverityCode(callback_parameters->message_severity) << "] ["
-                  << VkMessageTypeCode(callback_parameters->message_type) << "]: "
+                  << VK::SeverityCode(callback_parameters->message_severity) << "] ["
+                  << VK::MessageTypeCode(callback_parameters->message_type) << "]: "
                   << callback_parameters->callback_data->pMessage << "\n";
 
         if(callback_parameters->message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {

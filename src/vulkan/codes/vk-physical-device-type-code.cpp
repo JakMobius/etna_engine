@@ -5,7 +5,7 @@
 #include <vulkan/vulkan_core.h>
 #include "vk-physical-device-type-code.hpp"
 
-const char* VkPhysicalDeviceTypeCode::name(VkPhysicalDeviceType code) {
+const char* VK::PhysicalDeviceTypeCode::name(VkPhysicalDeviceType code) {
     switch(code) {
         case VK_PHYSICAL_DEVICE_TYPE_OTHER: return "OTHER";
         case VK_PHYSICAL_DEVICE_TYPE_INTEGRATED_GPU: return "INTEGRATED_GPU";
@@ -16,7 +16,7 @@ const char* VkPhysicalDeviceTypeCode::name(VkPhysicalDeviceType code) {
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const VkPhysicalDeviceTypeCode &result) {
-    stream << VkPhysicalDeviceTypeCode::name(result.get_code());
+std::ostream &operator<<(std::ostream &stream, const VK::PhysicalDeviceTypeCode &result) {
+    stream << VK::PhysicalDeviceTypeCode::name(result.get_code());
     return stream;
 }

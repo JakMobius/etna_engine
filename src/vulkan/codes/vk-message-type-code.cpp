@@ -4,7 +4,7 @@
 
 #include "vk-message-type-code.hpp"
 
-const char* VkMessageTypeCode::name(VkDebugUtilsMessageTypeFlagsEXT code) {
+const char* VK::MessageTypeCode::name(VkDebugUtilsMessageTypeFlagsEXT code) {
     switch(code) {
         case VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT:       return "General";
         case VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT:    return "Validation";
@@ -13,7 +13,7 @@ const char* VkMessageTypeCode::name(VkDebugUtilsMessageTypeFlagsEXT code) {
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const VkMessageTypeCode &code) {
-    stream << VkMessageTypeCode::name(code.get_code());
+std::ostream &operator<<(std::ostream &stream, const VK::MessageTypeCode &code) {
+    stream << VK::MessageTypeCode::name(code.get_code());
     return stream;
 }

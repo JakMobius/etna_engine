@@ -4,7 +4,7 @@
 
 #include "vk-object-type-code.hpp"
 
-const char* VkObjectTypeCode::name(VkObjectType object_type) {
+const char* VK::ObjectTypeCode::name(VkObjectType object_type) {
     switch(object_type) {
         case VK_OBJECT_TYPE_UNKNOWN:                         return "UNKNOWN";
         case VK_OBJECT_TYPE_INSTANCE:                        return "INSTANCE";
@@ -54,7 +54,7 @@ const char* VkObjectTypeCode::name(VkObjectType object_type) {
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const VkObjectTypeCode &result) {
-    stream << VkObjectTypeCode::name(result.get_code());
+std::ostream &operator<<(std::ostream &stream, const VK::ObjectTypeCode &result) {
+    stream << VK::ObjectTypeCode::name(result.get_code());
     return stream;
 }

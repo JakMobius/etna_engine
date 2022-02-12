@@ -12,9 +12,10 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
-#include "codes/vk-version-code.hpp"
+#include "vulkan/codes/vk-version-code.hpp"
 #include "vk-debug-callback-handler.hpp"
 #include "vk-queue-family-indices.hpp"
+#include "vulkan/vk-memory.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -56,33 +57,33 @@ class HelloTriangleApplication {
     std::vector<VkFence> m_in_flight_fences {};
     std::vector<VkFence> m_in_flight_images {};
     VkBuffer m_vertex_buffer {};
-    VkDeviceMemory m_vertex_buffer_memory {};
+    VK::Memory m_vertex_buffer_memory {};
     VkBuffer m_index_buffer {};
-    VkDeviceMemory m_index_buffer_memory {};
+    VK::Memory m_index_buffer_memory {};
     VkDescriptorSetLayout m_descriptor_set_layout = {};
     VkDescriptorPool m_descriptor_pool {};
     std::vector<VkDescriptorSet> m_descriptor_sets {};
 
     VkImage m_texture_image {};
-    VkDeviceMemory m_texture_image_memory {};
+    VK::Memory m_texture_image_memory {};
     VkImageView m_texture_image_view {};
     VkSampler m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
-//    VkImage m_color_image;
-//    VkDeviceMemory m_color_image_memory;
-//    VkImageView m_color_image_view;
+    VkImage m_color_image;
+    VK::Memory m_color_image_memory;
+    VkImageView m_color_image_view;
 
     VkImage m_depth_image {};
-    VkDeviceMemory m_depth_image_memory {};
+    VK::Memory m_depth_image_memory {};
     VkImageView m_depth_image_view {};
 
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
 
     std::vector<VkBuffer> m_uniform_buffers {};
-    std::vector<VkDeviceMemory> m_uniform_buffers_memory {};
+    std::vector<VK::Memory> m_uniform_buffers_memory {};
 
     size_t m_current_frame = 0;
 
@@ -168,12 +169,14 @@ private:
     uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties);
 
     void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                       VkDeviceMemory &bufferMemory);
+                       VK::Memory &buffer_memory);
 
     void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 
-    void create_image(uint32_t width, uint32_t height, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
-                      VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &image_memory);
+    void create_image(uint32_t width, uint32_t height, int mip_levels,
+                      VkSampleCountFlagBits num_samples, VkImageTiling tiling,
+                      VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
+                      VK::Memory &image_memory, VkFormat format);
 
     VkCommandBuffer begin_single_time_commands();
 
@@ -195,4 +198,6 @@ private:
     void generate_mipmaps(VkImage image, VkFormat image_format, int32_t tex_width, int32_t tex_height, uint32_t mip_levels);
 
     VkSampleCountFlagBits get_max_usable_sample_count(VkPhysicalDevice device);
+
+    void create_color_resources();
 };

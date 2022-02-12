@@ -72,7 +72,7 @@ bool VkDebugCallbackHandler::listen(VkInstance instance) {
     auto result = create_messenger(&create_info);
 
     if(result != VK_SUCCESS) {
-        std::cout << "Error initializing debug messenger: " << VkResultCode(result) << "\n";
+        std::cout << "Error initializing debug messenger: " << VK::ResultCode(result) << "\n";
         return false;
     }
     return true;
@@ -82,6 +82,6 @@ void VkDebugCallbackHandler::stop_listening() {
     auto result = destroy_messenger();
 
     if(result != VK_SUCCESS) {
-        std::cout << "Error deinitializing debug messenger: " << VkResultCode(result) << "\n";
+        std::cout << "Error deinitializing debug messenger: " << VK::ResultCode(result) << "\n";
     }
 }

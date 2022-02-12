@@ -4,7 +4,7 @@
 
 #include "vk-result-code.hpp"
 
-const char* VkResultCode::name(VkResult result) {
+const char* VK::ResultCode::name(VkResult result) {
     switch(result) {
 
         case VK_SUCCESS:                                            return "SUCCESS";
@@ -50,7 +50,7 @@ const char* VkResultCode::name(VkResult result) {
     }
 }
 
-std::ostream &operator<<(std::ostream &stream, const VkResultCode &result) {
-    stream << VkResultCode::name(result.get_code());
+std::ostream &operator<<(std::ostream &stream, const VK::ResultCode &result) {
+    stream << VK::ResultCode::name(result.get_code());
     return stream;
 }
