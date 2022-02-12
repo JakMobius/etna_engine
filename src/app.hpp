@@ -67,6 +67,12 @@ class HelloTriangleApplication {
     VkDeviceMemory m_texture_image_memory {};
     VkImageView m_texture_image_view {};
     VkSampler m_texture_sampler {};
+    int m_mip_levels = 0;
+
+    VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
+//    VkImage m_color_image;
+//    VkDeviceMemory m_color_image_memory;
+//    VkImageView m_color_image_view;
 
     VkImage m_depth_image {};
     VkDeviceMemory m_depth_image_memory {};
@@ -166,18 +172,18 @@ private:
 
     void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 
-    void create_image(uint32_t width, uint32_t height, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
+    void create_image(uint32_t width, uint32_t height, int mip_levels, VkFormat format, VkImageTiling tiling, VkImageUsageFlags usage,
                       VkMemoryPropertyFlags properties, VkImage &image, VkDeviceMemory &image_memory);
 
     VkCommandBuffer begin_single_time_commands();
 
     void end_single_time_commands(VkCommandBuffer command_buffer);
 
-    void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout);
+    void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, int mip_levels);
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags);
+    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, int mip_levels);
 
     VkFormat
     find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
@@ -185,4 +191,8 @@ private:
     VkFormat find_depth_format();
 
     bool has_stencil_component(VkFormat format);
+
+    void generate_mipmaps(VkImage image, VkFormat image_format, int32_t tex_width, int32_t tex_height, uint32_t mip_levels);
+
+    VkSampleCountFlagBits get_max_usable_sample_count(VkPhysicalDevice device);
 };

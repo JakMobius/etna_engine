@@ -23,7 +23,7 @@ constexpr const char* VK_CREATE_DEBUG_UTILS_MESSENGER_EXT_NAME = "vkCreateDebugU
 constexpr const char* VK_DESTROY_DEBUG_UTILS_MESSENGER_EXT_NAME = "vkDestroyDebugUtilsMessengerEXT";
 
 class VkDebugCallbackHandler {
-    VkDebugUtilsMessageSeverityFlagBitsEXT m_min_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT;
+    VkDebugUtilsMessageSeverityFlagBitsEXT m_min_severity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT;
 
     VkInstance m_instance = nullptr;
     VkDebugUtilsMessengerEXT m_handle = nullptr;
@@ -60,6 +60,14 @@ public:
                   << VkSeverityCode(callback_parameters->message_severity) << "] ["
                   << VkMessageTypeCode(callback_parameters->message_type) << "]: "
                   << callback_parameters->callback_data->pMessage << "\n";
+
+        if(callback_parameters->message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+            asm("nop");
+        }
+
+        if(callback_parameters->message_type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+            asm("nop");
+        }
 
         for(int i = 0; i < callback_parameters->callback_data->objectCount; i++) {
             std::cout << "\t- objects[" << i << "]: ";
