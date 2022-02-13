@@ -16,6 +16,7 @@
 #include "vk-debug-callback-handler.hpp"
 #include "vk-queue-family-indices.hpp"
 #include "vulkan/vk-memory.hpp"
+#include "vulkan/vk-buffer.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -56,10 +57,16 @@ class HelloTriangleApplication {
     std::unique_ptr<VkQueueFamilyIndices> m_family_indices {};
     std::vector<VkFence> m_in_flight_fences {};
     std::vector<VkFence> m_in_flight_images {};
-    VkBuffer m_vertex_buffer {};
-    VK::Memory m_vertex_buffer_memory {};
-    VkBuffer m_index_buffer {};
-    VK::Memory m_index_buffer_memory {};
+
+    std::unique_ptr<VK::Memory> m_vertex_buffer_memory {};
+    std::unique_ptr<VK::Buffer> m_vertex_buffer {};
+
+    std::unique_ptr<VK::Memory> m_index_buffer_memory {};
+    std::unique_ptr<VK::Buffer> m_index_buffer {};
+
+    std::vector<VK::Buffer*> m_uniform_buffers {};
+    std::vector<VK::Memory*> m_uniform_buffers_memory {};
+
     VkDescriptorSetLayout m_descriptor_set_layout = {};
     VkDescriptorPool m_descriptor_pool {};
     std::vector<VkDescriptorSet> m_descriptor_sets {};
@@ -81,9 +88,6 @@ class HelloTriangleApplication {
 
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
-
-    std::vector<VkBuffer> m_uniform_buffers {};
-    std::vector<VK::Memory*> m_uniform_buffers_memory {};
 
     size_t m_current_frame = 0;
 
@@ -165,9 +169,6 @@ private:
     bool check_device_extension_support(VkPhysicalDevice physical_device);
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
-
-    void create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer &buffer,
-                       VK::Memory &buffer_memory);
 
     void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 

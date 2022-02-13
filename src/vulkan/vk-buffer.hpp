@@ -20,7 +20,13 @@ class Buffer {
 public:
 
     explicit Buffer(const MemoryReference& reference): m_memory_ref(reference) {}
-    explicit Buffer(MemoryReference&& reference): m_memory_ref(reference) {}
+    ~Buffer() {
+        destroy();
+    }
+
+    VkBuffer get_handle() {
+        return m_handle;
+    }
 
     void set_size(VkDeviceSize size) {
         if(m_handle) report_illegal_state_change();
@@ -54,14 +60,19 @@ public:
         VkMemoryRequirements mem_requirements {};
         vkGetBufferMemoryRequirements(device->get_handle(), m_handle, &mem_requirements);
 
-        memory->allocate(mem_requirements.size, memory->get_suitable_memory_type(mem_requirements.memoryTypeBits, m_properties));
+        memory->set_size(mem_requirements.size);
+        memory->set_type(memory->get_suitable_memory_type(mem_requirements.memoryTypeBits, m_properties));
+        memory->allocate();
 
         vkBindBufferMemory(device->get_handle(), m_handle, memory->get_handle(), 0);
     }
 
-    void free() {
+    void destroy() {
         if(!m_handle) return;
 
+        auto device = m_memory_ref.get_memory()->get_device();
+        vkDestroyBuffer(device->get_handle(), m_handle, nullptr);
+        m_handle = nullptr;
     }
 };
 
