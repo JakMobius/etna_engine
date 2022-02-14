@@ -51,6 +51,7 @@ public:
         buffer_info.sharingMode = m_sharing_mode;
 
         auto device = m_memory->get_device();
+        auto physical_device = device->get_physical_device();
 
         if (vkCreateBuffer(device->get_handle(), &buffer_info, nullptr, &m_handle) != VK_SUCCESS) {
             throw std::runtime_error("failed to create buffer");
@@ -60,7 +61,7 @@ public:
         vkGetBufferMemoryRequirements(device->get_handle(), m_handle, &mem_requirements);
 
         m_memory->set_size(mem_requirements.size);
-        m_memory->set_type(m_memory->get_suitable_memory_type(mem_requirements.memoryTypeBits, m_properties));
+        m_memory->set_type(physical_device->get_suitable_memory_type(mem_requirements.memoryTypeBits, m_properties));
         m_memory->allocate();
 
         vkBindBufferMemory(device->get_handle(), m_handle, m_memory->get_handle(), 0);

@@ -38,10 +38,8 @@ class HelloTriangleApplication {
     VkInstance m_instance {};
 
     std::unique_ptr<VK::PhysicalDevice> m_physical_device {};
-    std::unique_ptr<VK::Device> m_device {};
     std::unique_ptr<VK::SurfaceContext> m_surface_context {};
-    VkQueue m_device_graphics_queue {};
-    VkQueue m_device_present_queue {};
+
     VkSurfaceKHR m_surface {};
 
     VkSwapchainKHR m_swap_chain {};

@@ -44,18 +44,6 @@ public:
         m_memory_type = memory_type;
     }
 
-    uint32_t get_suitable_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) {
-        auto* mem_properties = m_device->get_physical_device()->get_memory_properties();
-
-        for (uint32_t i = 0; i < mem_properties->memoryTypeCount; i++) {
-            if ((type_filter & (1 << i)) && (mem_properties->memoryTypes[i].propertyFlags & properties) == properties) {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("failed to find suitable memory type!");
-    }
-
     void allocate() {
         if(!m_device) {
             throw std::runtime_error("cannot to allocate memory without specifying a device");
