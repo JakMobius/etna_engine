@@ -1,31 +1,24 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+#include "vk-physical-device.hpp"
 
 namespace VK {
 
 class Device {
 
-    VkPhysicalDeviceMemoryProperties m_mem_properties {};
-    VkPhysicalDevice m_physical_device;
+    PhysicalDevice* m_physical_device;
     VkDevice m_handle;
 
 public:
 
     // TODO: this is ugly, create device properly
-    Device(VkDevice device = nullptr, VkPhysicalDevice physical_device = nullptr) {
+    Device(VkDevice device = nullptr, PhysicalDevice* physical_device = nullptr) {
         m_handle = device;
         m_physical_device = physical_device;
-        if(m_physical_device != nullptr) {
-            vkGetPhysicalDeviceMemoryProperties(m_physical_device, &m_mem_properties);
-        }
     }
 
-    const VkPhysicalDeviceMemoryProperties* get_memory_properties() {
-        return &m_mem_properties;
-    }
-
-    VkPhysicalDevice get_physical_device() {
+    PhysicalDevice* get_physical_device() {
         return m_physical_device;
     }
 

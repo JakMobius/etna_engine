@@ -13,10 +13,11 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
 #include "vulkan/codes/vk-version-code.hpp"
-#include "vk-debug-callback-handler.hpp"
-#include "vk-queue-family-indices.hpp"
+#include "vulkan/vk-debug-callback-handler.hpp"
+#include "vulkan/vk-queue-family-indices.hpp"
 #include "vulkan/vk-memory.hpp"
 #include "vulkan/vk-buffer.hpp"
+#include "vulkan/vk-surface-context.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -35,8 +36,10 @@ class HelloTriangleApplication {
     const uint32_t m_window_width = 800;
     const uint32_t m_window_height = 600;
     VkInstance m_instance {};
-    VkPhysicalDevice m_gpu {};
-    VK::Device m_device {};
+
+    std::unique_ptr<VK::PhysicalDevice> m_physical_device {};
+    std::unique_ptr<VK::Device> m_device {};
+    std::unique_ptr<VK::SurfaceContext> m_surface_context {};
     VkQueue m_device_graphics_queue {};
     VkQueue m_device_present_queue {};
     VkSurfaceKHR m_surface {};
@@ -54,7 +57,7 @@ class HelloTriangleApplication {
     std::vector<VkCommandBuffer> m_command_buffers {};
     std::vector<VkSemaphore> m_image_available_semaphores {};
     std::vector<VkSemaphore> m_render_finished_semaphores {};
-    std::unique_ptr<VkQueueFamilyIndices> m_family_indices {};
+
     std::vector<VkFence> m_in_flight_fences {};
     std::vector<VkFence> m_in_flight_images {};
 
@@ -102,7 +105,10 @@ class HelloTriangleApplication {
     const bool m_enable_validation_layers = true;
     const bool m_enable_debug_messenger = true;
 
-    float m_time = 0;
+    glm::vec3 m_camera_pos {};
+    glm::vec3 m_camera_direction {};
+    float m_pitch = 0;
+    float m_yaw = 0;
 
 public:
 
@@ -124,8 +130,6 @@ private:
     void create_instance();
     void setup_debug_messenger();
     void create_surface();
-    void pick_gpu();
-    void get_families();
     void create_logical_device();
     void create_swap_chain();
     void create_image_views();
@@ -150,11 +154,13 @@ private:
     void cleanup_swap_chain();
     void recreate_swap_chain();
 
+    VK::PhysicalDevice get_best_physical_device();
+
     void update_uniform_buffer(uint32_t image_index);
 
     void draw_frame();
 
-    VkPhysicalDevice select_best_gpu(const std::vector<VkPhysicalDevice>& devices);
+    const VK::PhysicalDevice* select_best_physical_device(const std::vector<VK::PhysicalDevice>& devices);
 
     std::vector<const char*> get_required_extensions();
 
@@ -164,9 +170,8 @@ private:
 
     void cleanup();
 
-    bool is_device_suitable(VkPhysicalDevice device, VkPhysicalDeviceProperties* properties);
-
-    bool check_device_extension_support(VkPhysicalDevice physical_device);
+    bool is_device_suitable(const VK::PhysicalDevice* physical_device);
+    bool check_device_extension_support(const VK::PhysicalDevice* physical_device);
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
 
@@ -195,8 +200,6 @@ private:
     bool has_stencil_component(VkFormat format);
 
     void generate_mipmaps(VkImage image, VkFormat image_format, int32_t tex_width, int32_t tex_height, uint32_t mip_levels);
-
-    VkSampleCountFlagBits get_max_usable_sample_count(VkPhysicalDevice device);
 
     void create_color_resources();
 };

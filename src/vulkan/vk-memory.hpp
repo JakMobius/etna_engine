@@ -2,7 +2,6 @@
 
 namespace VK {
 class Memory;
-class MemoryReference;
 }
 
 #include <vulkan/vulkan_core.h>
@@ -11,39 +10,15 @@ class MemoryReference;
 
 namespace VK {
 
-class MemoryReference {
-    Memory* m_memory;
-public:
-    explicit MemoryReference(Memory* memory = nullptr);
-
-    ~MemoryReference();
-
-    Memory* get_memory() { return m_memory; }
-};
-
 class Memory {
     VkDeviceMemory m_handle = nullptr;
     Device* m_device = nullptr;
     uint32_t m_size = 0;
     uint32_t m_memory_type = 0;
-    mutable int m_references = 0;
 
 public:
     explicit Memory(Device* device): m_device(device) {}
     Memory(): m_device(nullptr) {};
-
-    VK::MemoryReference create_reference();
-
-    void add_reference() {
-        m_references++;
-    };
-
-    void remove_reference() {
-        if(m_references == 0) {
-            throw std::runtime_error("unbalanced calls to VK::Memory::add_reference and VK::Memory::remove_reference");
-        }
-        m_references--;
-    };
 
     // As Memory class holds a Vulkan resource, we won't
     // allow one to copy/move it.
@@ -70,7 +45,7 @@ public:
     }
 
     uint32_t get_suitable_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) {
-        auto* mem_properties = m_device->get_memory_properties();
+        auto* mem_properties = m_device->get_physical_device()->get_memory_properties();
 
         for (uint32_t i = 0; i < mem_properties->memoryTypeCount; i++) {
             if ((type_filter & (1 << i)) && (mem_properties->memoryTypes[i].propertyFlags & properties) == properties) {

@@ -2,10 +2,10 @@
 
 #include <vulkan/vk_platform.h>
 #include <vulkan/vulkan_core.h>
-#include "vulkan/codes/vk-result-code.hpp"
-#include "vulkan/codes/vk-object-type-code.hpp"
-#include "vulkan/codes/vk-severity-code.hpp"
-#include "vulkan/codes/vk-message-type-code.hpp"
+#include "codes/vk-result-code.hpp"
+#include "codes/vk-object-type-code.hpp"
+#include "codes/vk-severity-code.hpp"
+#include "codes/vk-message-type-code.hpp"
 
 struct vk_callback_parameters {
     VkDebugUtilsMessageSeverityFlagBitsEXT message_severity;

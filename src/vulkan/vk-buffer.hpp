@@ -6,7 +6,7 @@
 namespace VK {
 
 class Buffer {
-    MemoryReference m_memory_ref {};
+    Memory* m_memory {};
     VkDeviceSize m_size = 0;
     VkBufferUsageFlags m_usage = 0;
     VkMemoryPropertyFlags m_properties = 0;
@@ -19,7 +19,7 @@ class Buffer {
 
 public:
 
-    explicit Buffer(const MemoryReference& reference): m_memory_ref(reference) {}
+    explicit Buffer(Memory* memory): m_memory(memory) {}
     ~Buffer() {
         destroy();
     }
@@ -50,8 +50,7 @@ public:
         buffer_info.usage = m_usage;
         buffer_info.sharingMode = m_sharing_mode;
 
-        auto memory = m_memory_ref.get_memory();
-        auto device = memory->get_device();
+        auto device = m_memory->get_device();
 
         if (vkCreateBuffer(device->get_handle(), &buffer_info, nullptr, &m_handle) != VK_SUCCESS) {
             throw std::runtime_error("failed to create buffer");
@@ -60,17 +59,17 @@ public:
         VkMemoryRequirements mem_requirements {};
         vkGetBufferMemoryRequirements(device->get_handle(), m_handle, &mem_requirements);
 
-        memory->set_size(mem_requirements.size);
-        memory->set_type(memory->get_suitable_memory_type(mem_requirements.memoryTypeBits, m_properties));
-        memory->allocate();
+        m_memory->set_size(mem_requirements.size);
+        m_memory->set_type(m_memory->get_suitable_memory_type(mem_requirements.memoryTypeBits, m_properties));
+        m_memory->allocate();
 
-        vkBindBufferMemory(device->get_handle(), m_handle, memory->get_handle(), 0);
+        vkBindBufferMemory(device->get_handle(), m_handle, m_memory->get_handle(), 0);
     }
 
     void destroy() {
         if(!m_handle) return;
 
-        auto device = m_memory_ref.get_memory()->get_device();
+        auto device = m_memory->get_device();
         vkDestroyBuffer(device->get_handle(), m_handle, nullptr);
         m_handle = nullptr;
     }

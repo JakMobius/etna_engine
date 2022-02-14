@@ -8,8 +8,7 @@ namespace VK {
 class PhysicalDeviceTypeCode {
     VkPhysicalDeviceType m_code;
 public:
-    explicit PhysicalDeviceTypeCode(VkPhysicalDeviceType
-    code):
+    explicit PhysicalDeviceTypeCode(VkPhysicalDeviceType code):
     m_code(code) {}
 
     static const char* name(VkPhysicalDeviceType result);
