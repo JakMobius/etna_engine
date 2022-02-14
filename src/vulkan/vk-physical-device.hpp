@@ -7,6 +7,7 @@ class PhysicalDevice;
 #include <vulkan/vulkan_core.h>
 #include <memory>
 #include <iostream>
+#include <set>
 #include "codes/vk-version-code.hpp"
 #include "codes/vk-physical-device-type-code.hpp"
 #include "vk-queue-family-indices.hpp"
@@ -29,100 +30,28 @@ public:
 
     PhysicalDevice(const PhysicalDevice& copy): m_handle(copy.m_handle) {}
 
-    PhysicalDevice& operator=(const PhysicalDevice& copy_assign) {
-        if(this == &copy_assign) return *this;
+    PhysicalDevice& operator=(const PhysicalDevice& copy_assign);
 
-        m_handle = copy_assign.m_handle;
-        m_mem_properties = nullptr;
-        m_physical_properties = nullptr;
-        m_physical_features = nullptr;
-        m_queue_family_indices = nullptr;
-        return *this;
-    };
+    PhysicalDevice& operator=(PhysicalDevice&& move_assign) noexcept;
 
-    PhysicalDevice& operator=(PhysicalDevice&& move_assign) noexcept {
-        if(this == &move_assign) return *this;
+    const VkPhysicalDeviceMemoryProperties* get_memory_properties() const;
 
-        m_handle = move_assign.m_handle;
-        m_mem_properties = std::move(move_assign.m_mem_properties);
-        m_physical_properties = std::move(move_assign.m_physical_properties);
-        m_physical_features = std::move(move_assign.m_physical_features);
-        m_queue_family_indices = std::move(move_assign.m_queue_family_indices);
+    const VkPhysicalDeviceProperties* get_physical_properties() const;
 
-        return *this;
-    };
+    const VkPhysicalDeviceFeatures* get_physical_features() const;
 
-    const VkPhysicalDeviceMemoryProperties* get_memory_properties() const {
-        if(!m_mem_properties) {
-            m_mem_properties = std::make_unique<VkPhysicalDeviceMemoryProperties>();
-            vkGetPhysicalDeviceMemoryProperties(m_handle, m_mem_properties.get());
-        }
-        return m_mem_properties.get();
-    }
+    const QueueFamilyIndices* get_queue_family_indices() const;
 
-    const VkPhysicalDeviceProperties* get_physical_properties() const {
-        if(!m_physical_properties) {
-            m_physical_properties = std::make_unique<VkPhysicalDeviceProperties>();
-            vkGetPhysicalDeviceProperties(m_handle, m_physical_properties.get());
-        }
-        return m_physical_properties.get();
-    }
+    void get_format_properties(VkFormatProperties* properties, VkFormat format);
 
-    const VkPhysicalDeviceFeatures* get_physical_features() const {
-        if(!m_physical_features) {
-            m_physical_features = std::make_unique<VkPhysicalDeviceFeatures>();
-            vkGetPhysicalDeviceFeatures(m_handle, m_physical_features.get());
-        }
-        return m_physical_features.get();
-    }
+    VkSampleCountFlagBits get_max_usable_sample_count() const;
 
-    const QueueFamilyIndices* get_queue_family_indices() const {
-        if(!m_queue_family_indices) {
-            m_queue_family_indices = std::make_unique<QueueFamilyIndices>(this);
-        }
-        return m_queue_family_indices.get();
-    }
+    uint32_t get_suitable_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) const;
 
-    void get_format_properties(VkFormatProperties* properties, VkFormat format) {
-        vkGetPhysicalDeviceFormatProperties(m_handle, format, properties);
-    }
+    void print_description();
 
-    VkSampleCountFlagBits get_max_usable_sample_count() const {
-        VkSampleCountFlags counts = get_physical_properties()->limits.framebufferColorSampleCounts &
-                                    get_physical_properties()->limits.framebufferDepthSampleCounts;
-
-        if (counts & VK_SAMPLE_COUNT_64_BIT) { return VK_SAMPLE_COUNT_64_BIT; }
-        if (counts & VK_SAMPLE_COUNT_32_BIT) { return VK_SAMPLE_COUNT_32_BIT; }
-        if (counts & VK_SAMPLE_COUNT_16_BIT) { return VK_SAMPLE_COUNT_16_BIT; }
-        if (counts & VK_SAMPLE_COUNT_8_BIT) { return VK_SAMPLE_COUNT_8_BIT; }
-        if (counts & VK_SAMPLE_COUNT_4_BIT) { return VK_SAMPLE_COUNT_4_BIT; }
-        if (counts & VK_SAMPLE_COUNT_2_BIT) { return VK_SAMPLE_COUNT_2_BIT; }
-
-        return VK_SAMPLE_COUNT_1_BIT;
-    }
-
-    uint32_t get_suitable_memory_type(uint32_t type_filter, VkMemoryPropertyFlags properties) const {
-        auto* mem_properties = get_memory_properties();
-
-        for (uint32_t i = 0; i < mem_properties->memoryTypeCount; i++) {
-            if ((type_filter & (1 << i)) && (mem_properties->memoryTypes[i].propertyFlags & properties) == properties) {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("failed to find suitable memory type");
-    }
-
-    void print_description() {
-        auto properties =get_physical_properties();
-
-        std::cout << "VK::PhysicalDevice[" << properties->deviceName << "]:\n";
-        std::cout << "\tapiVersion: " << VK::VersionCode(properties->apiVersion) << "\n";
-        std::cout << "\tdriverVersion: " << VK::VersionCode(properties->driverVersion) << "\n";
-        std::cout << "\tvendorID: " << properties->vendorID << "\n";
-        std::cout << "\tdeviceID: " << properties->deviceID << "\n";
-        std::cout << "\tdeviceType: " << VK::PhysicalDeviceTypeCode(properties->deviceType) << "\n";
-    }
+    bool supports_extensions(std::vector<const char*> extensions) const;
+    VkFormat find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     VkPhysicalDevice get_handle() const { return m_handle; }
 };

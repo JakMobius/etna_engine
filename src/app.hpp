@@ -18,6 +18,7 @@
 #include "vulkan/vk-memory.hpp"
 #include "vulkan/vk-buffer.hpp"
 #include "vulkan/vk-surface-context.hpp"
+#include "vulkan/vk-image-2d.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -64,26 +65,27 @@ class HelloTriangleApplication {
     std::unique_ptr<VK::Memory> m_index_buffer_memory {};
     std::unique_ptr<VK::Buffer> m_index_buffer {};
 
-    std::vector<VK::Buffer*> m_uniform_buffers {};
-    std::vector<VK::Memory*> m_uniform_buffers_memory {};
+    std::vector<std::unique_ptr<VK::Buffer>> m_uniform_buffers {};
+    std::vector<std::unique_ptr<VK::Memory>> m_uniform_buffers_memory {};
 
     VkDescriptorSetLayout m_descriptor_set_layout = {};
     VkDescriptorPool m_descriptor_pool {};
     std::vector<VkDescriptorSet> m_descriptor_sets {};
 
-    VkImage m_texture_image {};
+    std::unique_ptr<VK::Image2D> m_texture_image {};
     VK::Memory m_texture_image_memory {};
     VkImageView m_texture_image_view {};
     VkSampler m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
-    VkImage m_color_image;
+
+    std::unique_ptr<VK::Image2D> m_color_image;
     VK::Memory m_color_image_memory;
     VkImageView m_color_image_view;
 
-    VkImage m_depth_image {};
     VK::Memory m_depth_image_memory {};
+    std::unique_ptr<VK::Image2D> m_depth_image {};
     VkImageView m_depth_image_view {};
 
     std::vector<float> m_vertex_buffer_storage {};
@@ -91,7 +93,7 @@ class HelloTriangleApplication {
 
     size_t m_current_frame = 0;
 
-    const std::vector<const char*> required_validation_layers = {
+    const std::vector<const char*> m_required_validation_layers = {
         "VK_LAYER_KHRONOS_validation"
     };
 
@@ -168,25 +170,16 @@ private:
     void cleanup();
 
     bool is_device_suitable(const VK::PhysicalDevice* physical_device);
-    bool check_device_extension_support(const VK::PhysicalDevice* physical_device);
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
 
     void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
-
-    void create_image(uint32_t width, uint32_t height, int mip_levels,
-                      VkSampleCountFlagBits num_samples, VkImageTiling tiling,
-                      VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
-                      VK::Memory &image_memory, VkFormat format);
 
     void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, int mip_levels);
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 
     VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, int mip_levels);
-
-    VkFormat
-    find_supported_format(const std::vector<VkFormat> &candidates, VkImageTiling tiling, VkFormatFeatureFlags features);
 
     VkFormat find_depth_format();
 

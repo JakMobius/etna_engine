@@ -35,8 +35,8 @@ void HelloTriangleApplication::create_instance() {
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
     if (m_enable_validation_layers) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(required_validation_layers.size());
-        create_info.ppEnabledLayerNames = required_validation_layers.data();
+        create_info.enabledLayerCount = static_cast<uint32_t>(m_required_validation_layers.size());
+        create_info.ppEnabledLayerNames = m_required_validation_layers.data();
     } else {
         create_info.enabledLayerCount = 0;
     }
@@ -174,7 +174,7 @@ bool HelloTriangleApplication::is_device_suitable(const VK::PhysicalDevice* devi
     auto surface_family = device->get_queue_family_indices()->find_surface_present_family(m_surface);
     if(surface_family < 0) return false;
 
-    if(!check_device_extension_support(device)) return false;
+    if(!device->supports_extensions(m_device_extensions)) return false;
     if(!VK::SwapChainSupportDetails(device, m_surface).is_complete()) return false;
 
     if(!device->get_physical_features()->samplerAnisotropy) return false;
@@ -187,7 +187,6 @@ bool HelloTriangleApplication::check_validation_layer_support() {
 
     uint32_t layer_count = 0;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-
     std::vector<VkLayerProperties> available_layers(layer_count);
     vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
 
@@ -197,7 +196,7 @@ bool HelloTriangleApplication::check_validation_layer_support() {
         std::cout << "\t" << layer.layerName << " ver. " << VK::VersionCode(layer.specVersion) << " impl. " << VK::VersionCode(layer.implementationVersion) << ": " << layer.description << "\n";
     }
 
-    for (const char* required_layer : required_validation_layers) {
+    for (const char* required_layer : m_required_validation_layers) {
         bool layerFound = false;
 
         for (const auto& available_layer : available_layers) {
@@ -209,7 +208,7 @@ bool HelloTriangleApplication::check_validation_layer_support() {
 
         if (!layerFound) {
             result = false;
-            std::cout << "Warning: Validation layer '" << required_layer << "' is required but not avabilable\n";
+            std::cout << "Warning: Validation layer '" << required_layer << "' is required but not available\n";
         }
     }
 
@@ -239,11 +238,7 @@ void HelloTriangleApplication::cleanup() {
         m_texture_image_view = nullptr;
     }
 
-    if(m_texture_image) {
-        vkDestroyImage(m_surface_context->get_device()->get_handle(), m_texture_image, nullptr);
-        m_texture_image = nullptr;
-    }
-
+    m_texture_image->destroy();
     m_texture_image_memory.free();
 
     if(m_descriptor_set_layout) {
@@ -310,27 +305,12 @@ void HelloTriangleApplication::create_logical_device() {
     m_surface_context = std::make_unique<VK::SurfaceContext>(m_physical_device.get(), m_surface);
 
     if(m_enable_validation_layers) {
-        m_surface_context->create_logical_device(m_device_extensions, required_validation_layers);
+        m_surface_context->create_logical_device(m_device_extensions, m_required_validation_layers);
     } else {
         m_surface_context->create_logical_device(m_device_extensions, {});
     }
 
     m_msaa_samples = m_physical_device->get_max_usable_sample_count();
-}
-
-bool HelloTriangleApplication::check_device_extension_support(const VK::PhysicalDevice* physical_device) {
-    uint32_t extension_count = 0;
-    vkEnumerateDeviceExtensionProperties(physical_device->get_handle(), nullptr, &extension_count, nullptr);
-    std::vector<VkExtensionProperties> available_extensions(extension_count);
-    vkEnumerateDeviceExtensionProperties(physical_device->get_handle(), nullptr, &extension_count, available_extensions.data());
-
-    std::set<std::string> required_extensions(m_device_extensions.begin(), m_device_extensions.end());
-
-    for (const auto& extension : available_extensions) {
-        required_extensions.erase(extension.extensionName);
-    }
-
-    return required_extensions.empty();
 }
 
 void HelloTriangleApplication::create_swap_chain() {
@@ -843,11 +823,7 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_color_image_view = nullptr;
     }
 
-    if(m_color_image) {
-        vkDestroyImage(m_surface_context->get_device()->get_handle(), m_color_image, nullptr);
-        m_color_image = nullptr;
-    }
-
+    m_color_image->destroy();
     m_color_image_memory.free();
 
     if(m_depth_image_view) {
@@ -855,18 +831,10 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_depth_image_view = nullptr;
     }
 
+    m_depth_image->destroy();
     m_depth_image_memory.free();
 
-    if(m_depth_image) {
-        vkDestroyImage(m_surface_context->get_device()->get_handle(), m_depth_image, nullptr);
-        m_depth_image = nullptr;
-    }
-
-    // TODO: ugly. these vectors should use unique ptrs
-    for(auto* uniform_buffer : m_uniform_buffers) delete uniform_buffer;
     m_uniform_buffers.clear();
-
-    for(auto* memory : m_uniform_buffers_memory) delete memory;
     m_uniform_buffers_memory.clear();
 
     if(m_descriptor_pool) {
@@ -1078,11 +1046,11 @@ void HelloTriangleApplication::create_uniform_buffers() {
     m_uniform_buffers_memory.resize(m_swap_chain_images.size());
 
     for (size_t i = 0; i < m_swap_chain_images.size(); i++) {
-        m_uniform_buffers_memory[i] = new VK::Memory(m_surface_context->get_device());
+        m_uniform_buffers_memory[i] = std::make_unique<VK::Memory>(m_surface_context->get_device());
 
         auto& buffer = m_uniform_buffers[i];
-        buffer = new VK::Buffer(m_uniform_buffers_memory[i]);
-        buffer->set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        buffer = std::make_unique<VK::Buffer>(m_uniform_buffers_memory[i].get());
+        buffer->set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         buffer->set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         buffer->set_size(buffer_size);
         buffer->create();
@@ -1130,20 +1098,10 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
 
     ubo.proj[1][1] *= -1;
 
-    void* data = nullptr;
-    vkMapMemory(m_surface_context->get_device()->get_handle(), m_uniform_buffers_memory[image_index]->get_handle(), 0, sizeof(ubo), 0, &data);
-
-    VkMappedMemoryRange flush_range = {
-            VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE,
-            nullptr,
-            m_uniform_buffers_memory[image_index]->get_handle(),
-            0,
-            sizeof(ubo)
-    };
-
+    void* data = m_uniform_buffers_memory[image_index]->map();
     memcpy(data, &ubo, sizeof(ubo));
-    vkFlushMappedMemoryRanges(m_surface_context->get_device()->get_handle(), 1, &flush_range);
-    vkUnmapMemory(m_surface_context->get_device()->get_handle(), m_uniform_buffers_memory[image_index]->get_handle());
+    m_uniform_buffers_memory[image_index]->flush();
+    m_uniform_buffers_memory[image_index]->unmap();
 }
 
 void HelloTriangleApplication::create_descriptor_pool() {
@@ -1213,40 +1171,6 @@ void HelloTriangleApplication::create_descriptor_sets() {
 
 }
 
-void HelloTriangleApplication::create_image(uint32_t width, uint32_t height, int mip_levels,
-                                            VkSampleCountFlagBits num_samples, VkImageTiling tiling,
-                                            VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
-                                            VK::Memory &image_memory, VkFormat format) {
-    VkImageCreateInfo imageInfo{};
-    imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-    imageInfo.imageType = VK_IMAGE_TYPE_2D;
-    imageInfo.extent.width = width;
-    imageInfo.extent.height = height;
-    imageInfo.extent.depth = 1;
-    imageInfo.mipLevels = mip_levels;
-    imageInfo.arrayLayers = 1;
-    imageInfo.format = format;
-    imageInfo.tiling = tiling;
-    imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-    imageInfo.usage = usage;
-    imageInfo.samples = num_samples;
-    imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-    if (vkCreateImage(m_surface_context->get_device()->get_handle(), &imageInfo, nullptr, &image) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create image!");
-    }
-
-    VkMemoryRequirements memRequirements;
-    vkGetImageMemoryRequirements(m_surface_context->get_device()->get_handle(), image, &memRequirements);
-
-    image_memory.set_device(m_surface_context->get_device());
-    image_memory.set_size(memRequirements.size);
-    image_memory.set_type(m_physical_device->get_suitable_memory_type(memRequirements.memoryTypeBits, properties));
-    image_memory.allocate();
-
-    vkBindImageMemory(m_surface_context->get_device()->get_handle(), image, image_memory.get_handle(), 0);
-}
-
 void HelloTriangleApplication::create_texture_image() {
     const char* path = "resources/models/viking_room.png";
     FIBITMAP* bitmap = FreeImage_Load(FreeImage_GetFileType(path, 0), path);
@@ -1279,15 +1203,20 @@ void HelloTriangleApplication::create_texture_image() {
 
     FreeImage_Unload(converted);
 
-    create_image(image_width, image_height, m_mip_levels, VK_SAMPLE_COUNT_1_BIT, VK_IMAGE_TILING_OPTIMAL,
-                 VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_texture_image, m_texture_image_memory, VK_FORMAT_R8G8B8A8_SRGB);
+    m_texture_image_memory.set_device(m_surface_context->get_device());
 
-    transition_image_layout(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mip_levels);
-    copy_buffer_to_image(staging_buffer.get_handle(), m_texture_image, image_width, image_height);
+    m_texture_image = std::make_unique<VK::Image2D>(&m_texture_image_memory);
+    m_texture_image->set_size(image_width, image_height);
+    m_texture_image->set_mip_levels(m_mip_levels);
+    m_texture_image->set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    m_texture_image->set_format(VK_FORMAT_R8G8B8A8_SRGB);
+    m_texture_image->create();
+
+    transition_image_layout(m_texture_image->get_handle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mip_levels);
+    copy_buffer_to_image(staging_buffer.get_handle(), m_texture_image->get_handle(), image_width, image_height);
 //    transition_image_layout(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_mip_levels);
 
-    generate_mipmaps(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, image_width, image_height, m_mip_levels);
+    generate_mipmaps(m_texture_image->get_handle(), VK_FORMAT_R8G8B8A8_SRGB, image_width, image_height, m_mip_levels);
 }
 
 void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_format, int32_t tex_width, int32_t tex_height, uint32_t mip_levels) {
@@ -1444,7 +1373,7 @@ void HelloTriangleApplication::copy_buffer_to_image(VkBuffer buffer, VkImage ima
     auto command_buffer = command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VkBufferImageCopy region{};
+    VkBufferImageCopy region {};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
     region.bufferImageHeight = 0;
@@ -1454,12 +1383,8 @@ void HelloTriangleApplication::copy_buffer_to_image(VkBuffer buffer, VkImage ima
     region.imageSubresource.baseArrayLayer = 0;
     region.imageSubresource.layerCount = 1;
 
-    region.imageOffset = {0, 0, 0};
-    region.imageExtent = {
-        width,
-        height,
-        1
-    };
+    region.imageOffset = {0, 0, 0 };
+    region.imageExtent = { width, height,1 };
 
     vkCmdCopyBufferToImage(
         command_buffer.get_handle(),
@@ -1496,7 +1421,7 @@ VkImageView HelloTriangleApplication::create_image_view(VkImage image, VkFormat 
 }
 
 void HelloTriangleApplication::create_texture_image_view() {
-    m_texture_image_view = create_image_view(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_mip_levels);
+    m_texture_image_view = create_image_view(m_texture_image->get_handle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_mip_levels);
 }
 
 void HelloTriangleApplication::create_texture_sampler() {
@@ -1532,24 +1457,9 @@ void HelloTriangleApplication::create_texture_sampler() {
     }
 }
 
-VkFormat HelloTriangleApplication::find_supported_format(const std::vector<VkFormat>& candidates, VkImageTiling tiling, VkFormatFeatureFlags features) {
-    for (VkFormat format : candidates) {
-        VkFormatProperties props {};
-        m_physical_device->get_format_properties(&props, format);
-
-        if (tiling == VK_IMAGE_TILING_LINEAR && (props.linearTilingFeatures & features) == features) {
-            return format;
-        } else if (tiling == VK_IMAGE_TILING_OPTIMAL && (props.optimalTilingFeatures & features) == features) {
-            return format;
-        }
-    }
-
-    throw std::runtime_error("failed to find supported format");
-}
-
 VkFormat HelloTriangleApplication::find_depth_format() {
-    return find_supported_format(
-            {VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT},
+    return m_physical_device->find_supported_format(
+            { VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
@@ -1562,17 +1472,30 @@ bool HelloTriangleApplication::has_stencil_component(VkFormat format) {
 void HelloTriangleApplication::create_depth_resources() {
     VkFormat depth_format = find_depth_format();
 
-    create_image(m_swap_chain_extent.width, m_swap_chain_extent.height, 1, m_msaa_samples,
-                 VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-                 VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_depth_image, m_depth_image_memory, depth_format);
-    m_depth_image_view = create_image_view(m_depth_image, depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+    m_depth_image_memory.set_device(m_surface_context->get_device());
 
-    transition_image_layout(m_depth_image, depth_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+    m_depth_image = std::make_unique<VK::Image2D>(&m_depth_image_memory);
+    m_depth_image->set_samples(m_msaa_samples);
+    m_depth_image->set_size(m_swap_chain_extent.width, m_swap_chain_extent.height);
+    m_depth_image->set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depth_image->set_format(depth_format);
+    m_depth_image->create();
+
+    m_depth_image_view = create_image_view(m_depth_image->get_handle(), depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+
+    transition_image_layout(m_depth_image->get_handle(), depth_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
 }
 
 void HelloTriangleApplication::create_color_resources() {
     VkFormat color_format = m_swap_chain_image_format;
 
-    create_image(m_swap_chain_extent.width, m_swap_chain_extent.height, 1, m_msaa_samples, VK_IMAGE_TILING_OPTIMAL, VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, m_color_image, m_color_image_memory, color_format);
-    m_color_image_view = create_image_view(m_color_image, color_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    m_color_image_memory.set_device(m_surface_context->get_device());
+    m_color_image = std::make_unique<VK::Image2D>(&m_color_image_memory);
+    m_color_image->set_size(m_swap_chain_extent.width, m_swap_chain_extent.height);
+    m_color_image->set_samples(m_msaa_samples);
+    m_color_image->set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    m_color_image->set_format(color_format);
+    m_color_image->create();
+
+    m_color_image_view = create_image_view(m_color_image->get_handle(), color_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
 }
