@@ -46,8 +46,8 @@ struct SwapChainSupportDetails {
         }
     }
 
-    bool is_complete() {
-        return !m_formats.empty() && !m_formats.empty();
+    bool is_complete() const {
+        return !m_formats.empty() && !m_present_modes.empty();
     }
 
     VkSurfaceFormatKHR choose_best_format() {
@@ -71,7 +71,7 @@ struct SwapChainSupportDetails {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D choose_best_swap_extent(int window_width, int window_height) {
+    VkExtent2D choose_best_swap_extent(int window_width, int window_height) const {
         if(m_capabilities.currentExtent.width != UINT32_MAX) {
             return m_capabilities.currentExtent;
         } else {
@@ -86,7 +86,7 @@ struct SwapChainSupportDetails {
         }
     }
 
-    uint32_t get_optimal_chain_image_count() {
+    uint32_t get_optimal_chain_image_count() const {
         uint32_t image_count = m_capabilities.minImageCount + 1;
         if(m_capabilities.maxImageCount > 0 && image_count > m_capabilities.maxImageCount) {
             image_count = m_capabilities.maxImageCount;

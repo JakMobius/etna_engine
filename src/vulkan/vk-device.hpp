@@ -12,10 +12,13 @@ class Device {
 
 public:
 
-    // TODO: this is ugly, create device properly
-    Device(VkDevice device = nullptr, PhysicalDevice* physical_device = nullptr) {
+    Device(VkDevice device, PhysicalDevice* physical_device) {
         m_handle = device;
         m_physical_device = physical_device;
+    }
+
+    ~Device() {
+        destroy();
     }
 
     PhysicalDevice* get_physical_device() {

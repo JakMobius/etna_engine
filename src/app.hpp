@@ -51,8 +51,7 @@ class HelloTriangleApplication {
     VkPipelineLayout m_pipeline_layout {};
     VkPipeline m_graphics_pipeline {};
     std::vector<VkFramebuffer> m_swap_chain_framebuffers {};
-    VkCommandPool m_command_pool {};
-    std::vector<VkCommandBuffer> m_command_buffers {};
+    std::vector<std::unique_ptr<VK::CommandBuffer>> m_command_buffers {};
     std::vector<VkSemaphore> m_image_available_semaphores {};
     std::vector<VkSemaphore> m_render_finished_semaphores {};
 
@@ -179,10 +178,6 @@ private:
                       VkSampleCountFlagBits num_samples, VkImageTiling tiling,
                       VkImageUsageFlags usage, VkMemoryPropertyFlags properties, VkImage &image,
                       VK::Memory &image_memory, VkFormat format);
-
-    VkCommandBuffer begin_single_time_commands();
-
-    void end_single_time_commands(VkCommandBuffer command_buffer);
 
     void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, int mip_levels);
 
