@@ -19,6 +19,7 @@
 #include "vulkan/vk-buffer.hpp"
 #include "vulkan/vk-surface-context.hpp"
 #include "vulkan/vk-image-2d.hpp"
+#include "vulkan/vk-image-view.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -47,7 +48,7 @@ class HelloTriangleApplication {
     std::vector<VkImage> m_swap_chain_images {};
     VkFormat m_swap_chain_image_format {};
     VkExtent2D m_swap_chain_extent {};
-    std::vector<VkImageView> m_swap_chain_image_views {};
+    std::vector<std::unique_ptr<VK::ImageView>> m_swap_chain_image_views {};
     VkRenderPass m_render_pass {};
     VkPipelineLayout m_pipeline_layout {};
     VkPipeline m_graphics_pipeline {};
@@ -74,7 +75,7 @@ class HelloTriangleApplication {
 
     std::unique_ptr<VK::Image2D> m_texture_image {};
     VK::Memory m_texture_image_memory {};
-    VkImageView m_texture_image_view {};
+    std::unique_ptr<VK::ImageView> m_texture_image_view {};
     VkSampler m_texture_sampler {};
     int m_mip_levels = 0;
 
@@ -82,11 +83,11 @@ class HelloTriangleApplication {
 
     std::unique_ptr<VK::Image2D> m_color_image;
     VK::Memory m_color_image_memory;
-    VkImageView m_color_image_view;
+    std::unique_ptr<VK::ImageView> m_color_image_view;
 
     VK::Memory m_depth_image_memory {};
     std::unique_ptr<VK::Image2D> m_depth_image {};
-    VkImageView m_depth_image_view {};
+    std::unique_ptr<VK::ImageView> m_depth_image_view {};
 
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
@@ -178,8 +179,6 @@ private:
     void transition_image_layout(VK::Image2D* image, VkImageLayout old_layout, VkImageLayout new_layout);
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
-
-    VkImageView create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, int mip_levels);
 
     VkFormat find_depth_format();
 

@@ -1,13 +1,19 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
+#include <exception>
+#include <vector>
+#include "vk-memory.hpp"
 
 namespace VK {
 
-class ImageConfiguration {
+class BaseImage {
 
 protected:
     VkImage m_handle = nullptr;
+    Memory* m_memory = nullptr;
+
+    VkImageType m_image_type = VK_IMAGE_TYPE_MAX_ENUM;
     VkExtent2D m_extent = {0, 0};
     VkImageCreateFlags m_flags = 0;
     VkFormat m_format = VK_FORMAT_MAX_ENUM;
@@ -27,7 +33,7 @@ protected:
         throw std::runtime_error("cannot change VK::Image internal state while it is created");
     }
 
-    ImageConfiguration() = default;
+    BaseImage() = default;
 
 public:
 
@@ -88,6 +94,8 @@ public:
         m_memory_properties = memory_properties;
     }
 
+
+    VkImageType get_image_type()                  const { return m_image_type; }
     VkExtent2D get_size()                         const { return m_extent; }
     VkImageCreateFlags get_flags()                const { return m_flags; }
     VkFormat get_format()                         const { return m_format; }
@@ -99,6 +107,7 @@ public:
     VkImageLayout get_initial_layout()            const { return m_initial_layout; }
     VkSharingMode get_sharing_mode()              const { return m_sharing_mode; }
     VkMemoryPropertyFlags get_memory_properties() const { return m_memory_properties; }
+    VK::Memory* get_memory()                      const { return m_memory; }
 
     std::vector<uint32_t>& get_queue_family_indices() {
         return m_queue_family_indices;

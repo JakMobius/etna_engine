@@ -2,17 +2,18 @@
 
 #include <vulkan/vulkan_core.h>
 #include "vk-memory.hpp"
-#include "vk-image-configuration.hpp"
+#include "vk-base-image.hpp"
 #include "vk-command-buffer.hpp"
 
 namespace VK {
 
-class Image2D : public ImageConfiguration {
-
-    Memory* m_memory;
+class Image2D : public BaseImage {
 
 public:
-    explicit Image2D(Memory* memory): m_memory(memory) {}
+    explicit Image2D(Memory* memory): BaseImage() {
+        m_memory = memory;
+        m_image_type = VK_IMAGE_TYPE_2D;
+    }
     ~Image2D() {
         destroy();
     }

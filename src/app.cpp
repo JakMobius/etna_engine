@@ -233,11 +233,7 @@ void HelloTriangleApplication::cleanup() {
         m_texture_sampler = nullptr;
     }
 
-    if(m_texture_image_view) {
-        vkDestroyImageView(m_surface_context->get_device()->get_handle(), m_texture_image_view, nullptr);
-        m_texture_image_view = nullptr;
-    }
-
+    m_texture_image_view->destroy();
     m_texture_image->destroy();
     m_texture_image_memory.free();
 
@@ -365,15 +361,22 @@ void HelloTriangleApplication::create_swap_chain() {
     m_swap_chain_images.resize(image_count);
     vkGetSwapchainImagesKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, &image_count, m_swap_chain_images.data());
 
+
     m_swap_chain_image_format = surface_format.format;
     m_swap_chain_extent = extent;
 }
 
 void HelloTriangleApplication::create_image_views() {
-    m_swap_chain_image_views.resize(m_swap_chain_images.size());
+    m_swap_chain_image_views.reserve(m_swap_chain_images.size());
 
-    for (size_t i = 0; i < m_swap_chain_image_views.size(); i++) {
-        m_swap_chain_image_views[i] = create_image_view(m_swap_chain_images[i], m_swap_chain_image_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    for (auto& m_swap_chain_image : m_swap_chain_images) {
+        m_swap_chain_image_views.push_back(std::make_unique<VK::ImageView>(m_swap_chain_image, m_surface_context->get_device()));
+        auto& image_view = m_swap_chain_image_views.back();
+
+        image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_view->set_format(m_swap_chain_image_format);
+        image_view->set_view_type(VK_IMAGE_VIEW_TYPE_2D);
+        image_view->create();
     }
 }
 
@@ -666,21 +669,21 @@ void HelloTriangleApplication::create_framebuffers() {
 
     for (size_t i = 0; i < m_swap_chain_image_views.size(); i++) {
         VkImageView attachments[] = {
-            m_color_image_view,
-            m_depth_image_view,
-            m_swap_chain_image_views[i]
+            m_color_image_view->get_handle(),
+            m_depth_image_view->get_handle(),
+            m_swap_chain_image_views[i]->get_handle()
         };
 
-        VkFramebufferCreateInfo framebufferInfo{};
-        framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebufferInfo.renderPass = m_render_pass;
-        framebufferInfo.attachmentCount = 3,
-        framebufferInfo.pAttachments = attachments;
-        framebufferInfo.width = m_swap_chain_extent.width;
-        framebufferInfo.height = m_swap_chain_extent.height;
-        framebufferInfo.layers = 1;
+        VkFramebufferCreateInfo framebuffer_info {};
+        framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        framebuffer_info.renderPass = m_render_pass;
+        framebuffer_info.attachmentCount = 3,
+        framebuffer_info.pAttachments = attachments;
+        framebuffer_info.width = m_swap_chain_extent.width;
+        framebuffer_info.height = m_swap_chain_extent.height;
+        framebuffer_info.layers = 1;
 
-        if (vkCreateFramebuffer(m_surface_context->get_device()->get_handle(), &framebufferInfo, nullptr, &m_swap_chain_framebuffers[i]) != VK_SUCCESS) {
+        if (vkCreateFramebuffer(m_surface_context->get_device()->get_handle(), &framebuffer_info, nullptr, &m_swap_chain_framebuffers[i]) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer");
         }
     }
@@ -818,19 +821,11 @@ void HelloTriangleApplication::draw_frame() {
 
 void HelloTriangleApplication::cleanup_swap_chain() {
 
-    if(m_color_image_view) {
-        vkDestroyImageView(m_surface_context->get_device()->get_handle(), m_color_image_view, nullptr);
-        m_color_image_view = nullptr;
-    }
-
+    m_color_image_view->destroy();
     m_color_image->destroy();
     m_color_image_memory.free();
 
-    if(m_depth_image_view) {
-        vkDestroyImageView(m_surface_context->get_device()->get_handle(), m_depth_image_view, nullptr);
-        m_depth_image_view = nullptr;
-    }
-
+    m_depth_image_view->destroy();
     m_depth_image->destroy();
     m_depth_image_memory.free();
 
@@ -864,11 +859,6 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_render_pass = nullptr;
     }
 
-    for(auto image_view : m_swap_chain_image_views) {
-        if(image_view) {
-            vkDestroyImageView(m_surface_context->get_device()->get_handle(), image_view, nullptr);
-        }
-    }
     m_swap_chain_image_views.clear();
 
     if(m_swap_chain) {
@@ -1144,7 +1134,7 @@ void HelloTriangleApplication::create_descriptor_sets() {
 
         VkDescriptorImageInfo image_info {};
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = m_texture_image_view;
+        image_info.imageView = m_texture_image_view->get_handle();
         image_info.sampler = m_texture_sampler;
 
         VkWriteDescriptorSet descriptor_write[2] {};
@@ -1355,28 +1345,10 @@ void HelloTriangleApplication::copy_buffer_to_image(VkBuffer buffer, VkImage ima
     vkQueueWaitIdle(m_surface_context->get_device_graphics_queue());
 }
 
-VkImageView HelloTriangleApplication::create_image_view(VkImage image, VkFormat format, VkImageAspectFlags aspect_flags, int mip_levels) {
-    VkImageViewCreateInfo view_info {};
-    view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    view_info.image = image;
-    view_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
-    view_info.format = format;
-    view_info.subresourceRange.baseMipLevel = 0;
-    view_info.subresourceRange.levelCount = mip_levels;
-    view_info.subresourceRange.layerCount = 1;
-    view_info.subresourceRange.baseArrayLayer = 0;
-    view_info.subresourceRange.aspectMask = aspect_flags;
-
-    VkImageView image_view = nullptr;
-    if (vkCreateImageView(m_surface_context->get_device()->get_handle(), &view_info, nullptr, &image_view) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture image view!");
-    }
-
-    return image_view;
-}
-
 void HelloTriangleApplication::create_texture_image_view() {
-    m_texture_image_view = create_image_view(m_texture_image->get_handle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT, m_mip_levels);
+    m_texture_image_view = std::make_unique<VK::ImageView>(m_texture_image.get());
+    m_texture_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_texture_image_view->create();
 }
 
 void HelloTriangleApplication::create_texture_sampler() {
@@ -1436,7 +1408,9 @@ void HelloTriangleApplication::create_depth_resources() {
     m_depth_image->set_format(depth_format);
     m_depth_image->create();
 
-    m_depth_image_view = create_image_view(m_depth_image->get_handle(), depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
+    m_depth_image_view = std::make_unique<VK::ImageView>(m_depth_image.get());
+    m_depth_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_depth_image_view->create();
 
     transition_image_layout(m_depth_image.get(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
@@ -1452,5 +1426,7 @@ void HelloTriangleApplication::create_color_resources() {
     m_color_image->set_format(color_format);
     m_color_image->create();
 
-    m_color_image_view = create_image_view(m_color_image->get_handle(), color_format, VK_IMAGE_ASPECT_COLOR_BIT, 1);
+    m_color_image_view = std::make_unique<VK::ImageView>(m_color_image.get());
+    m_color_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_color_image_view->create();
 }
