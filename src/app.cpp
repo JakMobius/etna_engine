@@ -1212,7 +1212,7 @@ void HelloTriangleApplication::create_texture_image() {
     m_texture_image->set_format(VK_FORMAT_R8G8B8A8_SRGB);
     m_texture_image->create();
 
-    transition_image_layout(m_texture_image->get_handle(), VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, m_mip_levels);
+    transition_image_layout(m_texture_image.get(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copy_buffer_to_image(staging_buffer.get_handle(), m_texture_image->get_handle(), image_width, image_height);
 //    transition_image_layout(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_mip_levels);
 
@@ -1311,57 +1311,12 @@ void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_fo
     vkQueueWaitIdle(m_surface_context->get_device_graphics_queue());
 }
 
-void HelloTriangleApplication::transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, int mip_levels) {
+void HelloTriangleApplication::transition_image_layout(VK::Image2D* image, VkImageLayout old_layout, VkImageLayout new_layout) {
     auto command_pool = m_surface_context->get_command_pool();
     auto command_buffer = command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VkImageMemoryBarrier barrier{};
-    barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.oldLayout = old_layout;
-    barrier.newLayout = new_layout;
-
-    barrier.image = image;
-    barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    barrier.subresourceRange.baseMipLevel = 0;
-    barrier.subresourceRange.levelCount = mip_levels;
-    barrier.subresourceRange.layerCount = 1;
-    barrier.subresourceRange.baseArrayLayer = 0;
-
-    VkPipelineStageFlags source_stage = 0;
-    VkPipelineStageFlags destination_stage = 0;
-
-    if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destination_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    } else if (old_layout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && new_layout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-        barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-        barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-        destination_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-    } else if (old_layout == VK_IMAGE_LAYOUT_UNDEFINED && new_layout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL) {
-        barrier.srcAccessMask = 0;
-        barrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-
-        source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-        destination_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
-    } else {
-        throw std::invalid_argument("unsupported layout transition!");
-    }
-
-    vkCmdPipelineBarrier(
-            command_buffer.get_handle(),
-            source_stage, destination_stage,
-            0,
-            0, nullptr,
-            0, nullptr,
-            1, &barrier
-    );
+    image->perform_layout_transition(command_buffer, old_layout, new_layout);
 
     command_buffer.end();
     command_buffer.submit(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -1483,7 +1438,7 @@ void HelloTriangleApplication::create_depth_resources() {
 
     m_depth_image_view = create_image_view(m_depth_image->get_handle(), depth_format, VK_IMAGE_ASPECT_DEPTH_BIT, 1);
 
-    transition_image_layout(m_depth_image->get_handle(), depth_format, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL, 1);
+    transition_image_layout(m_depth_image.get(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 }
 
 void HelloTriangleApplication::create_color_resources() {

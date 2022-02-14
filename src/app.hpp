@@ -175,7 +175,7 @@ private:
 
     void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
 
-    void transition_image_layout(VkImage image, VkFormat format, VkImageLayout old_layout, VkImageLayout new_layout, int mip_levels);
+    void transition_image_layout(VK::Image2D* image, VkImageLayout old_layout, VkImageLayout new_layout);
 
     void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
 

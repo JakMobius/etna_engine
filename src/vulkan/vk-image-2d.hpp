@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include "vk-memory.hpp"
 #include "vk-image-configuration.hpp"
+#include "vk-command-buffer.hpp"
 
 namespace VK {
 
@@ -24,6 +25,8 @@ public:
             m_handle = nullptr;
         }
     }
+
+    void perform_layout_transition(VK::CommandBuffer& command_buffer, VkImageLayout old_layout, VkImageLayout new_layout);
 };
 
 }
