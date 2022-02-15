@@ -25,7 +25,7 @@ public:
 
     ~CommandPool();
 
-    VK::CommandBuffer create_command_buffer(VkCommandBufferLevel level);
+    VK::CommandBuffer create_command_buffer();
 
     VkCommandPool get_handle() { return m_handle; }
 

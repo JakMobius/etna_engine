@@ -58,7 +58,7 @@ void HelloTriangleApplication::create_instance() {
     }
 }
 
-std::vector<const char*> HelloTriangleApplication::get_required_extensions() {
+std::vector<const char*> HelloTriangleApplication::get_required_extensions() const {
     uint32_t glfw_extension_count = 0;
     const char** glfw_extensions;
 
@@ -97,7 +97,6 @@ void HelloTriangleApplication::init_vulkan() {
     create_depth_resources();
     create_framebuffers();
     create_texture_image();
-    create_texture_image_view();
     create_texture_sampler();
     create_uniform_buffers();
     create_descriptor_pool();
@@ -134,7 +133,9 @@ VK::PhysicalDevice HelloTriangleApplication::get_best_physical_device() {
     std::vector<VkPhysicalDevice> devices(device_count);
     vkEnumeratePhysicalDevices(m_instance, &device_count, devices.data());
 
-    std::vector<VK::PhysicalDevice> physical_devices;
+    std::vector<VK::PhysicalDevice> physical_devices {};
+    physical_devices.reserve(devices.size());
+
     for(auto& device : devices) {
         physical_devices.emplace_back(device);
     }
@@ -225,6 +226,7 @@ void HelloTriangleApplication::main_loop() {
 }
 
 void HelloTriangleApplication::cleanup() {
+    if(!m_window) return;
 
     cleanup_swap_chain();
 
@@ -233,8 +235,8 @@ void HelloTriangleApplication::cleanup() {
         m_texture_sampler = nullptr;
     }
 
-    m_texture_image_view->destroy();
-    m_texture_image->destroy();
+    if(m_texture_image_view) m_texture_image_view->destroy();
+    if(m_texture_image) m_texture_image->destroy();
     m_texture_image_memory.free();
 
     if(m_descriptor_set_layout) {
@@ -242,11 +244,11 @@ void HelloTriangleApplication::cleanup() {
         m_descriptor_set_layout = nullptr;
     }
 
-    m_index_buffer->destroy();
-    m_index_buffer_memory->free();
+    if(m_index_buffer) m_index_buffer->destroy();
+    m_index_buffer_memory.free();
 
-    m_vertex_buffer->destroy();
-    m_vertex_buffer_memory->free();
+    if(m_vertex_buffer) m_vertex_buffer->destroy();
+    m_vertex_buffer_memory.free();
 
     m_debug_callback_handler.stop_listening();
 
@@ -277,8 +279,9 @@ void HelloTriangleApplication::cleanup() {
     vkDestroyInstance(m_instance, nullptr);
 
     glfwDestroyWindow(m_window);
-
     glfwTerminate();
+
+    m_window = nullptr;
 }
 
 static void framebuffer_resize_callback(GLFWwindow* window, int width, int height) {
@@ -360,7 +363,6 @@ void HelloTriangleApplication::create_swap_chain() {
     vkGetSwapchainImagesKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, &image_count, nullptr);
     m_swap_chain_images.resize(image_count);
     vkGetSwapchainImagesKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, &image_count, m_swap_chain_images.data());
-
 
     m_swap_chain_image_format = surface_format.format;
     m_swap_chain_extent = extent;
@@ -699,7 +701,7 @@ void HelloTriangleApplication::create_command_buffers() {
     auto command_pool = m_surface_context->get_command_pool();
 
     for (int i = 0; i < m_command_buffers.size(); i++) {
-        m_command_buffers[i] = std::make_unique<VK::CommandBuffer>(command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY));
+        m_command_buffers[i] = std::make_unique<VK::CommandBuffer>(command_pool->create_command_buffer());
         auto command_buffer = m_command_buffers[i].get();
 
         command_buffer->get_wait_flags().push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
@@ -742,7 +744,6 @@ void HelloTriangleApplication::create_sync_objects() {
     m_render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
     m_in_flight_images.resize(m_swap_chain_images.size(), nullptr);
-
 
     VkSemaphoreCreateInfo semaphore_info {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -821,12 +822,12 @@ void HelloTriangleApplication::draw_frame() {
 
 void HelloTriangleApplication::cleanup_swap_chain() {
 
-    m_color_image_view->destroy();
-    m_color_image->destroy();
+    if(m_color_image_view) m_color_image_view->destroy();
+    if(m_color_image) m_color_image->destroy();
     m_color_image_memory.free();
 
-    m_depth_image_view->destroy();
-    m_depth_image->destroy();
+    if(m_depth_image_view) m_depth_image_view->destroy();
+    if(m_depth_image) m_depth_image->destroy();
     m_depth_image_memory.free();
 
     m_uniform_buffers.clear();
@@ -948,14 +949,20 @@ void HelloTriangleApplication::create_index_buffer() {
     staging_buffer_memory.flush();
     staging_buffer_memory.unmap();
 
-    m_index_buffer_memory = std::make_unique<VK::Memory>(m_surface_context->get_device());
-    m_index_buffer = std::make_unique<VK::Buffer>(m_index_buffer_memory.get());
+    m_index_buffer_memory.set_device(m_surface_context->get_device());
+    m_index_buffer = std::make_unique<VK::Buffer>(&m_index_buffer_memory);
     m_index_buffer->set_size(buffer_size);
     m_index_buffer->set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     m_index_buffer->set_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_index_buffer->create();
 
-    copy_buffer(staging_buffer.get_handle(), m_index_buffer->get_handle(), buffer_size);
+    auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
+    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+    staging_buffer.copy(&command_buffer, m_index_buffer.get());
+
+    command_buffer.end();
+    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
 }
 
 void HelloTriangleApplication::create_vertex_buffer() {
@@ -975,31 +982,20 @@ void HelloTriangleApplication::create_vertex_buffer() {
     m_staging_buffer_memory.flush();
     m_staging_buffer_memory.unmap();
 
-    m_vertex_buffer_memory = std::make_unique<VK::Memory>(m_surface_context->get_device());
-    m_vertex_buffer = std::make_unique<VK::Buffer>(m_vertex_buffer_memory.get());
+    m_vertex_buffer_memory.set_device(m_surface_context->get_device());
+    m_vertex_buffer = std::make_unique<VK::Buffer>(&m_vertex_buffer_memory);
     m_vertex_buffer->set_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_vertex_buffer->set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     m_vertex_buffer->set_size(buffer_size);
     m_vertex_buffer->create();
 
-    copy_buffer(m_staging_buffer.get_handle(), m_vertex_buffer->get_handle(), buffer_size);
-}
-
-void HelloTriangleApplication::copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size) {
-    auto command_pool = m_surface_context->get_command_pool();
-    auto command_buffer = command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VkBufferCopy copy_region {};
-    copy_region.srcOffset = 0;
-    copy_region.dstOffset = 0;
-    copy_region.size = size;
-
-    vkCmdCopyBuffer(command_buffer.get_handle(), src_buffer, dst_buffer, 1, &copy_region);
+    m_staging_buffer.copy(&command_buffer, m_vertex_buffer.get());
 
     command_buffer.end();
-    command_buffer.submit(m_surface_context->get_device_graphics_queue(), nullptr);
-    vkQueueWaitIdle(m_surface_context->get_device_graphics_queue());
+    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
 }
 
 void HelloTriangleApplication::create_descriptor_set_layout() {
@@ -1084,7 +1080,7 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
     ubo.model = glm::rotate(ubo.model, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05, 0.05, 0.05));
     ubo.view = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_direction, glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), m_swap_chain_extent.width / (float) m_swap_chain_extent.height, 0.01f, 100.0f);
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swap_chain_extent.width / (float) m_swap_chain_extent.height, 0.01f, 100.0f);
 
     ubo.proj[1][1] *= -1;
 
@@ -1202,32 +1198,41 @@ void HelloTriangleApplication::create_texture_image() {
     m_texture_image->set_format(VK_FORMAT_R8G8B8A8_SRGB);
     m_texture_image->create();
 
-    transition_image_layout(m_texture_image.get(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copy_buffer_to_image(staging_buffer.get_handle(), m_texture_image->get_handle(), image_width, image_height);
+    auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
+    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+    m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+    copy_buffer_to_image(&command_buffer, &staging_buffer, m_texture_image.get(), image_width, image_height);
 //    transition_image_layout(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_mip_levels);
 
-    generate_mipmaps(m_texture_image->get_handle(), VK_FORMAT_R8G8B8A8_SRGB, image_width, image_height, m_mip_levels);
+    generate_mipmaps(&command_buffer, m_texture_image.get());
+
+    command_buffer.end();
+    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
+
+    m_texture_image_view = std::make_unique<VK::ImageView>(m_texture_image.get());
+    m_texture_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_texture_image_view->create();
 }
 
-void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_format, int32_t tex_width, int32_t tex_height, uint32_t mip_levels) {
+void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image2D* image) {
 
     VkFormatProperties format_properties {};
-    m_physical_device->get_format_properties(&format_properties, image_format);
+    m_physical_device->get_format_properties(&format_properties, image->get_format());
 
     if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         throw std::runtime_error("texture image format does not support linear blitting");
     }
 
-    auto command_pool = m_surface_context->get_command_pool();
-    auto command_buffer = command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    auto image_size = image->get_size();
 
-    int32_t mip_width = tex_width;
-    int32_t mip_height = tex_height;
+    int32_t mip_width = image_size.width;
+    int32_t mip_height = image_size.height;
 
     VkImageMemoryBarrier barrier {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    barrier.image = image;
+    barrier.image = image->get_handle();
     barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
@@ -1243,7 +1248,7 @@ void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_fo
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
         barrier.dstAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
 
-        vkCmdPipelineBarrier(command_buffer.get_handle(),
+        vkCmdPipelineBarrier(command_buffer->get_handle(),
                              VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
                              0, nullptr,
                              0, nullptr,
@@ -1263,9 +1268,9 @@ void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_fo
         blit.dstSubresource.baseArrayLayer = 0;
         blit.dstSubresource.layerCount = 1;
 
-        vkCmdBlitImage(command_buffer.get_handle(),
-                       image, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+        vkCmdBlitImage(command_buffer->get_handle(),
+                       image->get_handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                       image->get_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
                        1, &blit,
                        VK_FILTER_LINEAR);
 
@@ -1274,7 +1279,7 @@ void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_fo
         barrier.srcAccessMask = VK_ACCESS_TRANSFER_READ_BIT;
         barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-        vkCmdPipelineBarrier(command_buffer.get_handle(),
+        vkCmdPipelineBarrier(command_buffer->get_handle(),
                              VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                              0, nullptr,
                              0, nullptr,
@@ -1284,40 +1289,20 @@ void HelloTriangleApplication::generate_mipmaps(VkImage image, VkFormat image_fo
         if (mip_height > 1) mip_height /= 2;
     }
 
-    barrier.subresourceRange.baseMipLevel = mip_levels - 1;
+    barrier.subresourceRange.baseMipLevel = image->get_mip_levels() - 1;
     barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
     barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
     barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
     barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-    vkCmdPipelineBarrier(command_buffer.get_handle(),
+    vkCmdPipelineBarrier(command_buffer->get_handle(),
                          VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
                          0, nullptr,
                          0, nullptr,
                          1, &barrier);
-
-    command_buffer.end();
-    command_buffer.submit(m_surface_context->get_device_graphics_queue(), nullptr);
-    vkQueueWaitIdle(m_surface_context->get_device_graphics_queue());
 }
 
-void HelloTriangleApplication::transition_image_layout(VK::Image2D* image, VkImageLayout old_layout, VkImageLayout new_layout) {
-    auto command_pool = m_surface_context->get_command_pool();
-    auto command_buffer = command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-    image->perform_layout_transition(command_buffer, old_layout, new_layout);
-
-    command_buffer.end();
-    command_buffer.submit(m_surface_context->get_device_graphics_queue(), nullptr);
-    vkQueueWaitIdle(m_surface_context->get_device_graphics_queue());
-}
-
-void HelloTriangleApplication::copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height) {
-    auto command_pool = m_surface_context->get_command_pool();
-    auto command_buffer = command_pool->create_command_buffer(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
+void HelloTriangleApplication::copy_buffer_to_image(VK::CommandBuffer* command_buffer, VK::Buffer* buffer, VK::Image2D* image, uint32_t width, uint32_t height) {
     VkBufferImageCopy region {};
     region.bufferOffset = 0;
     region.bufferRowLength = 0;
@@ -1332,23 +1317,13 @@ void HelloTriangleApplication::copy_buffer_to_image(VkBuffer buffer, VkImage ima
     region.imageExtent = { width, height,1 };
 
     vkCmdCopyBufferToImage(
-        command_buffer.get_handle(),
-        buffer,
-        image,
+        command_buffer->get_handle(),
+        buffer->get_handle(),
+        image->get_handle(),
         VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
         1,
         &region
     );
-
-    command_buffer.end();
-    command_buffer.submit(m_surface_context->get_device_graphics_queue(), nullptr);
-    vkQueueWaitIdle(m_surface_context->get_device_graphics_queue());
-}
-
-void HelloTriangleApplication::create_texture_image_view() {
-    m_texture_image_view = std::make_unique<VK::ImageView>(m_texture_image.get());
-    m_texture_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_texture_image_view->create();
 }
 
 void HelloTriangleApplication::create_texture_sampler() {
@@ -1412,7 +1387,13 @@ void HelloTriangleApplication::create_depth_resources() {
     m_depth_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_depth_image_view->create();
 
-    transition_image_layout(m_depth_image.get(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
+    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+    m_depth_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+    command_buffer.end();
+    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
 }
 
 void HelloTriangleApplication::create_color_resources() {

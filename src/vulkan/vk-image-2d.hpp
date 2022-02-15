@@ -27,7 +27,7 @@ public:
         }
     }
 
-    void perform_layout_transition(VK::CommandBuffer& command_buffer, VkImageLayout old_layout, VkImageLayout new_layout);
+    void perform_layout_transition(VK::CommandBuffer* command_buffer, VkImageLayout old_layout, VkImageLayout new_layout);
 };
 
 }

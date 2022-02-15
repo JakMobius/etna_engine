@@ -4,7 +4,7 @@
 
 #include "vk-command-pool.hpp"
 
-VK::CommandBuffer VK::CommandPool::create_command_buffer(VkCommandBufferLevel level) {
+VK::CommandBuffer VK::CommandPool::create_command_buffer() {
     VkCommandBufferAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.commandPool = m_handle;

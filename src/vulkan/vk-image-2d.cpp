@@ -40,7 +40,7 @@ void VK::Image2D::create() {
     vkBindImageMemory(device->get_handle(), m_handle, m_memory->get_handle(), 0);
 }
 
-void VK::Image2D::perform_layout_transition(VK::CommandBuffer &command_buffer, VkImageLayout old_layout,
+void VK::Image2D::perform_layout_transition(VK::CommandBuffer* command_buffer, VkImageLayout old_layout,
                                             VkImageLayout new_layout) {
     VkImageMemoryBarrier barrier {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -81,7 +81,7 @@ void VK::Image2D::perform_layout_transition(VK::CommandBuffer &command_buffer, V
     }
 
     vkCmdPipelineBarrier(
-            command_buffer.get_handle(),
+            command_buffer->get_handle(),
             source_stage, destination_stage,
             0,
             0, nullptr,

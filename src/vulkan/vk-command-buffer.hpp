@@ -46,6 +46,11 @@ public:
         }
     }
 
+    void submit_and_wait(VkQueue queue, VkFence fence) {
+        submit(queue, fence);
+        vkQueueWaitIdle(queue);
+    }
+
     void submit(VkQueue queue, VkFence fence) {
         VkSubmitInfo submit_info {};
         submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;

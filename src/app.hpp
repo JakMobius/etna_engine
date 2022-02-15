@@ -60,10 +60,10 @@ class HelloTriangleApplication {
     std::vector<VkFence> m_in_flight_fences {};
     std::vector<VkFence> m_in_flight_images {};
 
-    std::unique_ptr<VK::Memory> m_vertex_buffer_memory {};
+    VK::Memory m_vertex_buffer_memory {};
     std::unique_ptr<VK::Buffer> m_vertex_buffer {};
 
-    std::unique_ptr<VK::Memory> m_index_buffer_memory {};
+    VK::Memory m_index_buffer_memory {};
     std::unique_ptr<VK::Buffer> m_index_buffer {};
 
     std::vector<std::unique_ptr<VK::Buffer>> m_uniform_buffers {};
@@ -85,8 +85,8 @@ class HelloTriangleApplication {
     VK::Memory m_color_image_memory;
     std::unique_ptr<VK::ImageView> m_color_image_view;
 
-    VK::Memory m_depth_image_memory {};
     std::unique_ptr<VK::Image2D> m_depth_image {};
+    VK::Memory m_depth_image_memory {};
     std::unique_ptr<VK::ImageView> m_depth_image_view {};
 
     std::vector<float> m_vertex_buffer_storage {};
@@ -121,6 +121,10 @@ public:
         cleanup();
     }
 
+    ~HelloTriangleApplication() {
+        cleanup();
+    }
+
 private:
 
     void init_window();
@@ -143,7 +147,6 @@ private:
     void create_vertex_buffer();
     void create_depth_resources();
     void create_texture_image();
-    void create_texture_image_view();
     void create_texture_sampler();
     void create_uniform_buffers();
     void create_descriptor_pool();
@@ -162,7 +165,7 @@ private:
 
     const VK::PhysicalDevice* select_best_physical_device(const std::vector<VK::PhysicalDevice>& devices);
 
-    std::vector<const char*> get_required_extensions();
+    std::vector<const char*> get_required_extensions() const;
 
     bool check_validation_layer_support();
 
@@ -174,17 +177,14 @@ private:
 
     VkShaderModule create_shader_module(const std::vector<char>& code);
 
-    void copy_buffer(VkBuffer src_buffer, VkBuffer dst_buffer, VkDeviceSize size);
-
-    void transition_image_layout(VK::Image2D* image, VkImageLayout old_layout, VkImageLayout new_layout);
-
-    void copy_buffer_to_image(VkBuffer buffer, VkImage image, uint32_t width, uint32_t height);
+    void generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image2D* image);
 
     VkFormat find_depth_format();
 
     bool has_stencil_component(VkFormat format);
 
-    void generate_mipmaps(VkImage image, VkFormat image_format, int32_t tex_width, int32_t tex_height, uint32_t mip_levels);
-
     void create_color_resources();
+
+    void copy_buffer_to_image(VK::CommandBuffer* command_buffer, VK::Buffer* buffer, VK::Image2D* image, uint32_t width,
+                              uint32_t height);
 };
