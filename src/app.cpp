@@ -669,27 +669,20 @@ void HelloTriangleApplication::create_render_pass() {
 }
 
 void HelloTriangleApplication::create_framebuffers() {
-    m_swap_chain_framebuffers.resize(m_swap_chain_image_views.size());
+    m_swap_chain_framebuffers.reserve(m_swap_chain_image_views.size());
 
-    for (size_t i = 0; i < m_swap_chain_image_views.size(); i++) {
-        VkImageView attachments[] = {
-            m_color_image_view->get_handle(),
-            m_depth_image_view->get_handle(),
-            m_swap_chain_image_views[i]->get_handle()
-        };
+    for (auto& m_swap_chain_image_view : m_swap_chain_image_views) {
+        m_swap_chain_framebuffers.push_back(std::make_unique<VK::Framebuffer>(m_surface_context->get_device(), m_render_pass));
+        VK::Framebuffer* framebuffer = m_swap_chain_framebuffers.back().get();
 
-        VkFramebufferCreateInfo framebuffer_info {};
-        framebuffer_info.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-        framebuffer_info.renderPass = m_render_pass;
-        framebuffer_info.attachmentCount = 3,
-        framebuffer_info.pAttachments = attachments;
-        framebuffer_info.width = m_swap_chain_extent.width;
-        framebuffer_info.height = m_swap_chain_extent.height;
-        framebuffer_info.layers = 1;
+        framebuffer->get_attachments().assign({
+            m_color_image_view.get(),
+            m_depth_image_view.get(),
+            m_swap_chain_image_view.get()
+        });
 
-        if (vkCreateFramebuffer(m_surface_context->get_device()->get_handle(), &framebuffer_info, nullptr, &m_swap_chain_framebuffers[i]) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create framebuffer");
-        }
+        framebuffer->set_size(m_swap_chain_extent);
+        framebuffer->create();
     }
 }
 
@@ -710,29 +703,29 @@ void HelloTriangleApplication::create_command_buffers() {
 
         command_buffer->begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-        VkRenderPassBeginInfo render_pass_info {};
-        render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_info.renderPass = m_render_pass;
-        render_pass_info.framebuffer = m_swap_chain_framebuffers[i];
+        VkRenderPassBeginInfo render_pass_begin_info {};
+        render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+        render_pass_begin_info.renderPass = m_render_pass;
+        render_pass_begin_info.framebuffer = m_swap_chain_framebuffers[i]->get_handle();
 
-        render_pass_info.renderArea.offset = {0, 0};
-        render_pass_info.renderArea.extent = m_swap_chain_extent;
+        render_pass_begin_info.renderArea.offset = {0, 0};
+        render_pass_begin_info.renderArea.extent = m_swap_chain_extent;
 
         VkClearValue clear_values[2] {};
         clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
         clear_values[1].depthStencil = {1.0f, 0};
 
-        render_pass_info.clearValueCount = 2;
-        render_pass_info.pClearValues = clear_values;
+        render_pass_begin_info.clearValueCount = 2;
+        render_pass_begin_info.pClearValues = clear_values;
 
-        vkCmdBeginRenderPass(command_buffer->get_handle(), &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+        vkCmdBeginRenderPass(command_buffer->get_handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
         vkCmdBindPipeline(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 
         VkBuffer vertex_buffers[] = { m_vertex_buffer->get_handle() };
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffer->get_handle(), 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(command_buffer->get_handle(), m_index_buffer->get_handle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_descriptor_sets[i], 0, nullptr);
+        vkCmdBindDescriptorSets(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_descriptor_sets->get_descriptor_sets()[i], 0, nullptr);
         vkCmdDrawIndexed(command_buffer->get_handle(), m_index_buffer_storage.size(), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffer->get_handle());
 
@@ -840,11 +833,6 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_descriptor_pool = nullptr;
     }
 
-    for (auto framebuffer : m_swap_chain_framebuffers) {
-        if(framebuffer) {
-            vkDestroyFramebuffer(m_surface_context->get_device()->get_handle(), framebuffer, nullptr);
-        }
-    }
     m_swap_chain_framebuffers.clear();
 
     if(m_graphics_pipeline) {
@@ -1100,17 +1088,10 @@ void HelloTriangleApplication::create_descriptor_pool() {
 }
 
 void HelloTriangleApplication::create_descriptor_sets() {
-    std::vector<VkDescriptorSetLayout> layouts(m_swap_chain_images.size(), m_descriptor_set_layout);
-    VkDescriptorSetAllocateInfo alloc_info {};
-    alloc_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    alloc_info.descriptorPool = m_descriptor_pool;
-    alloc_info.descriptorSetCount = static_cast<uint32_t>(m_swap_chain_images.size());
-    alloc_info.pSetLayouts = layouts.data();
 
-    m_descriptor_sets.resize(m_swap_chain_images.size());
-    if (vkAllocateDescriptorSets(m_surface_context->get_device()->get_handle(), &alloc_info, m_descriptor_sets.data()) != VK_SUCCESS) {
-        throw std::runtime_error("failed to allocate descriptor sets");
-    }
+    m_descriptor_sets = std::make_unique<VK::DescriptorSetArray>(m_surface_context->get_device(), m_descriptor_pool);
+    m_descriptor_sets->get_layouts().resize(m_swap_chain_images.size(), m_descriptor_set_layout);
+    m_descriptor_sets->create();
 
     for (size_t i = 0; i < m_swap_chain_images.size(); i++) {
         VkDescriptorBufferInfo buffer_info {};
@@ -1125,7 +1106,7 @@ void HelloTriangleApplication::create_descriptor_sets() {
 
         VkWriteDescriptorSet descriptor_write[2] {};
         descriptor_write[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write[0].dstSet = m_descriptor_sets[i];
+        descriptor_write[0].dstSet = m_descriptor_sets->get_descriptor_sets()[i];
         descriptor_write[0].dstBinding = 0;
         descriptor_write[0].dstArrayElement = 0;
         descriptor_write[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -1135,7 +1116,7 @@ void HelloTriangleApplication::create_descriptor_sets() {
         descriptor_write[0].pTexelBufferView = nullptr; // Optional
 
         descriptor_write[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write[1].dstSet = m_descriptor_sets[i];
+        descriptor_write[1].dstSet = m_descriptor_sets->get_descriptor_sets()[i];
         descriptor_write[1].dstBinding = 1;
         descriptor_write[1].dstArrayElement = 0;
         descriptor_write[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

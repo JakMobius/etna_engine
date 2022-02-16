@@ -20,6 +20,8 @@
 #include "vulkan/vk-surface-context.hpp"
 #include "vulkan/vk-image-2d.hpp"
 #include "vulkan/vk-image-view.hpp"
+#include "vulkan/vk-descriptor-set-array.hpp"
+#include "vulkan/vk-framebuffer.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -52,7 +54,7 @@ class HelloTriangleApplication {
     VkRenderPass m_render_pass {};
     VkPipelineLayout m_pipeline_layout {};
     VkPipeline m_graphics_pipeline {};
-    std::vector<VkFramebuffer> m_swap_chain_framebuffers {};
+    std::vector<std::unique_ptr<VK::Framebuffer>> m_swap_chain_framebuffers {};
     std::vector<std::unique_ptr<VK::CommandBuffer>> m_command_buffers {};
     std::vector<VkSemaphore> m_image_available_semaphores {};
     std::vector<VkSemaphore> m_render_finished_semaphores {};
@@ -71,7 +73,7 @@ class HelloTriangleApplication {
 
     VkDescriptorSetLayout m_descriptor_set_layout = {};
     VkDescriptorPool m_descriptor_pool {};
-    std::vector<VkDescriptorSet> m_descriptor_sets {};
+    std::unique_ptr<VK::DescriptorSetArray> m_descriptor_sets {};
 
     std::unique_ptr<VK::Image2D> m_texture_image {};
     VK::Memory m_texture_image_memory {};
