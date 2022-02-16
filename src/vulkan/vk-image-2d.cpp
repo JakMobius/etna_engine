@@ -77,7 +77,7 @@ void VK::Image2D::perform_layout_transition(VK::CommandBuffer* command_buffer, V
         source_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
         destination_stage = VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     } else {
-        throw std::invalid_argument("unsupported layout transition!");
+        throw std::invalid_argument("unsupported layout transition");
     }
 
     vkCmdPipelineBarrier(

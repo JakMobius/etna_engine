@@ -15,6 +15,8 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include "vulkan/vk-buffer.hpp"
+#include "vulkan/commands/vk-copy-buffer-command.hpp"
+#include "vulkan/commands/copy-buffer-to-image-command.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -959,7 +961,7 @@ void HelloTriangleApplication::create_index_buffer() {
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    staging_buffer.copy(&command_buffer, m_index_buffer.get());
+    VK::CopyBufferCommand(&staging_buffer, m_index_buffer.get()).write(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -968,19 +970,19 @@ void HelloTriangleApplication::create_index_buffer() {
 void HelloTriangleApplication::create_vertex_buffer() {
 
     VkDeviceSize buffer_size = sizeof(m_vertex_buffer_storage[0]) * m_vertex_buffer_storage.size();
-    VK::Memory m_staging_buffer_memory { m_surface_context->get_device() };
-    VK::Buffer m_staging_buffer { &m_staging_buffer_memory };
+    VK::Memory staging_buffer_memory {m_surface_context->get_device() };
+    VK::Buffer staging_buffer {&staging_buffer_memory };
 
-    m_staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    m_staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    m_staging_buffer.set_size(buffer_size);
+    staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
+    staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    staging_buffer.set_size(buffer_size);
 
-    m_staging_buffer.create();
+    staging_buffer.create();
 
-    void* data = m_staging_buffer_memory.map();
+    void* data = staging_buffer_memory.map();
     memcpy(data, m_vertex_buffer_storage.data(), (size_t) buffer_size);
-    m_staging_buffer_memory.flush();
-    m_staging_buffer_memory.unmap();
+    staging_buffer_memory.flush();
+    staging_buffer_memory.unmap();
 
     m_vertex_buffer_memory.set_device(m_surface_context->get_device());
     m_vertex_buffer = std::make_unique<VK::Buffer>(&m_vertex_buffer_memory);
@@ -992,7 +994,7 @@ void HelloTriangleApplication::create_vertex_buffer() {
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    m_staging_buffer.copy(&command_buffer, m_vertex_buffer.get());
+    VK::CopyBufferCommand(&staging_buffer, m_vertex_buffer.get()).write(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -1203,8 +1205,11 @@ void HelloTriangleApplication::create_texture_image() {
 
     m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    copy_buffer_to_image(&command_buffer, &staging_buffer, m_texture_image.get(), image_width, image_height);
-//    transition_image_layout(m_texture_image, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, m_mip_levels);
+    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer, m_texture_image.get());
+    copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copy_command.write(&command_buffer);
+
+//    m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     generate_mipmaps(&command_buffer, m_texture_image.get());
 
@@ -1227,8 +1232,8 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
 
     auto image_size = image->get_size();
 
-    int32_t mip_width = image_size.width;
-    int32_t mip_height = image_size.height;
+    auto mip_width = (int32_t) image_size.width;
+    auto mip_height = (int32_t) image_size.height;
 
     VkImageMemoryBarrier barrier {};
     barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
@@ -1300,30 +1305,6 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
                          0, nullptr,
                          0, nullptr,
                          1, &barrier);
-}
-
-void HelloTriangleApplication::copy_buffer_to_image(VK::CommandBuffer* command_buffer, VK::Buffer* buffer, VK::Image2D* image, uint32_t width, uint32_t height) {
-    VkBufferImageCopy region {};
-    region.bufferOffset = 0;
-    region.bufferRowLength = 0;
-    region.bufferImageHeight = 0;
-
-    region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    region.imageSubresource.mipLevel = 0;
-    region.imageSubresource.baseArrayLayer = 0;
-    region.imageSubresource.layerCount = 1;
-
-    region.imageOffset = {0, 0, 0 };
-    region.imageExtent = { width, height,1 };
-
-    vkCmdCopyBufferToImage(
-        command_buffer->get_handle(),
-        buffer->get_handle(),
-        image->get_handle(),
-        VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-        1,
-        &region
-    );
 }
 
 void HelloTriangleApplication::create_texture_sampler() {

@@ -184,7 +184,4 @@ private:
     bool has_stencil_component(VkFormat format);
 
     void create_color_resources();
-
-    void copy_buffer_to_image(VK::CommandBuffer* command_buffer, VK::Buffer* buffer, VK::Image2D* image, uint32_t width,
-                              uint32_t height);
 };

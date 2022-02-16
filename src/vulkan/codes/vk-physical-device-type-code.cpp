@@ -12,7 +12,7 @@ const char* VK::PhysicalDeviceTypeCode::name(VkPhysicalDeviceType code) {
         case VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU: return "DISCRETE_GPU";
         case VK_PHYSICAL_DEVICE_TYPE_VIRTUAL_GPU: return "VIRTUAL_GPU";
         case VK_PHYSICAL_DEVICE_TYPE_CPU: return "CPU";
-        case VK_PHYSICAL_DEVICE_TYPE_MAX_ENUM: return "MAX_ENUM";
+        default: return "unknown device type";
     }
 }
 

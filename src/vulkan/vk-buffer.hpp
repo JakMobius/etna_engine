@@ -76,19 +76,9 @@ public:
         m_handle = nullptr;
     }
 
-    void copy(VK::CommandBuffer* command_buffer, VK::Buffer* destination, VkDeviceSize src_offset = 0, VkDeviceSize dst_offset = 0, VkDeviceSize size = UINT64_MAX) {
-
-        if(src_offset >= m_size) throw std::invalid_argument("src_offset is greater than source buffer size");
-        if(size > m_size - src_offset) size = m_size - src_offset;
-        if(dst_offset + size > destination->m_size) throw std::invalid_argument("destination buffer overflow");
-
-        VkBufferCopy copy_region {};
-        copy_region.srcOffset = src_offset;
-        copy_region.dstOffset = dst_offset;
-        copy_region.size = size;
-
-        vkCmdCopyBuffer(command_buffer->get_handle(), m_handle, destination->get_handle(), 1, &copy_region);
-    }
+    VkDeviceSize get_size() const { return m_size; }
+    VkBufferUsageFlags get_usage() const { return m_usage; }
+    const VkMemoryPropertyFlags& get_properties() const { return m_properties; }
 };
 
 }
