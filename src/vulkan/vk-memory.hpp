@@ -84,6 +84,13 @@ public:
 
     void flush();
     void flush(uint32_t offset, uint32_t size);
+
+    void set_data(void* data, size_t size, size_t offset = 0) {
+        void* mapped_ptr = map();
+        memcpy(mapped_ptr, data, size);
+        flush(offset, size);
+        unmap();
+    }
 };
 
 }

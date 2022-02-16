@@ -936,20 +936,16 @@ void HelloTriangleApplication::create_mesh() {
 }
 
 void HelloTriangleApplication::create_index_buffer() {
+    VkDeviceSize buffer_size = sizeof(m_index_buffer_storage[0]) * m_index_buffer_storage.size();
+
     VK::Memory staging_buffer_memory { m_surface_context->get_device() };
     VK::Buffer staging_buffer { &staging_buffer_memory };
 
-    VkDeviceSize buffer_size = sizeof(m_index_buffer_storage[0]) * m_index_buffer_storage.size();
     staging_buffer.set_size(buffer_size);
     staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     staging_buffer.create();
-
-    void* data = staging_buffer_memory.map();
-    memcpy(data, m_index_buffer_storage.data(), (size_t) buffer_size);
-
-    staging_buffer_memory.flush();
-    staging_buffer_memory.unmap();
+    staging_buffer_memory.set_data(m_index_buffer_storage.data(), (size_t) buffer_size);
 
     m_index_buffer_memory.set_device(m_surface_context->get_device());
     m_index_buffer = std::make_unique<VK::Buffer>(&m_index_buffer_memory);
@@ -976,13 +972,8 @@ void HelloTriangleApplication::create_vertex_buffer() {
     staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     staging_buffer.set_size(buffer_size);
-
     staging_buffer.create();
-
-    void* data = staging_buffer_memory.map();
-    memcpy(data, m_vertex_buffer_storage.data(), (size_t) buffer_size);
-    staging_buffer_memory.flush();
-    staging_buffer_memory.unmap();
+    staging_buffer_memory.set_data(m_vertex_buffer_storage.data(), (size_t) buffer_size);
 
     m_vertex_buffer_memory.set_device(m_surface_context->get_device());
     m_vertex_buffer = std::make_unique<VK::Buffer>(&m_vertex_buffer_memory);
@@ -1086,10 +1077,7 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
 
     ubo.proj[1][1] *= -1;
 
-    void* data = m_uniform_buffers_memory[image_index]->map();
-    memcpy(data, &ubo, sizeof(ubo));
-    m_uniform_buffers_memory[image_index]->flush();
-    m_uniform_buffers_memory[image_index]->unmap();
+    m_uniform_buffers_memory[image_index]->set_data(&ubo, sizeof(ubo));
 }
 
 void HelloTriangleApplication::create_descriptor_pool() {
@@ -1183,11 +1171,7 @@ void HelloTriangleApplication::create_texture_image() {
     staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
     staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
     staging_buffer.create();
-
-    void* data = staging_buffer_memory.map();
-    memcpy(data, image, image_size);
-    staging_buffer_memory.flush();
-    staging_buffer_memory.unmap();
+    staging_buffer_memory.set_data(image, image_size);
 
     FreeImage_Unload(converted);
 
