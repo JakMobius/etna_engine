@@ -16,6 +16,11 @@ public:
 
     }
 
+    void destroy() {
+        m_buffer.destroy();
+        m_memory.free();
+    }
+
     Memory& get_memory() { return m_memory; }
     Buffer& get_buffer() { return m_buffer; }
 };
