@@ -17,6 +17,7 @@
 #include "vulkan/vk-buffer.hpp"
 #include "vulkan/commands/vk-copy-buffer-command.hpp"
 #include "vulkan/commands/copy-buffer-to-image-command.hpp"
+#include "vulkan/vk-swapchain.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -316,69 +317,22 @@ void HelloTriangleApplication::create_logical_device() {
 
 void HelloTriangleApplication::create_swap_chain() {
 
-    VK::SwapChainSupportDetails swap_chain_support(m_physical_device.get(), m_surface);
-
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_window, &width, &height);
 
-    VkSurfaceFormatKHR surface_format = swap_chain_support.choose_best_format();
-    VkPresentModeKHR present_mode = swap_chain_support.choose_best_present_mode();
-    VkExtent2D extent = swap_chain_support.choose_best_swap_extent(width, height);
-
-    uint32_t image_count = swap_chain_support.get_optimal_chain_image_count();
-
-    VkSwapchainCreateInfoKHR create_info {};
-    create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-    create_info.surface = m_surface;
-    create_info.minImageCount = image_count;
-    create_info.imageFormat = surface_format.format;
-    create_info.imageColorSpace = surface_format.colorSpace;
-    create_info.imageExtent = extent;
-    create_info.imageArrayLayers = 1;
-    create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-    uint32_t queue_family_indices[] = {
-        (uint32_t) m_surface_context->get_graphics_queue_index(),
-        (uint32_t) m_surface_context->get_present_queue_index()
-    };
-
-    if (m_surface_context->get_graphics_queue_index() != m_surface_context->get_present_queue_index()) {
-        create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-        create_info.queueFamilyIndexCount = 2;
-        create_info.pQueueFamilyIndices = queue_family_indices;
-    } else {
-        create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        create_info.queueFamilyIndexCount = 0;
-        create_info.pQueueFamilyIndices = nullptr;
-    }
-
-    create_info.preTransform = swap_chain_support.m_capabilities.currentTransform;
-    create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-    create_info.clipped = VK_TRUE;
-
-    create_info.oldSwapchain = VK_NULL_HANDLE;
-
-    if (vkCreateSwapchainKHR(m_surface_context->get_device()->get_handle(), &create_info, nullptr, &m_swap_chain) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create swap chain");
-    }
-
-    vkGetSwapchainImagesKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, &image_count, nullptr);
-    m_swap_chain_images.resize(image_count);
-    vkGetSwapchainImagesKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, &image_count, m_swap_chain_images.data());
-
-    m_swap_chain_image_format = surface_format.format;
-    m_swap_chain_extent = extent;
+    m_swapchain = std::make_unique<VK::Swapchain>(m_surface_context.get());
+    m_swapchain->create(width, height);
 }
 
 void HelloTriangleApplication::create_image_views() {
-    m_swap_chain_image_views.reserve(m_swap_chain_images.size());
+    m_swap_chain_image_views.reserve(m_swapchain->get_image_count());
 
-    for (auto& m_swap_chain_image : m_swap_chain_images) {
+    for (auto& m_swap_chain_image : m_swapchain->get_images()) {
         m_swap_chain_image_views.push_back(std::make_unique<VK::ImageView>(m_swap_chain_image, m_surface_context->get_device()));
         auto& image_view = m_swap_chain_image_views.back();
 
         image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view->set_format(m_swap_chain_image_format);
+        image_view->set_format(m_swapchain->get_image_format());
         image_view->set_view_type(VK_IMAGE_VIEW_TYPE_2D);
         image_view->create();
     }
@@ -449,14 +403,14 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     VkViewport viewport {};
     viewport.x = 0.0f;
     viewport.y = 0.0f;
-    viewport.width = (float) m_swap_chain_extent.width;
-    viewport.height = (float) m_swap_chain_extent.height;
+    viewport.width = (float) m_swapchain->get_extent().width;
+    viewport.height = (float) m_swapchain->get_extent().height;
     viewport.minDepth = 0.0f;
     viewport.maxDepth = 1.0f;
 
     VkRect2D scissor {};
     scissor.offset = {0, 0};
-    scissor.extent = m_swap_chain_extent;
+    scissor.extent = m_swapchain->get_extent();
 
     VkPipelineViewportStateCreateInfo viewport_state {};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -590,7 +544,7 @@ VkShaderModule HelloTriangleApplication::create_shader_module(const std::vector<
 
 void HelloTriangleApplication::create_render_pass() {
     VkAttachmentDescription color_attachment {};
-    color_attachment.format = m_swap_chain_image_format;
+    color_attachment.format = m_swapchain->get_image_format();
     color_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
 
     color_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
@@ -624,7 +578,7 @@ void HelloTriangleApplication::create_render_pass() {
     depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
     VkAttachmentDescription color_attachment_resolve{};
-    color_attachment_resolve.format = m_swap_chain_image_format;
+    color_attachment_resolve.format = m_swapchain->get_image_format();
     color_attachment_resolve.samples = VK_SAMPLE_COUNT_1_BIT;
     color_attachment_resolve.loadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
     color_attachment_resolve.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
@@ -681,7 +635,7 @@ void HelloTriangleApplication::create_framebuffers() {
             m_swap_chain_image_view.get()
         });
 
-        framebuffer->set_size(m_swap_chain_extent);
+        framebuffer->set_size(m_swapchain->get_extent());
         framebuffer->create();
     }
 }
@@ -709,7 +663,7 @@ void HelloTriangleApplication::create_command_buffers() {
         render_pass_begin_info.framebuffer = m_swap_chain_framebuffers[i]->get_handle();
 
         render_pass_begin_info.renderArea.offset = {0, 0};
-        render_pass_begin_info.renderArea.extent = m_swap_chain_extent;
+        render_pass_begin_info.renderArea.extent = m_swapchain->get_extent();
 
         VkClearValue clear_values[2] {};
         clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -738,7 +692,7 @@ void HelloTriangleApplication::create_sync_objects() {
     m_image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
     m_in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-    m_in_flight_images.resize(m_swap_chain_images.size(), nullptr);
+    m_in_flight_images.resize(m_swapchain->get_image_count(), nullptr);
 
     VkSemaphoreCreateInfo semaphore_info {};
     semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -762,7 +716,7 @@ void HelloTriangleApplication::draw_frame() {
     vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
 
     uint32_t image_index = 0;
-    auto result = vkAcquireNextImageKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, UINT64_MAX, m_image_available_semaphores[m_current_frame], VK_NULL_HANDLE, &image_index);
+    auto result = vkAcquireNextImageKHR(m_surface_context->get_device()->get_handle(), m_swapchain->get_handle(), UINT64_MAX, m_image_available_semaphores[m_current_frame], VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         m_framebuffer_resized = false;
@@ -795,7 +749,7 @@ void HelloTriangleApplication::draw_frame() {
     present_info.waitSemaphoreCount = 1;
     present_info.pWaitSemaphores = m_command_buffers[image_index]->get_signal_semaphores().data();
 
-    VkSwapchainKHR swap_chains[] = {m_swap_chain};
+    VkSwapchainKHR swap_chains[] = {m_swapchain->get_handle()};
     present_info.swapchainCount = 1;
     present_info.pSwapchains = swap_chains;
     present_info.pImageIndices = &image_index;
@@ -852,10 +806,7 @@ void HelloTriangleApplication::cleanup_swap_chain() {
 
     m_swap_chain_image_views.clear();
 
-    if(m_swap_chain) {
-        vkDestroySwapchainKHR(m_surface_context->get_device()->get_handle(), m_swap_chain, nullptr);
-        m_swap_chain = nullptr;
-    }
+    if(m_swapchain) m_swapchain->destroy();
 }
 
 void HelloTriangleApplication::recreate_swap_chain() {
@@ -1009,10 +960,10 @@ void HelloTriangleApplication::create_descriptor_set_layout() {
 void HelloTriangleApplication::create_uniform_buffers() {
     VkDeviceSize buffer_size = sizeof(UniformBufferObject);
 
-    m_uniform_buffers.resize(m_swap_chain_images.size());
-    m_uniform_buffers_memory.resize(m_swap_chain_images.size());
+    m_uniform_buffers.resize(m_swapchain->get_image_count());
+    m_uniform_buffers_memory.resize(m_swapchain->get_image_count());
 
-    for (size_t i = 0; i < m_swap_chain_images.size(); i++) {
+    for (size_t i = 0; i < m_swapchain->get_image_count(); i++) {
         m_uniform_buffers_memory[i] = std::make_unique<VK::Memory>(m_surface_context->get_device());
 
         auto& buffer = m_uniform_buffers[i];
@@ -1061,7 +1012,7 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
     ubo.model = glm::rotate(ubo.model, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05, 0.05, 0.05));
     ubo.view = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_direction, glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swap_chain_extent.width / (float) m_swap_chain_extent.height, 0.01f, 100.0f);
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain->get_extent().width / (float) m_swapchain->get_extent().height, 0.01f, 100.0f);
 
     ubo.proj[1][1] *= -1;
 
@@ -1071,16 +1022,16 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
 void HelloTriangleApplication::create_descriptor_pool() {
     VkDescriptorPoolSize pool_size[2] {};
     pool_size[0].type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    pool_size[0].descriptorCount = static_cast<uint32_t>(m_swap_chain_images.size());
+    pool_size[0].descriptorCount = static_cast<uint32_t>(m_swapchain->get_image_count());
 
     pool_size[1].type = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    pool_size[1].descriptorCount = static_cast<uint32_t>(m_swap_chain_images.size());
+    pool_size[1].descriptorCount = static_cast<uint32_t>(m_swapchain->get_image_count());
 
     VkDescriptorPoolCreateInfo pool_info {};
     pool_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
     pool_info.poolSizeCount = 2;
     pool_info.pPoolSizes = pool_size;
-    pool_info.maxSets = static_cast<uint32_t>(m_swap_chain_images.size());
+    pool_info.maxSets = static_cast<uint32_t>(m_swapchain->get_image_count());
 
     if (vkCreateDescriptorPool(m_surface_context->get_device()->get_handle(), &pool_info, nullptr, &m_descriptor_pool) != VK_SUCCESS) {
         throw std::runtime_error("failed to create descriptor pool");
@@ -1090,10 +1041,10 @@ void HelloTriangleApplication::create_descriptor_pool() {
 void HelloTriangleApplication::create_descriptor_sets() {
 
     m_descriptor_sets = std::make_unique<VK::DescriptorSetArray>(m_surface_context->get_device(), m_descriptor_pool);
-    m_descriptor_sets->get_layouts().resize(m_swap_chain_images.size(), m_descriptor_set_layout);
+    m_descriptor_sets->get_layouts().resize(m_swapchain->get_image_count(), m_descriptor_set_layout);
     m_descriptor_sets->create();
 
-    for (size_t i = 0; i < m_swap_chain_images.size(); i++) {
+    for (size_t i = 0; i < m_swapchain->get_image_count(); i++) {
         VkDescriptorBufferInfo buffer_info {};
         buffer_info.buffer = m_uniform_buffers[i]->get_handle();
         buffer_info.offset = 0;
@@ -1135,9 +1086,9 @@ void HelloTriangleApplication::create_texture_image() {
     FreeImage_Unload(bitmap);
 
     auto* image = (unsigned char*) FreeImage_GetBits(converted);
-    int image_width = (int)FreeImage_GetWidth(converted);
-    int image_height = (int)FreeImage_GetHeight(converted);
-    int image_size = image_width * image_height * 4;
+    auto image_width = (uint32_t)FreeImage_GetWidth(converted);
+    auto image_height = (uint32_t)FreeImage_GetHeight(converted);
+    auto image_size = image_width * image_height * 4;
 
     m_mip_levels = (int) floor(log2(std::max(image_width, image_height))) + 1;
 
@@ -1159,7 +1110,7 @@ void HelloTriangleApplication::create_texture_image() {
     m_texture_image_memory.set_device(m_surface_context->get_device());
 
     m_texture_image = std::make_unique<VK::Image2D>(&m_texture_image_memory);
-    m_texture_image->set_size(image_width, image_height);
+    m_texture_image->set_size({ image_width, image_height });
     m_texture_image->set_mip_levels(m_mip_levels);
     m_texture_image->set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     m_texture_image->set_format(VK_FORMAT_R8G8B8A8_SRGB);
@@ -1324,7 +1275,7 @@ void HelloTriangleApplication::create_depth_resources() {
 
     m_depth_image = std::make_unique<VK::Image2D>(&m_depth_image_memory);
     m_depth_image->set_samples(m_msaa_samples);
-    m_depth_image->set_size(m_swap_chain_extent.width, m_swap_chain_extent.height);
+    m_depth_image->set_size(m_swapchain->get_extent());
     m_depth_image->set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     m_depth_image->set_format(depth_format);
     m_depth_image->create();
@@ -1343,11 +1294,11 @@ void HelloTriangleApplication::create_depth_resources() {
 }
 
 void HelloTriangleApplication::create_color_resources() {
-    VkFormat color_format = m_swap_chain_image_format;
+    VkFormat color_format = m_swapchain->get_image_format();
 
     m_color_image_memory.set_device(m_surface_context->get_device());
     m_color_image = std::make_unique<VK::Image2D>(&m_color_image_memory);
-    m_color_image->set_size(m_swap_chain_extent.width, m_swap_chain_extent.height);
+    m_color_image->set_size(m_swapchain->get_extent());
     m_color_image->set_samples(m_msaa_samples);
     m_color_image->set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     m_color_image->set_format(color_format);

@@ -9,9 +9,7 @@ void VK::Image2D::create() {
     VkImageCreateInfo image_info {};
     image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
     image_info.imageType = VK_IMAGE_TYPE_2D;
-    image_info.extent.width = m_extent.width;
-    image_info.extent.height = m_extent.height;
-    image_info.extent.depth = 1;
+    image_info.extent = m_extent;
     image_info.mipLevels = m_mip_levels;
     image_info.arrayLayers = m_array_layers;
     image_info.format = m_format;

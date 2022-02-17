@@ -27,6 +27,13 @@ public:
         }
     }
 
+    void set_size(VkExtent2D extent) {
+        if(m_handle) report_illegal_state_change();
+        m_extent = { extent.width, extent.height, 1 };
+    }
+
+    VkExtent2D get_size() const { return { m_extent.width, m_extent.height }; }
+
     void perform_layout_transition(VK::CommandBuffer* command_buffer, VkImageLayout old_layout, VkImageLayout new_layout);
 };
 

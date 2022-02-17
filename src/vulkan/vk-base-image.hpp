@@ -14,7 +14,7 @@ protected:
     Memory* m_memory = nullptr;
 
     VkImageType m_image_type = VK_IMAGE_TYPE_MAX_ENUM;
-    VkExtent2D m_extent = {0, 0};
+    VkExtent3D m_extent = {0, 0, 0};
     VkImageCreateFlags m_flags = 0;
     VkFormat m_format = VK_FORMAT_MAX_ENUM;
     uint32_t m_mip_levels = 1;
@@ -38,11 +38,6 @@ protected:
 public:
 
     VkImage get_handle() { return m_handle; }
-
-    void set_size(uint32_t width, uint32_t height) {
-        if(m_handle) report_illegal_state_change();
-        m_extent = { width, height };
-    }
 
     void set_flags(VkImageCreateFlags flags) {
         if(m_handle) report_illegal_state_change();
@@ -96,7 +91,6 @@ public:
 
 
     VkImageType get_image_type()                  const { return m_image_type; }
-    VkExtent2D get_size()                         const { return m_extent; }
     VkImageCreateFlags get_flags()                const { return m_flags; }
     VkFormat get_format()                         const { return m_format; }
     uint32_t get_mip_levels()                     const { return m_mip_levels; }

@@ -47,13 +47,9 @@ public:
 
     void create_command_pool();
 
-    VK::Device* get_device() {
-        return m_logical_device.get();
-    }
-
-    VK::CommandPool* get_command_pool() {
-        return m_command_pool.get();
-    }
+    VK::Device* get_device() { return m_logical_device.get(); }
+    VK::CommandPool* get_command_pool() { return m_command_pool.get(); }
+    VkSurfaceKHR get_surface() { return m_surface; }
 
     VkQueue get_device_graphics_queue() { return m_graphics_queue; }
     VkQueue get_device_present_queue() { return m_present_queue; }

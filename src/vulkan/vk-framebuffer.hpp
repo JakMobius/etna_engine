@@ -10,16 +10,20 @@ class Framebuffer {
 
     Device* m_device;
     VkRenderPass m_render_pass;
-    std::vector<ImageView*> m_attachments;
-    VkExtent2D m_size;
+    std::vector<ImageView*> m_attachments {};
+    VkExtent2D m_size {};
     uint32_t m_layers = 1;
 
-    VkFramebuffer m_handle;
+    VkFramebuffer m_handle = nullptr;
 
 public:
 
     Framebuffer(Device* device, VkRenderPass render_pass): m_device(device), m_render_pass(render_pass) {
 
+    }
+
+    ~Framebuffer() {
+        destroy();
     }
 
     void create() {
@@ -41,6 +45,13 @@ public:
 
         if (vkCreateFramebuffer(m_device->get_handle(), &framebuffer_info, nullptr, &m_handle) != VK_SUCCESS) {
             throw std::runtime_error("failed to create framebuffer");
+        }
+    }
+
+    void destroy() {
+        if(m_handle) {
+            vkDestroyFramebuffer(m_device->get_handle(), m_handle, nullptr);
+            m_handle = nullptr;
         }
     }
 

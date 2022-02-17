@@ -22,6 +22,7 @@
 #include "vulkan/vk-image-view.hpp"
 #include "vulkan/vk-descriptor-set-array.hpp"
 #include "vulkan/vk-framebuffer.hpp"
+#include "vulkan/vk-swapchain.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -46,10 +47,8 @@ class HelloTriangleApplication {
 
     VkSurfaceKHR m_surface {};
 
-    VkSwapchainKHR m_swap_chain {};
-    std::vector<VkImage> m_swap_chain_images {};
-    VkFormat m_swap_chain_image_format {};
-    VkExtent2D m_swap_chain_extent {};
+    std::unique_ptr<VK::Swapchain> m_swapchain {};
+
     std::vector<std::unique_ptr<VK::ImageView>> m_swap_chain_image_views {};
     VkRenderPass m_render_pass {};
     VkPipelineLayout m_pipeline_layout {};

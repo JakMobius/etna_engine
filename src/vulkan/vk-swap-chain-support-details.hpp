@@ -3,6 +3,7 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include "vk-physical-device.hpp"
+#include "vk-surface-context.hpp"
 
 namespace VK {
 
@@ -15,6 +16,15 @@ struct SwapChainSupportDetails {
 
     explicit SwapChainSupportDetails(const PhysicalDevice* device, VkSurfaceKHR surface) :
             m_device(device), m_surface(surface) {
+
+        get_capabilities();
+        get_formats();
+        get_present_modes();
+
+    }
+
+    explicit SwapChainSupportDetails(SurfaceContext* ctx) :
+            m_device(ctx->get_device()->get_physical_device()), m_surface(ctx->get_surface()) {
 
         get_capabilities();
         get_formats();
