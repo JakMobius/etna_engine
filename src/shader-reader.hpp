@@ -3,4 +3,4 @@
 #include <vector>
 #include <string>
 
-std::vector<char> read_file(const std::string& filename);
+std::string read_file(const std::string& filename);

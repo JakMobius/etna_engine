@@ -4,9 +4,10 @@
 
 #include "shader-reader.hpp"
 
+#include <string>
 #include <fstream>
 
-std::vector<char> read_file(const std::string& filename) {
+std::string read_file(const std::string& filename) {
     std::ifstream file(filename, std::ios::ate | std::ios::binary);
 
     if (!file.is_open()) {
@@ -14,10 +15,10 @@ std::vector<char> read_file(const std::string& filename) {
     }
 
     size_t file_size = (size_t) file.tellg();
-    std::vector<char> buffer(file_size);
+    std::string buffer(file_size, '\0');
 
     file.seekg(0);
-    file.read(buffer.data(), file_size);
+    file.read(&buffer[0], file_size);
 
     file.close();
 

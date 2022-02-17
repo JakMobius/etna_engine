@@ -19,6 +19,7 @@
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/vk-memory-buffer.hpp"
 #include "vulkan/vk-staging-buffer.hpp"
+#include "vulkan/vk-shader.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -327,19 +328,19 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     auto vert_shader_code = read_file("resources/shaders/vert.spv");
     auto frag_shader_code = read_file("resources/shaders/frag.spv");
 
-    auto vert_shader_module = create_shader_module(vert_shader_code);
-    auto frag_shader_module = create_shader_module(frag_shader_code);
+    VK::Shader vertex_shader   { m_surface_context->get_device(), vert_shader_code };
+    VK::Shader fragment_shader { m_surface_context->get_device(), frag_shader_code };
 
     VkPipelineShaderStageCreateInfo vert_shader_stage_info {};
     vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_shader_stage_info.module = vert_shader_module;
+    vert_shader_stage_info.module = vertex_shader.get_handle();
     vert_shader_stage_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo frag_shader_stage_info {};
     frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
     frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_shader_stage_info.module = frag_shader_module;
+    frag_shader_stage_info.module = fragment_shader.get_handle();
     frag_shader_stage_info.pName = "main";
 
     VkPipelineShaderStageCreateInfo shader_stages[] = {
@@ -508,23 +509,6 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     if (vkCreateGraphicsPipelines(m_surface_context->get_device()->get_handle(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &m_graphics_pipeline) != VK_SUCCESS) {
         throw std::runtime_error("failed to create graphics pipeline");
     }
-
-    vkDestroyShaderModule(m_surface_context->get_device()->get_handle(), vert_shader_module, nullptr);
-    vkDestroyShaderModule(m_surface_context->get_device()->get_handle(), frag_shader_module, nullptr);
-}
-
-VkShaderModule HelloTriangleApplication::create_shader_module(const std::vector<char> &code) {
-    VkShaderModuleCreateInfo createInfo {};
-    createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    createInfo.codeSize = code.size();
-    createInfo.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
-    VkShaderModule shader_module {};
-    if (vkCreateShaderModule(m_surface_context->get_device()->get_handle(), &createInfo, nullptr, &shader_module) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create shader module");
-    }
-
-    return shader_module;
 }
 
 void HelloTriangleApplication::create_render_pass() {

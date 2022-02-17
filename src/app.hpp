@@ -166,8 +166,6 @@ private:
 
     bool is_device_suitable(const VK::PhysicalDevice* physical_device);
 
-    VkShaderModule create_shader_module(const std::vector<char>& code);
-
     void generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image2D* image);
 
     VkFormat find_depth_format();
