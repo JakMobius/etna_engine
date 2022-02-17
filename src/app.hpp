@@ -49,26 +49,24 @@ class HelloTriangleApplication {
 
     std::unique_ptr<VK::Swapchain> m_swapchain {};
 
-    std::vector<std::unique_ptr<VK::ImageView>> m_swap_chain_image_views {};
+    std::vector<VkSemaphore> m_image_available_semaphores {};
+    std::vector<VkSemaphore> m_render_finished_semaphores {};
+    std::vector<VkFence> m_in_flight_fences {};
+    std::vector<VkFence> m_in_flight_images {};
+    std::vector<float> m_vertex_buffer_storage {};
+    std::vector<uint32_t> m_index_buffer_storage {};
+    std::vector<std::unique_ptr<VK::Buffer>> m_uniform_buffers {};
+    std::vector<std::unique_ptr<VK::Memory>> m_uniform_buffers_memory {};
+
     VkRenderPass m_render_pass {};
     VkPipelineLayout m_pipeline_layout {};
     VkPipeline m_graphics_pipeline {};
-    std::vector<std::unique_ptr<VK::Framebuffer>> m_swap_chain_framebuffers {};
-    std::vector<std::unique_ptr<VK::CommandBuffer>> m_command_buffers {};
-    std::vector<VkSemaphore> m_image_available_semaphores {};
-    std::vector<VkSemaphore> m_render_finished_semaphores {};
-
-    std::vector<VkFence> m_in_flight_fences {};
-    std::vector<VkFence> m_in_flight_images {};
 
     VK::Memory m_vertex_buffer_memory {};
     std::unique_ptr<VK::Buffer> m_vertex_buffer {};
 
     VK::Memory m_index_buffer_memory {};
     std::unique_ptr<VK::Buffer> m_index_buffer {};
-
-    std::vector<std::unique_ptr<VK::Buffer>> m_uniform_buffers {};
-    std::vector<std::unique_ptr<VK::Memory>> m_uniform_buffers_memory {};
 
     VkDescriptorSetLayout m_descriptor_set_layout = {};
     VkDescriptorPool m_descriptor_pool {};
@@ -89,9 +87,6 @@ class HelloTriangleApplication {
     std::unique_ptr<VK::Image2D> m_depth_image {};
     VK::Memory m_depth_image_memory {};
     std::unique_ptr<VK::ImageView> m_depth_image_view {};
-
-    std::vector<float> m_vertex_buffer_storage {};
-    std::vector<uint32_t> m_index_buffer_storage {};
 
     size_t m_current_frame = 0;
 
@@ -137,12 +132,9 @@ private:
     void create_surface();
     void create_logical_device();
     void create_swap_chain();
-    void create_image_views();
     void create_render_pass();
     void create_descriptor_set_layout();
     void create_graphics_pipeline();
-    void create_framebuffers();
-    void create_command_pool();
     void create_mesh();
     void create_index_buffer();
     void create_vertex_buffer();

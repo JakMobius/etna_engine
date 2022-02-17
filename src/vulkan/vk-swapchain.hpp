@@ -1,10 +1,31 @@
 #pragma once
 
+namespace VK {
+
+class SwapchainEntry;
+class Swapchain;
+
+}
+
 #include <vulkan/vulkan_core.h>
 #include "vk-surface-context.hpp"
 #include "vk-swap-chain-support-details.hpp"
+#include "vk-image-view.hpp"
+#include "vk-framebuffer.hpp"
 
 namespace VK {
+
+struct SwapchainEntry {
+    Swapchain* m_swapchain = nullptr;
+    VkImage m_image {};
+    std::unique_ptr<ImageView> m_image_view {};
+    std::unique_ptr<Framebuffer> m_framebuffer {};
+    std::unique_ptr<CommandBuffer> m_command_buffer {};
+
+    void create_image_view();
+    void create_framebuffer(VkRenderPass render_pass);
+    void destroy();
+};
 
 class Swapchain {
 
@@ -13,7 +34,22 @@ class Swapchain {
 
     VkFormat m_image_format {};
     VkExtent2D m_extent {};
-    std::vector<VkImage> m_images {};
+
+    std::vector<SwapchainEntry> m_entries {};
+    std::vector<ImageView*> m_framebuffer_attachments {};
+
+    void create_entries(const std::vector<VkImage>& images, VkRenderPass render_pass) {
+        for(auto image : images) {
+            m_entries.emplace_back();
+            auto& entry = m_entries.back();
+
+            entry.m_swapchain = this;
+            entry.m_image = image;
+            entry.create_image_view();
+            entry.create_framebuffer(render_pass);
+
+        }
+    }
 
 public:
     explicit Swapchain(SurfaceContext* surface_context): m_surface_context(surface_context) {}
@@ -69,15 +105,26 @@ public:
             throw std::runtime_error("failed to create swap chain");
         }
 
-        vkGetSwapchainImagesKHR(device->get_handle(), m_handle, &image_count, nullptr);
-        m_images.resize(image_count);
-        vkGetSwapchainImagesKHR(device->get_handle(), m_handle, &image_count, m_images.data());
-
         m_image_format = surface_format.format;
+    }
+
+    void create_images(VkRenderPass render_pass) {
+        auto device = m_surface_context->get_device();
+
+        uint32_t image_count;
+        std::vector<VkImage> images {};
+        vkGetSwapchainImagesKHR(device->get_handle(), m_handle, &image_count, nullptr);
+        images.resize(image_count);
+        vkGetSwapchainImagesKHR(device->get_handle(), m_handle, &image_count, images.data());
+
+        create_entries(images, render_pass);
     }
 
     void destroy() {
         if(m_handle) {
+            for(auto& entry : m_entries) entry.destroy();
+            m_entries.clear();
+
             vkDestroySwapchainKHR(m_surface_context->get_device()->get_handle(), m_handle, nullptr);
             m_handle = nullptr;
         }
@@ -85,10 +132,12 @@ public:
 
     VkSwapchainKHR get_handle() { return m_handle; };
 
+    std::vector<ImageView*>& get_framebuffer_attachments() { return m_framebuffer_attachments; }
+    SurfaceContext* get_surface_context() { return m_surface_context; }
     VkFormat get_image_format() { return m_image_format; };
     VkExtent2D get_extent() { return m_extent; };
-    const std::vector<VkImage>& get_images() { return m_images; };
-    int get_image_count() { return m_images.size(); };
+    std::vector<SwapchainEntry>& get_entries() { return m_entries; };
+    int get_image_count() { return m_entries.size(); };
 };
 
 }

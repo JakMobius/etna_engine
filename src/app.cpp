@@ -88,17 +88,14 @@ void HelloTriangleApplication::init_vulkan() {
     create_surface();
     create_logical_device();
     create_swap_chain();
-    create_image_views();
-    create_render_pass();
-    create_descriptor_set_layout();
-    create_graphics_pipeline();
-    create_command_pool();
     create_mesh();
     create_index_buffer();
     create_vertex_buffer();
     create_color_resources();
     create_depth_resources();
-    create_framebuffers();
+    create_render_pass();
+    create_descriptor_set_layout();
+    create_graphics_pipeline();
     create_texture_image();
     create_texture_sampler();
     create_uniform_buffers();
@@ -233,6 +230,20 @@ void HelloTriangleApplication::cleanup() {
 
     cleanup_swap_chain();
 
+    for(auto& semaphore : m_image_available_semaphores) {
+        if(semaphore) {
+            vkDestroySemaphore(m_surface_context->get_device()->get_handle(), semaphore, nullptr);
+        }
+    }
+    m_image_available_semaphores.clear();
+
+    for(auto& semaphore : m_render_finished_semaphores) {
+        if(semaphore) {
+            vkDestroySemaphore(m_surface_context->get_device()->get_handle(), semaphore, nullptr);
+        }
+    }
+    m_render_finished_semaphores.clear();
+
     if(m_texture_sampler) {
         vkDestroySampler(m_surface_context->get_device()->get_handle(), m_texture_sampler, nullptr);
         m_texture_sampler = nullptr;
@@ -260,17 +271,6 @@ void HelloTriangleApplication::cleanup() {
     }
     m_in_flight_fences.clear();
 
-    for (auto& semaphore : m_image_available_semaphores) {
-        vkDestroySemaphore(m_surface_context->get_device()->get_handle(), semaphore, nullptr);
-    }
-    m_image_available_semaphores.clear();
-
-    for (auto& semaphore : m_render_finished_semaphores) {
-        vkDestroySemaphore(m_surface_context->get_device()->get_handle(), semaphore, nullptr);
-    }
-    m_render_finished_semaphores.clear();
-
-    m_command_buffers.clear();
     m_surface_context = nullptr;
     m_physical_device = nullptr;
 
@@ -313,6 +313,7 @@ void HelloTriangleApplication::create_logical_device() {
     }
 
     m_msaa_samples = m_physical_device->get_max_usable_sample_count();
+    m_surface_context->create_command_pool();
 }
 
 void HelloTriangleApplication::create_swap_chain() {
@@ -322,20 +323,6 @@ void HelloTriangleApplication::create_swap_chain() {
 
     m_swapchain = std::make_unique<VK::Swapchain>(m_surface_context.get());
     m_swapchain->create(width, height);
-}
-
-void HelloTriangleApplication::create_image_views() {
-    m_swap_chain_image_views.reserve(m_swapchain->get_image_count());
-
-    for (auto& m_swap_chain_image : m_swapchain->get_images()) {
-        m_swap_chain_image_views.push_back(std::make_unique<VK::ImageView>(m_swap_chain_image, m_surface_context->get_device()));
-        auto& image_view = m_swap_chain_image_views.back();
-
-        image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image_view->set_format(m_swapchain->get_image_format());
-        image_view->set_view_type(VK_IMAGE_VIEW_TYPE_2D);
-        image_view->create();
-    }
 }
 
 void HelloTriangleApplication::create_graphics_pipeline() {
@@ -620,38 +607,23 @@ void HelloTriangleApplication::create_render_pass() {
     if (vkCreateRenderPass(m_surface_context->get_device()->get_handle(), &render_pass_info, nullptr, &m_render_pass) != VK_SUCCESS) {
         throw std::runtime_error("failed to create render pass");
     }
-}
 
-void HelloTriangleApplication::create_framebuffers() {
-    m_swap_chain_framebuffers.reserve(m_swap_chain_image_views.size());
-
-    for (auto& m_swap_chain_image_view : m_swap_chain_image_views) {
-        m_swap_chain_framebuffers.push_back(std::make_unique<VK::Framebuffer>(m_surface_context->get_device(), m_render_pass));
-        VK::Framebuffer* framebuffer = m_swap_chain_framebuffers.back().get();
-
-        framebuffer->get_attachments().assign({
-            m_color_image_view.get(),
-            m_depth_image_view.get(),
-            m_swap_chain_image_view.get()
-        });
-
-        framebuffer->set_size(m_swapchain->get_extent());
-        framebuffer->create();
-    }
-}
-
-void HelloTriangleApplication::create_command_pool() {
-    m_surface_context->create_command_pool();
+    m_swapchain->get_framebuffer_attachments().assign({
+        m_color_image_view.get(),
+        m_depth_image_view.get()
+    });
+    m_swapchain->create_images(m_render_pass);
 }
 
 void HelloTriangleApplication::create_command_buffers() {
-    m_command_buffers.resize(m_swap_chain_framebuffers.size());
 
     auto command_pool = m_surface_context->get_command_pool();
 
-    for (int i = 0; i < m_command_buffers.size(); i++) {
-        m_command_buffers[i] = std::make_unique<VK::CommandBuffer>(command_pool->create_command_buffer());
-        auto command_buffer = m_command_buffers[i].get();
+    for (int i = 0; i < m_swapchain->get_image_count(); i++) {
+        auto& entry = m_swapchain->get_entries()[i];
+        entry.m_command_buffer = std::make_unique<VK::CommandBuffer>(command_pool->create_command_buffer());
+
+        auto command_buffer = entry.m_command_buffer.get();
 
         command_buffer->get_wait_flags().push_back(VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT);
 
@@ -660,7 +632,7 @@ void HelloTriangleApplication::create_command_buffers() {
         VkRenderPassBeginInfo render_pass_begin_info {};
         render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
         render_pass_begin_info.renderPass = m_render_pass;
-        render_pass_begin_info.framebuffer = m_swap_chain_framebuffers[i]->get_handle();
+        render_pass_begin_info.framebuffer = entry.m_framebuffer->get_handle();
 
         render_pass_begin_info.renderArea.offset = {0, 0};
         render_pass_begin_info.renderArea.extent = m_swapchain->get_extent();
@@ -737,7 +709,9 @@ void HelloTriangleApplication::draw_frame() {
 
     vkResetFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame]);
 
-    auto command_buffer = m_command_buffers[image_index].get();
+    auto& swapchain_entry = m_swapchain->get_entries()[image_index];
+
+    auto command_buffer = swapchain_entry.m_command_buffer.get();
 
     command_buffer->get_wait_semaphores().assign({ m_image_available_semaphores[m_current_frame] });
     command_buffer->get_signal_semaphores().assign({ m_render_finished_semaphores[m_current_frame] });
@@ -747,7 +721,7 @@ void HelloTriangleApplication::draw_frame() {
     VkPresentInfoKHR present_info {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
     present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = m_command_buffers[image_index]->get_signal_semaphores().data();
+    present_info.pWaitSemaphores = command_buffer->get_signal_semaphores().data();
 
     VkSwapchainKHR swap_chains[] = {m_swapchain->get_handle()};
     present_info.swapchainCount = 1;
@@ -787,8 +761,6 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_descriptor_pool = nullptr;
     }
 
-    m_swap_chain_framebuffers.clear();
-
     if(m_graphics_pipeline) {
         vkDestroyPipeline(m_surface_context->get_device()->get_handle(), m_graphics_pipeline, nullptr);
         m_graphics_pipeline = nullptr;
@@ -803,8 +775,6 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         vkDestroyRenderPass(m_surface_context->get_device()->get_handle(), m_render_pass, nullptr);
         m_render_pass = nullptr;
     }
-
-    m_swap_chain_image_views.clear();
 
     if(m_swapchain) m_swapchain->destroy();
 }
@@ -822,12 +792,10 @@ void HelloTriangleApplication::recreate_swap_chain() {
     cleanup_swap_chain();
 
     create_swap_chain();
-    create_image_views();
     create_render_pass();
     create_graphics_pipeline();
     create_color_resources();
     create_depth_resources();
-    create_framebuffers();
     create_uniform_buffers();
     create_descriptor_pool();
     create_descriptor_sets();
