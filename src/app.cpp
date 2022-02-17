@@ -18,6 +18,8 @@
 #include "vulkan/commands/vk-copy-buffer-command.hpp"
 #include "vulkan/commands/copy-buffer-to-image-command.hpp"
 #include "vulkan/vk-swapchain.hpp"
+#include "vulkan/vk-memory-buffer.hpp"
+#include "vulkan/vk-staging-buffer.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -843,20 +845,12 @@ void HelloTriangleApplication::create_mesh() {
 }
 
 void HelloTriangleApplication::create_index_buffer() {
-    VkDeviceSize buffer_size = sizeof(m_index_buffer_storage[0]) * m_index_buffer_storage.size();
 
-    VK::Memory staging_buffer_memory { m_surface_context->get_device() };
-    VK::Buffer staging_buffer { &staging_buffer_memory };
-
-    staging_buffer.set_size(buffer_size);
-    staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    staging_buffer.create();
-    staging_buffer_memory.set_data(m_index_buffer_storage.data(), (size_t) buffer_size);
+    VK::StagingBuffer staging_buffer { m_surface_context->get_device(), m_index_buffer_storage };
 
     m_index_buffer_memory.set_device(m_surface_context->get_device());
     m_index_buffer = std::make_unique<VK::Buffer>(&m_index_buffer_memory);
-    m_index_buffer->set_size(buffer_size);
+    m_index_buffer->set_size(staging_buffer.get_buffer().get_size());
     m_index_buffer->set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     m_index_buffer->set_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_index_buffer->create();
@@ -864,7 +858,7 @@ void HelloTriangleApplication::create_index_buffer() {
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VK::CopyBufferCommand(&staging_buffer, m_index_buffer.get()).write(&command_buffer);
+    VK::CopyBufferCommand(&staging_buffer.get_buffer(), m_index_buffer.get()).write(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -872,27 +866,19 @@ void HelloTriangleApplication::create_index_buffer() {
 
 void HelloTriangleApplication::create_vertex_buffer() {
 
-    VkDeviceSize buffer_size = sizeof(m_vertex_buffer_storage[0]) * m_vertex_buffer_storage.size();
-    VK::Memory staging_buffer_memory {m_surface_context->get_device() };
-    VK::Buffer staging_buffer {&staging_buffer_memory };
-
-    staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    staging_buffer.set_size(buffer_size);
-    staging_buffer.create();
-    staging_buffer_memory.set_data(m_vertex_buffer_storage.data(), (size_t) buffer_size);
+    VK::StagingBuffer staging_buffer { m_surface_context->get_device(), m_vertex_buffer_storage };
 
     m_vertex_buffer_memory.set_device(m_surface_context->get_device());
     m_vertex_buffer = std::make_unique<VK::Buffer>(&m_vertex_buffer_memory);
     m_vertex_buffer->set_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     m_vertex_buffer->set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    m_vertex_buffer->set_size(buffer_size);
+    m_vertex_buffer->set_size(staging_buffer.get_buffer().get_size());
     m_vertex_buffer->create();
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VK::CopyBufferCommand(&staging_buffer, m_vertex_buffer.get()).write(&command_buffer);
+    VK::CopyBufferCommand(&staging_buffer.get_buffer(), m_vertex_buffer.get()).write(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -1064,14 +1050,7 @@ void HelloTriangleApplication::create_texture_image() {
         std::swap(image[pix + 0], image[pix + 2]);
     }
 
-    VK::Memory staging_buffer_memory { m_surface_context->get_device() };
-    VK::Buffer staging_buffer { &staging_buffer_memory };
-
-    staging_buffer.set_size(image_size);
-    staging_buffer.set_usage(VK_BUFFER_USAGE_TRANSFER_SRC_BIT);
-    staging_buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-    staging_buffer.create();
-    staging_buffer_memory.set_data(image, image_size);
+    VK::StagingBuffer staging_buffer { m_surface_context->get_device(), image, image_size };
 
     FreeImage_Unload(converted);
 
@@ -1089,7 +1068,7 @@ void HelloTriangleApplication::create_texture_image() {
 
     m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer, m_texture_image.get());
+    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), m_texture_image.get());
     copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copy_command.write(&command_buffer);
 
