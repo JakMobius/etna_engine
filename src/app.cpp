@@ -253,7 +253,6 @@ void HelloTriangleApplication::cleanup() {
 
     if(m_texture_image_view) m_texture_image_view->destroy();
     if(m_texture_image) m_texture_image->destroy();
-    m_texture_image_memory.free();
 
     if(m_descriptor_set_layout) {
         vkDestroyDescriptorSetLayout(m_surface_context->get_device()->get_handle(), m_descriptor_set_layout, nullptr);
@@ -729,11 +728,9 @@ void HelloTriangleApplication::cleanup_swap_chain() {
 
     if(m_color_image_view) m_color_image_view->destroy();
     if(m_color_image) m_color_image->destroy();
-    m_color_image_memory.free();
 
     if(m_depth_image_view) m_depth_image_view->destroy();
     if(m_depth_image) m_depth_image->destroy();
-    m_depth_image_memory.free();
 
     m_uniform_buffers.clear();
 
@@ -773,10 +770,10 @@ void HelloTriangleApplication::recreate_swap_chain() {
     cleanup_swap_chain();
 
     create_swap_chain();
-    create_render_pass();
-    create_graphics_pipeline();
     create_color_resources();
     create_depth_resources();
+    create_render_pass();
+    create_graphics_pipeline();
     create_uniform_buffers();
     create_descriptor_pool();
     create_descriptor_sets();
@@ -806,13 +803,13 @@ void HelloTriangleApplication::create_mesh() {
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
             };
 
-//            float length = sqrt(vertex[0] * vertex[0] + vertex[1] * vertex[1] + vertex[2] * vertex[2]);
+            float length = sqrt(vertex[0] * vertex[0] + vertex[1] * vertex[1] + vertex[2] * vertex[2]);
 
-//            length = 1 / sqrt(length);
+            length = 1 / sqrt(length);
 
-//            vertex[0] = vertex[0] * length;
-//            vertex[1] = vertex[1] * length;
-//            vertex[2] = vertex[2] * length;
+            vertex[0] = vertex[0] * length;
+            vertex[1] = vertex[1] * length;
+            vertex[2] = vertex[2] * length;
 
             for(auto num : vertex) {
                 m_vertex_buffer_storage.push_back(num);
@@ -1029,32 +1026,30 @@ void HelloTriangleApplication::create_texture_image() {
 
     FreeImage_Unload(converted);
 
-    m_texture_image_memory.set_device(m_surface_context->get_device());
-
-    m_texture_image = std::make_unique<VK::Image2D>(&m_texture_image_memory);
-    m_texture_image->set_size({ image_width, image_height });
-    m_texture_image->set_mip_levels(m_mip_levels);
-    m_texture_image->set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    m_texture_image->set_format(VK_FORMAT_R8G8B8A8_SRGB);
-    m_texture_image->create();
+    m_texture_image = std::make_unique<VK::MemoryImage2D>(m_surface_context->get_device());
+    m_texture_image->get_image().set_size({ image_width, image_height });
+    m_texture_image->get_image().set_mip_levels(m_mip_levels);
+    m_texture_image->get_image().set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    m_texture_image->get_image().set_format(VK_FORMAT_R8G8B8A8_SRGB);
+    m_texture_image->get_image().create();
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    m_texture_image->get_image().perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
-    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), m_texture_image.get());
+    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), &m_texture_image->get_image());
     copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copy_command.write(&command_buffer);
 
 //    m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-    generate_mipmaps(&command_buffer, m_texture_image.get());
+    generate_mipmaps(&command_buffer, &m_texture_image->get_image());
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
 
-    m_texture_image_view = std::make_unique<VK::ImageView>(m_texture_image.get());
+    m_texture_image_view = std::make_unique<VK::ImageView>(&m_texture_image->get_image());
     m_texture_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_texture_image_view->create();
 }
@@ -1193,23 +1188,21 @@ bool HelloTriangleApplication::has_stencil_component(VkFormat format) {
 void HelloTriangleApplication::create_depth_resources() {
     VkFormat depth_format = find_depth_format();
 
-    m_depth_image_memory.set_device(m_surface_context->get_device());
+    m_depth_image = std::make_unique<VK::MemoryImage2D>(m_surface_context->get_device());
+    m_depth_image->get_image().set_samples(m_msaa_samples);
+    m_depth_image->get_image().set_size(m_swapchain->get_extent());
+    m_depth_image->get_image().set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    m_depth_image->get_image().set_format(depth_format);
+    m_depth_image->get_image().create();
 
-    m_depth_image = std::make_unique<VK::Image2D>(&m_depth_image_memory);
-    m_depth_image->set_samples(m_msaa_samples);
-    m_depth_image->set_size(m_swapchain->get_extent());
-    m_depth_image->set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    m_depth_image->set_format(depth_format);
-    m_depth_image->create();
-
-    m_depth_image_view = std::make_unique<VK::ImageView>(m_depth_image.get());
+    m_depth_image_view = std::make_unique<VK::ImageView>(&m_depth_image->get_image());
     m_depth_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_depth_image_view->create();
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    m_depth_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    m_depth_image->get_image().perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -1218,15 +1211,14 @@ void HelloTriangleApplication::create_depth_resources() {
 void HelloTriangleApplication::create_color_resources() {
     VkFormat color_format = m_swapchain->get_image_format();
 
-    m_color_image_memory.set_device(m_surface_context->get_device());
-    m_color_image = std::make_unique<VK::Image2D>(&m_color_image_memory);
-    m_color_image->set_size(m_swapchain->get_extent());
-    m_color_image->set_samples(m_msaa_samples);
-    m_color_image->set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    m_color_image->set_format(color_format);
-    m_color_image->create();
+    m_color_image = std::make_unique<VK::MemoryImage2D>(m_surface_context->get_device());
+    m_color_image->get_image().set_size(m_swapchain->get_extent());
+    m_color_image->get_image().set_samples(m_msaa_samples);
+    m_color_image->get_image().set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    m_color_image->get_image().set_format(color_format);
+    m_color_image->get_image().create();
 
-    m_color_image_view = std::make_unique<VK::ImageView>(m_color_image.get());
+    m_color_image_view = std::make_unique<VK::ImageView>(&m_color_image->get_image());
     m_color_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_color_image_view->create();
 }

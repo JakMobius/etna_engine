@@ -24,6 +24,7 @@
 #include "vulkan/vk-framebuffer.hpp"
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/vk-memory-buffer.hpp"
+#include "vulkan/vk-memory-image2d.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -70,20 +71,17 @@ class HelloTriangleApplication {
     VkDescriptorPool m_descriptor_pool {};
     std::unique_ptr<VK::DescriptorSetArray> m_descriptor_sets {};
 
-    std::unique_ptr<VK::Image2D> m_texture_image {};
-    VK::Memory m_texture_image_memory {};
+    std::unique_ptr<VK::MemoryImage2D> m_texture_image {};
     std::unique_ptr<VK::ImageView> m_texture_image_view {};
     VkSampler m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
-    std::unique_ptr<VK::Image2D> m_color_image;
-    VK::Memory m_color_image_memory;
+    std::unique_ptr<VK::MemoryImage2D> m_color_image;
     std::unique_ptr<VK::ImageView> m_color_image_view;
 
-    std::unique_ptr<VK::Image2D> m_depth_image {};
-    VK::Memory m_depth_image_memory {};
+    std::unique_ptr<VK::MemoryImage2D> m_depth_image {};
     std::unique_ptr<VK::ImageView> m_depth_image_view {};
 
     size_t m_current_frame = 0;
