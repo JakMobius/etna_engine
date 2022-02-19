@@ -26,6 +26,10 @@
 #include "vulkan/pipeline/vk-pipeline-viewport-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-input-assembly.hpp"
 #include "vulkan/pipeline/vk-pipeline-rasterization-state.hpp"
+#include "vulkan/pipeline/vk-pipeline-multisampling-state.hpp"
+#include "vulkan/pipeline/vk-pipeline-dynamic-states.hpp"
+#include "vulkan/pipeline/vk-pipeline-color-blend-attachment-state.hpp"
+#include "vulkan/pipeline/vk-pipeline-depth-stencil-states.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -356,6 +360,20 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
     pipeline_rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
+    VK::PipelineMultisamplingState pipeline_multisampling_state {};
+    pipeline_multisampling_state.set_rasterization_samples(m_msaa_samples);
+
+    VK::PipelineDynamicStates pipeline_dynamic_states {};
+//    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_VIEWPORT);
+//    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_LINE_WIDTH);
+
+    VK::PipelineColorAttachmentState pipeline_color_attachment_states {};
+
+    VK::PipelineDepthStencilStates pipeline_depth_stencil_states {};
+    pipeline_depth_stencil_states.set_depth_test_enable(true);
+    pipeline_depth_stencil_states.set_depth_write_enable(true);
+    pipeline_depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = input_vertex_state.get_binding_descriptions().size();
@@ -370,61 +388,21 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     viewport_state.scissorCount = pipeline_viewport_state.get_scissors().size();
     viewport_state.pScissors = pipeline_viewport_state.get_scissors().data();
 
-    VkPipelineMultisampleStateCreateInfo multisampling {};
-    multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-    multisampling.sampleShadingEnable = VK_FALSE;
-    multisampling.rasterizationSamples = m_msaa_samples;
-    multisampling.minSampleShading = 1.0f;
-    multisampling.pSampleMask = nullptr;
-    multisampling.alphaToCoverageEnable = VK_FALSE;
-    multisampling.alphaToOneEnable = VK_FALSE;
-
-    VkPipelineColorBlendAttachmentState color_blend_attachment {};
-    color_blend_attachment.colorWriteMask =
-            VK_COLOR_COMPONENT_R_BIT |
-            VK_COLOR_COMPONENT_G_BIT |
-            VK_COLOR_COMPONENT_B_BIT |
-            VK_COLOR_COMPONENT_A_BIT;
-    color_blend_attachment.blendEnable = VK_FALSE;
-    color_blend_attachment.srcColorBlendFactor = VK_BLEND_FACTOR_ONE;
-    color_blend_attachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
-    color_blend_attachment.colorBlendOp = VK_BLEND_OP_ADD;
-    color_blend_attachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-    color_blend_attachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-    color_blend_attachment.alphaBlendOp = VK_BLEND_OP_ADD;
-
-    VkPipelineDepthStencilStateCreateInfo depth_stencil{};
-    depth_stencil.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-    depth_stencil.depthTestEnable = VK_TRUE;
-    depth_stencil.depthWriteEnable = VK_TRUE;
-    depth_stencil.depthCompareOp = VK_COMPARE_OP_LESS;
-    depth_stencil.depthBoundsTestEnable = VK_FALSE;
-    depth_stencil.minDepthBounds = 0.0f; // Optional
-    depth_stencil.maxDepthBounds = 1.0f; // Optional
-    depth_stencil.stencilTestEnable = VK_FALSE;
-    depth_stencil.front = {}; // Optional
-    depth_stencil.back = {}; // Optional
-
     VkPipelineColorBlendStateCreateInfo color_blending {};
     color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
     color_blending.logicOpEnable = VK_FALSE;
     color_blending.logicOp = VK_LOGIC_OP_COPY; // Optional
     color_blending.attachmentCount = 1;
-    color_blending.pAttachments = &color_blend_attachment;
+    color_blending.pAttachments = &pipeline_color_attachment_states.get_description();
     color_blending.blendConstants[0] = 0.0f; // Optional
     color_blending.blendConstants[1] = 0.0f; // Optional
     color_blending.blendConstants[2] = 0.0f; // Optional
     color_blending.blendConstants[3] = 0.0f; // Optional
 
-    VkDynamicState dynamic_states[] = {
-        VK_DYNAMIC_STATE_VIEWPORT,
-        VK_DYNAMIC_STATE_LINE_WIDTH
-    };
-
     VkPipelineDynamicStateCreateInfo dynamic_state {};
     dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = 2;
-    dynamic_state.pDynamicStates = dynamic_states;
+    dynamic_state.dynamicStateCount = pipeline_dynamic_states.get_dynamic_states().size();
+    dynamic_state.pDynamicStates = pipeline_dynamic_states.get_dynamic_states().data();
 
     VkPipelineLayoutCreateInfo pipeline_layout_info {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -446,8 +424,8 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_info.pInputAssemblyState = &pipeline_input_assembly.get_description();
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &pipeline_rasterization_state.get_description();
-    pipeline_info.pMultisampleState = &multisampling;
-    pipeline_info.pDepthStencilState = &depth_stencil;
+    pipeline_info.pMultisampleState = &pipeline_multisampling_state.get_description();
+    pipeline_info.pDepthStencilState = &pipeline_depth_stencil_states.get_description();
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.pDynamicState = nullptr; // Optional
 
