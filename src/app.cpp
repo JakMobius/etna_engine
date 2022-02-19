@@ -25,6 +25,7 @@
 #include "vulkan/pipeline/vk-viewport.hpp"
 #include "vulkan/pipeline/vk-pipeline-viewport-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-input-assembly.hpp"
+#include "vulkan/pipeline/vk-pipeline-rasterization-state.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -351,6 +352,10 @@ void HelloTriangleApplication::create_graphics_pipeline() {
 
     VK::PipelineInputAssembly pipeline_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
+    VK::PipelineRasterizationState pipeline_rasterization_state {};
+    pipeline_rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
+    pipeline_rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = input_vertex_state.get_binding_descriptions().size();
@@ -364,19 +369,6 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     viewport_state.pViewports = pipeline_viewport_state.get_viewports().data();
     viewport_state.scissorCount = pipeline_viewport_state.get_scissors().size();
     viewport_state.pScissors = pipeline_viewport_state.get_scissors().data();
-
-    VkPipelineRasterizationStateCreateInfo rasterizer {};
-    rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-    rasterizer.depthClampEnable = VK_FALSE;
-    rasterizer.rasterizerDiscardEnable = VK_FALSE;
-    rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
-    rasterizer.lineWidth = 1.0f;
-    rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-    rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    rasterizer.depthBiasEnable = VK_FALSE;
-    rasterizer.depthBiasConstantFactor = 0.0f;
-    rasterizer.depthBiasClamp = 0.0f;
-    rasterizer.depthBiasSlopeFactor = 0.0f;
 
     VkPipelineMultisampleStateCreateInfo multisampling {};
     multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -453,7 +445,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &pipeline_input_assembly.get_description();
     pipeline_info.pViewportState = &viewport_state;
-    pipeline_info.pRasterizationState = &rasterizer;
+    pipeline_info.pRasterizationState = &pipeline_rasterization_state.get_description();
     pipeline_info.pMultisampleState = &multisampling;
     pipeline_info.pDepthStencilState = &depth_stencil;
     pipeline_info.pColorBlendState = &color_blending;
