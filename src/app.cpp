@@ -20,7 +20,8 @@
 #include "vulkan/vk-memory-buffer.hpp"
 #include "vulkan/vk-staging-buffer.hpp"
 #include "vulkan/vk-shader.hpp"
-#include "vulkan/pipeline/vk-pipeline-factory.hpp"
+#include "vulkan/pipeline/vk-vertex-array-binding.hpp"
+#include "vulkan/pipeline/vk-pipeline-shader-stages.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -335,21 +336,18 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
     pipeline_shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    auto vertex_array_binding = VK::VertexArrayBinding(0, 8 * sizeof(float));
-    vertex_array_binding.add_attribute_description(VK_FORMAT_R32G32B32_SFLOAT, 0, sizeof(float) * 0);
-    vertex_array_binding.add_attribute_description(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
-    vertex_array_binding.add_attribute_description(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
+    VK::PipelineInputVertexState input_vertex_state {};
+    auto vertex_array_binding = input_vertex_state.create_binding(0, 8 * sizeof(float));
+    vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 0, sizeof(float) * 0);
+    vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
+    vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexBindingDescriptionCount = 0;
-    vertex_input_info.pVertexBindingDescriptions = nullptr; // Optional
-    vertex_input_info.vertexAttributeDescriptionCount = 0;
-    vertex_input_info.pVertexAttributeDescriptions = nullptr; // Optional
-    vertex_input_info.vertexBindingDescriptionCount = 1;
-    vertex_input_info.vertexAttributeDescriptionCount = 3;
-    vertex_input_info.pVertexBindingDescriptions = vertex_array_binding.get_descriptions();
-    vertex_input_info.pVertexAttributeDescriptions = vertex_array_binding.get_attribute_descriptions().data();
+    vertex_input_info.vertexBindingDescriptionCount = input_vertex_state.get_binding_descriptions().size();
+    vertex_input_info.pVertexBindingDescriptions = input_vertex_state.get_binding_descriptions().data();
+    vertex_input_info.vertexAttributeDescriptionCount = input_vertex_state.get_attribute_descriptions().size();
+    vertex_input_info.pVertexAttributeDescriptions = input_vertex_state.get_attribute_descriptions().data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly {};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
