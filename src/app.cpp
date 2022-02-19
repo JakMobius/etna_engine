@@ -22,6 +22,9 @@
 #include "vulkan/vk-shader.hpp"
 #include "vulkan/pipeline/vk-vertex-array-binding.hpp"
 #include "vulkan/pipeline/vk-pipeline-shader-stages.hpp"
+#include "vulkan/pipeline/vk-viewport.hpp"
+#include "vulkan/pipeline/vk-pipeline-viewport-state.hpp"
+#include "vulkan/pipeline/vk-pipeline-input-assembly.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -342,6 +345,12 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
+    VK::PipelineViewportState pipeline_viewport_state {};
+    pipeline_viewport_state.add_viewport(VK::Viewport(m_swapchain->get_extent()));
+    pipeline_viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain->get_extent()});
+
+    VK::PipelineInputAssembly pipeline_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+
     VkPipelineVertexInputStateCreateInfo vertex_input_info {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
     vertex_input_info.vertexBindingDescriptionCount = input_vertex_state.get_binding_descriptions().size();
@@ -349,29 +358,12 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     vertex_input_info.vertexAttributeDescriptionCount = input_vertex_state.get_attribute_descriptions().size();
     vertex_input_info.pVertexAttributeDescriptions = input_vertex_state.get_attribute_descriptions().data();
 
-    VkPipelineInputAssemblyStateCreateInfo input_assembly {};
-    input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-    input_assembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    input_assembly.primitiveRestartEnable = VK_FALSE;
-
-    VkViewport viewport {};
-    viewport.x = 0.0f;
-    viewport.y = 0.0f;
-    viewport.width = (float) m_swapchain->get_extent().width;
-    viewport.height = (float) m_swapchain->get_extent().height;
-    viewport.minDepth = 0.0f;
-    viewport.maxDepth = 1.0f;
-
-    VkRect2D scissor {};
-    scissor.offset = {0, 0};
-    scissor.extent = m_swapchain->get_extent();
-
     VkPipelineViewportStateCreateInfo viewport_state {};
     viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = 1;
-    viewport_state.pViewports = &viewport;
-    viewport_state.scissorCount = 1;
-    viewport_state.pScissors = &scissor;
+    viewport_state.viewportCount = pipeline_viewport_state.get_viewports().size();
+    viewport_state.pViewports = pipeline_viewport_state.get_viewports().data();
+    viewport_state.scissorCount = pipeline_viewport_state.get_scissors().size();
+    viewport_state.pScissors = pipeline_viewport_state.get_scissors().data();
 
     VkPipelineRasterizationStateCreateInfo rasterizer {};
     rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
@@ -459,7 +451,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_info.pStages = pipeline_shader_stages.get_shader_stages().data();
 
     pipeline_info.pVertexInputState = &vertex_input_info;
-    pipeline_info.pInputAssemblyState = &input_assembly;
+    pipeline_info.pInputAssemblyState = &pipeline_input_assembly.get_description();
     pipeline_info.pViewportState = &viewport_state;
     pipeline_info.pRasterizationState = &rasterizer;
     pipeline_info.pMultisampleState = &multisampling;
