@@ -20,6 +20,7 @@
 #include "vulkan/vk-memory-buffer.hpp"
 #include "vulkan/vk-staging-buffer.hpp"
 #include "vulkan/vk-shader.hpp"
+#include "vulkan/pipeline/vk-pipeline-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -330,44 +331,14 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     VK::Shader vertex_shader   { m_surface_context->get_device(), vert_shader_code };
     VK::Shader fragment_shader { m_surface_context->get_device(), frag_shader_code };
 
-    VkPipelineShaderStageCreateInfo vert_shader_stage_info {};
-    vert_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    vert_shader_stage_info.stage = VK_SHADER_STAGE_VERTEX_BIT;
-    vert_shader_stage_info.module = vertex_shader.get_handle();
-    vert_shader_stage_info.pName = "main";
+    VK::PipelineShaderStages pipeline_shader_stages {};
+    pipeline_shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
+    pipeline_shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VkPipelineShaderStageCreateInfo frag_shader_stage_info {};
-    frag_shader_stage_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-    frag_shader_stage_info.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-    frag_shader_stage_info.module = fragment_shader.get_handle();
-    frag_shader_stage_info.pName = "main";
-
-    VkPipelineShaderStageCreateInfo shader_stages[] = {
-        vert_shader_stage_info,
-        frag_shader_stage_info
-    };
-
-    VkVertexInputBindingDescription binding_description {};
-    binding_description.binding = 0;
-    binding_description.stride = 8 * sizeof(float);
-    binding_description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-
-    VkVertexInputAttributeDescription attribute_descriptions[3] {};
-
-    attribute_descriptions[0].binding = 0;
-    attribute_descriptions[0].location = 0;
-    attribute_descriptions[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attribute_descriptions[0].offset = sizeof(float) * 0;
-
-    attribute_descriptions[1].binding = 0;
-    attribute_descriptions[1].location = 1;
-    attribute_descriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-    attribute_descriptions[1].offset = sizeof(float) * 3;
-
-    attribute_descriptions[2].binding = 0;
-    attribute_descriptions[2].location = 2;
-    attribute_descriptions[2].format = VK_FORMAT_R32G32_SFLOAT;
-    attribute_descriptions[2].offset = sizeof(float) * 6;
+    auto vertex_array_binding = VK::VertexArrayBinding(0, 8 * sizeof(float));
+    vertex_array_binding.add_attribute_description(VK_FORMAT_R32G32B32_SFLOAT, 0, sizeof(float) * 0);
+    vertex_array_binding.add_attribute_description(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
+    vertex_array_binding.add_attribute_description(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info {};
     vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -377,8 +348,8 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     vertex_input_info.pVertexAttributeDescriptions = nullptr; // Optional
     vertex_input_info.vertexBindingDescriptionCount = 1;
     vertex_input_info.vertexAttributeDescriptionCount = 3;
-    vertex_input_info.pVertexBindingDescriptions = &binding_description;
-    vertex_input_info.pVertexAttributeDescriptions = attribute_descriptions;
+    vertex_input_info.pVertexBindingDescriptions = vertex_array_binding.get_descriptions();
+    vertex_input_info.pVertexAttributeDescriptions = vertex_array_binding.get_attribute_descriptions().data();
 
     VkPipelineInputAssemblyStateCreateInfo input_assembly {};
     input_assembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
@@ -486,8 +457,8 @@ void HelloTriangleApplication::create_graphics_pipeline() {
 
     VkGraphicsPipelineCreateInfo pipeline_info {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = 2;
-    pipeline_info.pStages = shader_stages;
+    pipeline_info.stageCount = pipeline_shader_stages.get_shader_stages().size();
+    pipeline_info.pStages = pipeline_shader_stages.get_shader_stages().data();
 
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &input_assembly;
@@ -676,7 +647,7 @@ void HelloTriangleApplication::draw_frame() {
         recreate_swap_chain();
         return;
     } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
-        throw std::runtime_error("failed to acquire swap chain image!");
+        throw std::runtime_error("failed to acquire swap chain image");
     }
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
@@ -803,13 +774,13 @@ void HelloTriangleApplication::create_mesh() {
                 1.0f - attrib.texcoords[2 * index.texcoord_index + 1],
             };
 
-            float length = sqrt(vertex[0] * vertex[0] + vertex[1] * vertex[1] + vertex[2] * vertex[2]);
-
-            length = 1 / sqrt(length);
-
-            vertex[0] = vertex[0] * length;
-            vertex[1] = vertex[1] * length;
-            vertex[2] = vertex[2] * length;
+//            float length = sqrt(vertex[0] * vertex[0] + vertex[1] * vertex[1] + vertex[2] * vertex[2]);
+//
+//            length = 1 / sqrt(length);
+//
+//            vertex[0] = vertex[0] * length;
+//            vertex[1] = vertex[1] * length;
+//            vertex[2] = vertex[2] * length;
 
             for(auto num : vertex) {
                 m_vertex_buffer_storage.push_back(num);
