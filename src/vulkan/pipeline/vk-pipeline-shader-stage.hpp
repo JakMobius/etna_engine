@@ -6,11 +6,11 @@
 
 namespace VK {
 
-class PipelineShaderStages {
+class PipelineShaderStage {
     std::vector <VkPipelineShaderStageCreateInfo> m_shader_stages {};
 public:
 
-    PipelineShaderStages() {}
+    PipelineShaderStage() {}
 
     void add_shader(VK::Shader &shader, VkShaderStageFlagBits stage) {
         m_shader_stages.emplace_back();

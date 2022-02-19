@@ -5,11 +5,11 @@
 
 namespace VK {
 
-class PipelineDynamicStates {
+class PipelineDynamicState {
     std::vector<VkDynamicState> m_dynamic_states {};
 
 public:
-    PipelineDynamicStates() {
+    PipelineDynamicState() {
 
     }
 

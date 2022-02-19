@@ -21,15 +21,15 @@
 #include "vulkan/vk-staging-buffer.hpp"
 #include "vulkan/vk-shader.hpp"
 #include "vulkan/pipeline/vk-vertex-array-binding.hpp"
-#include "vulkan/pipeline/vk-pipeline-shader-stages.hpp"
-#include "vulkan/pipeline/vk-viewport.hpp"
+#include "vulkan/pipeline/vk-pipeline-shader-stage.hpp"
+#include "vulkan/vk-viewport.hpp"
 #include "vulkan/pipeline/vk-pipeline-viewport-state.hpp"
-#include "vulkan/pipeline/vk-pipeline-input-assembly.hpp"
+#include "vulkan/pipeline/vk-pipeline-input-assembly-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-rasterization-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-multisampling-state.hpp"
-#include "vulkan/pipeline/vk-pipeline-dynamic-states.hpp"
+#include "vulkan/pipeline/vk-pipeline-dynamic-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-color-blend-attachment-state.hpp"
-#include "vulkan/pipeline/vk-pipeline-depth-stencil-states.hpp"
+#include "vulkan/pipeline/vk-pipeline-depth-stencil-state.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -340,7 +340,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     VK::Shader vertex_shader   { m_surface_context->get_device(), vert_shader_code };
     VK::Shader fragment_shader { m_surface_context->get_device(), frag_shader_code };
 
-    VK::PipelineShaderStages pipeline_shader_stages {};
+    VK::PipelineShaderStage pipeline_shader_stages {};
     pipeline_shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
     pipeline_shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
@@ -354,7 +354,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_viewport_state.add_viewport(VK::Viewport(m_swapchain->get_extent()));
     pipeline_viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain->get_extent()});
 
-    VK::PipelineInputAssembly pipeline_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+    VK::PipelineInputAssemblyStates pipeline_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
 
     VK::PipelineRasterizationState pipeline_rasterization_state {};
     pipeline_rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
@@ -363,13 +363,13 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     VK::PipelineMultisamplingState pipeline_multisampling_state {};
     pipeline_multisampling_state.set_rasterization_samples(m_msaa_samples);
 
-    VK::PipelineDynamicStates pipeline_dynamic_states {};
+    VK::PipelineDynamicState pipeline_dynamic_states {};
 //    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_VIEWPORT);
 //    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_LINE_WIDTH);
 
     VK::PipelineColorAttachmentState pipeline_color_attachment_states {};
 
-    VK::PipelineDepthStencilStates pipeline_depth_stencil_states {};
+    VK::PipelineDepthStencilState pipeline_depth_stencil_states {};
     pipeline_depth_stencil_states.set_depth_test_enable(true);
     pipeline_depth_stencil_states.set_depth_write_enable(true);
     pipeline_depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);

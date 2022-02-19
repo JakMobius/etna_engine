@@ -4,8 +4,8 @@
 
 #include "vk-vertex-array-binding.hpp"
 
-VK::VertexArrayBinding::VertexArrayBinding(VK::PipelineInputVertexState* input_vertex_state, uint32_t binding,
-                                           uint32_t stride) :
+VK::VertexArrayBindingState::VertexArrayBindingState(VK::PipelineInputVertexState* input_vertex_state, uint32_t binding,
+                                                     uint32_t stride) :
         m_input_vertex_state(input_vertex_state), m_binding(binding) {
     m_input_vertex_state->get_binding_descriptions().emplace_back();
     auto& description = m_input_vertex_state->get_binding_descriptions().back();
@@ -15,7 +15,7 @@ VK::VertexArrayBinding::VertexArrayBinding(VK::PipelineInputVertexState* input_v
     description.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 }
 
-void VK::VertexArrayBinding::add_attribute(VkFormat format, uint32_t location, uint32_t offset) {
+void VK::VertexArrayBindingState::add_attribute(VkFormat format, uint32_t location, uint32_t offset) {
     m_input_vertex_state->get_attribute_descriptions().emplace_back();
     auto& descriptor = m_input_vertex_state->get_attribute_descriptions().back();
 

@@ -4,11 +4,11 @@
 
 namespace VK {
 
-class PipelineDepthStencilStates {
+class PipelineDepthStencilState {
     VkPipelineDepthStencilStateCreateInfo m_description {};
 
 public:
-    PipelineDepthStencilStates() {
+    PipelineDepthStencilState() {
         m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
 
         m_description.depthTestEnable = VK_FALSE;

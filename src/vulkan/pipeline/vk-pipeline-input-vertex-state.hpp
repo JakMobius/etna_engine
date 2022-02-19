@@ -25,7 +25,7 @@ public:
         return m_attribute_descriptions;
     }
 
-    VertexArrayBinding create_binding(uint32_t binding, uint32_t stride);
+    VertexArrayBindingState create_binding(uint32_t binding, uint32_t stride);
 };
 
 }
