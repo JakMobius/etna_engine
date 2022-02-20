@@ -20,7 +20,7 @@
 #include "vulkan/vk-memory-buffer.hpp"
 #include "vulkan/vk-staging-buffer.hpp"
 #include "vulkan/vk-shader.hpp"
-#include "vulkan/pipeline/vk-vertex-array-binding.hpp"
+#include "vulkan/pipeline/vk-pipeline-vertex-array-binding.hpp"
 #include "vulkan/pipeline/vk-pipeline-shader-stage.hpp"
 #include "vulkan/vk-viewport.hpp"
 #include "vulkan/pipeline/vk-pipeline-viewport-state.hpp"
@@ -30,6 +30,7 @@
 #include "vulkan/pipeline/vk-pipeline-dynamic-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-color-blend-attachment-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-depth-stencil-state.hpp"
+#include "vulkan/pipeline/vk-pipeline-color-blend-state.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -367,42 +368,21 @@ void HelloTriangleApplication::create_graphics_pipeline() {
 //    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_VIEWPORT);
 //    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_LINE_WIDTH);
 
+    VK::PipelineColorBlendState pipeline_color_blend_state_create_info {};
+
     VK::PipelineColorAttachmentState pipeline_color_attachment_states {};
+
+    pipeline_color_blend_state_create_info.add_color_attachment(pipeline_color_attachment_states);
 
     VK::PipelineDepthStencilState pipeline_depth_stencil_states {};
     pipeline_depth_stencil_states.set_depth_test_enable(true);
     pipeline_depth_stencil_states.set_depth_write_enable(true);
     pipeline_depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_info {};
-    vertex_input_info.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertex_input_info.vertexBindingDescriptionCount = input_vertex_state.get_binding_descriptions().size();
-    vertex_input_info.pVertexBindingDescriptions = input_vertex_state.get_binding_descriptions().data();
-    vertex_input_info.vertexAttributeDescriptionCount = input_vertex_state.get_attribute_descriptions().size();
-    vertex_input_info.pVertexAttributeDescriptions = input_vertex_state.get_attribute_descriptions().data();
-
-    VkPipelineViewportStateCreateInfo viewport_state {};
-    viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-    viewport_state.viewportCount = pipeline_viewport_state.get_viewports().size();
-    viewport_state.pViewports = pipeline_viewport_state.get_viewports().data();
-    viewport_state.scissorCount = pipeline_viewport_state.get_scissors().size();
-    viewport_state.pScissors = pipeline_viewport_state.get_scissors().data();
-
-    VkPipelineColorBlendStateCreateInfo color_blending {};
-    color_blending.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    color_blending.logicOpEnable = VK_FALSE;
-    color_blending.logicOp = VK_LOGIC_OP_COPY; // Optional
-    color_blending.attachmentCount = 1;
-    color_blending.pAttachments = &pipeline_color_attachment_states.get_description();
-    color_blending.blendConstants[0] = 0.0f; // Optional
-    color_blending.blendConstants[1] = 0.0f; // Optional
-    color_blending.blendConstants[2] = 0.0f; // Optional
-    color_blending.blendConstants[3] = 0.0f; // Optional
-
-    VkPipelineDynamicStateCreateInfo dynamic_state {};
-    dynamic_state.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-    dynamic_state.dynamicStateCount = pipeline_dynamic_states.get_dynamic_states().size();
-    dynamic_state.pDynamicStates = pipeline_dynamic_states.get_dynamic_states().data();
+    VkPipelineVertexInputStateCreateInfo vertex_input_info = input_vertex_state.compile();
+    VkPipelineViewportStateCreateInfo viewport_state = pipeline_viewport_state.compile();
+    VkPipelineColorBlendStateCreateInfo color_blending = pipeline_color_blend_state_create_info.compile();
+    VkPipelineDynamicStateCreateInfo dynamic_state = pipeline_dynamic_states.compile();
 
     VkPipelineLayoutCreateInfo pipeline_layout_info {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -419,7 +399,6 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
     pipeline_info.stageCount = pipeline_shader_stages.get_shader_stages().size();
     pipeline_info.pStages = pipeline_shader_stages.get_shader_stages().data();
-
     pipeline_info.pVertexInputState = &vertex_input_info;
     pipeline_info.pInputAssemblyState = &pipeline_input_assembly.get_description();
     pipeline_info.pViewportState = &viewport_state;
@@ -427,7 +406,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_info.pMultisampleState = &pipeline_multisampling_state.get_description();
     pipeline_info.pDepthStencilState = &pipeline_depth_stencil_states.get_description();
     pipeline_info.pColorBlendState = &color_blending;
-    pipeline_info.pDynamicState = nullptr; // Optional
+    pipeline_info.pDynamicState = &dynamic_state;
 
     pipeline_info.layout = m_pipeline_layout;
     pipeline_info.renderPass = m_render_pass;

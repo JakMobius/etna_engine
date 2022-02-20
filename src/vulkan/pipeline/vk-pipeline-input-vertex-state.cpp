@@ -4,6 +4,6 @@
 
 #include "vk-pipeline-input-vertex-state.hpp"
 
-VK::VertexArrayBindingState VK::PipelineInputVertexState::create_binding(uint32_t binding, uint32_t stride) {
+VK::PipelineVertexArrayBindingState VK::PipelineInputVertexState::create_binding(uint32_t binding, uint32_t stride) {
     return { this, binding, stride };
 }

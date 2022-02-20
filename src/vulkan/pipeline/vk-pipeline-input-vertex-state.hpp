@@ -4,7 +4,7 @@ namespace VK {
 class PipelineInputVertexState;
 }
 
-#include "vk-vertex-array-binding.hpp"
+#include "vk-pipeline-vertex-array-binding.hpp"
 
 namespace VK {
 
@@ -25,7 +25,18 @@ public:
         return m_attribute_descriptions;
     }
 
-    VertexArrayBindingState create_binding(uint32_t binding, uint32_t stride);
+    PipelineVertexArrayBindingState create_binding(uint32_t binding, uint32_t stride);
+
+    VkPipelineVertexInputStateCreateInfo compile() const {
+        VkPipelineVertexInputStateCreateInfo result {};
+        result.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        result.vertexBindingDescriptionCount = m_descriptions.size();
+        result.pVertexBindingDescriptions = m_descriptions.data();
+        result.vertexAttributeDescriptionCount = m_attribute_descriptions.size();
+        result.pVertexAttributeDescriptions = m_attribute_descriptions.data();
+
+        return result;
+    }
 };
 
 }

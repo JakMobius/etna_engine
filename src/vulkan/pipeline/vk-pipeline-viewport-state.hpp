@@ -25,8 +25,18 @@ public:
         m_scissors.push_back(scissor);
     }
 
-    const std::vector<VkViewport>& get_viewports() { return m_viewports; }
-    const std::vector<VkRect2D>& get_scissors() { return m_scissors; }
+    const std::vector<VkViewport>& get_viewports() const { return m_viewports; }
+    const std::vector<VkRect2D>& get_scissors() const { return m_scissors; }
+
+    VkPipelineViewportStateCreateInfo compile() const {
+        VkPipelineViewportStateCreateInfo viewport_state {};
+        viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewport_state.viewportCount = get_viewports().size();
+        viewport_state.pViewports = get_viewports().data();
+        viewport_state.scissorCount = get_scissors().size();
+        viewport_state.pScissors = get_scissors().data();
+        return viewport_state;
+    }
 };
 
 }

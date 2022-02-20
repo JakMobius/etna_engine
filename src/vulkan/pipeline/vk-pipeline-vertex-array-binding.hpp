@@ -1,7 +1,7 @@
 #pragma once
 
 namespace VK {
-class VertexArrayBindingState;
+class PipelineVertexArrayBindingState;
 }
 
 #include <vulkan/vulkan_core.h>
@@ -11,12 +11,12 @@ class VertexArrayBindingState;
 
 namespace VK {
 
-class VertexArrayBindingState {
+class PipelineVertexArrayBindingState {
 
     uint32_t m_binding;
     VK::PipelineInputVertexState* m_input_vertex_state;
 public:
-    VertexArrayBindingState(VK::PipelineInputVertexState* input_vertex_state, uint32_t binding, uint32_t stride);
+    PipelineVertexArrayBindingState(VK::PipelineInputVertexState* input_vertex_state, uint32_t binding, uint32_t stride);
 
     void add_attribute(VkFormat format, uint32_t location, uint32_t offset);
 };

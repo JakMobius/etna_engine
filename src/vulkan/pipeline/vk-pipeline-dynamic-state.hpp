@@ -20,6 +20,14 @@ public:
     std::vector<VkDynamicState>& get_dynamic_states() {
         return m_dynamic_states;
     }
+
+    VkPipelineDynamicStateCreateInfo compile() const {
+        VkPipelineDynamicStateCreateInfo result = {};
+        result.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        result.dynamicStateCount = m_dynamic_states.size();
+        result.pDynamicStates = m_dynamic_states.data();
+        return result;
+    }
 };
 
 }
