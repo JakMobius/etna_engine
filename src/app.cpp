@@ -378,7 +378,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
         std::vector<VkPushConstantRange> {}
     );
 
-    m_graphics_pipeline = pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass);
+    m_graphics_pipeline = std::make_unique<VK::Pipeline>(m_surface_context->get_device(), pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass));
 }
 
 void HelloTriangleApplication::create_render_pass() {
@@ -497,7 +497,7 @@ void HelloTriangleApplication::create_command_buffers() {
         render_pass_begin_info.pClearValues = clear_values;
 
         vkCmdBeginRenderPass(command_buffer->get_handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-        vkCmdBindPipeline(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
+        vkCmdBindPipeline(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline->get_handle());
 
         VkBuffer vertex_buffers[] = { m_vertex_buffer->get_buffer().get_handle() };
         VkDeviceSize offsets[] = { 0 };
@@ -610,11 +610,7 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_descriptor_pool = nullptr;
     }
 
-    if(m_graphics_pipeline) {
-        vkDestroyPipeline(m_surface_context->get_device()->get_handle(), m_graphics_pipeline, nullptr);
-        m_graphics_pipeline = nullptr;
-    }
-
+    if(m_graphics_pipeline) m_graphics_pipeline->destroy();
     if(m_pipeline_layout) m_pipeline_layout->destroy();
 
     if(m_render_pass) {

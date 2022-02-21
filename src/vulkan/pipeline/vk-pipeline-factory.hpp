@@ -9,6 +9,7 @@
 #include "vk-pipeline-color-blend-state.hpp"
 #include "vk-pipeline-depth-stencil-state.hpp"
 #include "vk-pipeline-input-vertex-state.hpp"
+#include "vk-pipeline.hpp"
 
 namespace VK {
 
@@ -24,7 +25,7 @@ public:
     PipelineColorBlendState color_blend_state_create_info {};
     PipelineDepthStencilState depth_stencil_states {};
 
-    VkPipeline create(VK::Device* device, VkPipelineLayout pipeline_layout, VkRenderPass render_pass) {
+    VkPipeline create(Device* device, VkPipelineLayout pipeline_layout, VkRenderPass render_pass) {
         auto vk_vertex_input_info = input_vertex_state.compile();
         auto vk_viewport_state = viewport_state.compile();
         auto vk_color_blending = color_blend_state_create_info.compile();

@@ -11,8 +11,8 @@ class PipelineLayout {
     VK::Device* m_device;
 public:
     PipelineLayout(Device* device,
-                   std::vector<VkDescriptorSetLayout> descriptor_set_layouts,
-                   std::vector<VkPushConstantRange> push_constant_ranges): m_device(device) {
+                   const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
+                   const std::vector<VkPushConstantRange>& push_constant_ranges): m_device(device) {
         VkPipelineLayoutCreateInfo pipeline_layout_info {};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = descriptor_set_layouts.size();
