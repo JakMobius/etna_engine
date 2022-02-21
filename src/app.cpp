@@ -31,6 +31,7 @@
 #include "vulkan/pipeline/vk-pipeline-color-blend-attachment-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-depth-stencil-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-color-blend-state.hpp"
+#include "vulkan/pipeline/vk-pipeline-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -335,15 +336,17 @@ void HelloTriangleApplication::create_swap_chain() {
 }
 
 void HelloTriangleApplication::create_graphics_pipeline() {
+
+    VK::PipelineFactory pipeline_factory {};
+
     auto vert_shader_code = read_file("resources/shaders/vert.spv");
     auto frag_shader_code = read_file("resources/shaders/frag.spv");
 
     VK::Shader vertex_shader   { m_surface_context->get_device(), vert_shader_code };
     VK::Shader fragment_shader { m_surface_context->get_device(), frag_shader_code };
 
-    VK::PipelineShaderStage pipeline_shader_stages {};
-    pipeline_shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
-    pipeline_shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
+    pipeline_factory.shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
+    pipeline_factory.shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
     VK::PipelineInputVertexState input_vertex_state {};
     auto vertex_array_binding = input_vertex_state.create_binding(0, 8 * sizeof(float));
@@ -351,64 +354,50 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
-    VK::PipelineViewportState pipeline_viewport_state {};
-    pipeline_viewport_state.add_viewport(VK::Viewport(m_swapchain->get_extent()));
-    pipeline_viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain->get_extent()});
+    pipeline_factory.viewport_state.add_viewport(VK::Viewport(m_swapchain->get_extent()));
+    pipeline_factory.viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain->get_extent()});
 
-    VK::PipelineInputAssemblyStates pipeline_input_assembly(VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST, false);
+    pipeline_factory.rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
+    pipeline_factory.rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-    VK::PipelineRasterizationState pipeline_rasterization_state {};
-    pipeline_rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
-    pipeline_rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    pipeline_factory.multisampling_state.set_rasterization_samples(m_msaa_samples);
 
-    VK::PipelineMultisamplingState pipeline_multisampling_state {};
-    pipeline_multisampling_state.set_rasterization_samples(m_msaa_samples);
-
-    VK::PipelineDynamicState pipeline_dynamic_states {};
 //    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_VIEWPORT);
 //    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_LINE_WIDTH);
 
-    VK::PipelineColorBlendState pipeline_color_blend_state_create_info {};
-
     VK::PipelineColorAttachmentState pipeline_color_attachment_states {};
 
-    pipeline_color_blend_state_create_info.add_color_attachment(pipeline_color_attachment_states);
+    pipeline_factory.color_blend_state_create_info.add_color_attachment(pipeline_color_attachment_states);
 
-    VK::PipelineDepthStencilState pipeline_depth_stencil_states {};
-    pipeline_depth_stencil_states.set_depth_test_enable(true);
-    pipeline_depth_stencil_states.set_depth_write_enable(true);
-    pipeline_depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
+    pipeline_factory.depth_stencil_states.set_depth_test_enable(true);
+    pipeline_factory.depth_stencil_states.set_depth_write_enable(true);
+    pipeline_factory.depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
 
     VkPipelineVertexInputStateCreateInfo vertex_input_info = input_vertex_state.compile();
-    VkPipelineViewportStateCreateInfo viewport_state = pipeline_viewport_state.compile();
-    VkPipelineColorBlendStateCreateInfo color_blending = pipeline_color_blend_state_create_info.compile();
-    VkPipelineDynamicStateCreateInfo dynamic_state = pipeline_dynamic_states.compile();
+    VkPipelineViewportStateCreateInfo viewport_state = pipeline_factory.viewport_state.compile();
+    VkPipelineColorBlendStateCreateInfo color_blending = pipeline_factory.color_blend_state_create_info.compile();
+    VkPipelineDynamicStateCreateInfo dynamic_state = pipeline_factory.dynamic_states.compile();
 
-    VkPipelineLayoutCreateInfo pipeline_layout_info {};
-    pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    pipeline_layout_info.setLayoutCount = 1; // Optional
-    pipeline_layout_info.pSetLayouts = &m_descriptor_set_layout; // Optional
-    pipeline_layout_info.pushConstantRangeCount = 0; // Optional
-    pipeline_layout_info.pPushConstantRanges = nullptr; // Optional
-
-    if (vkCreatePipelineLayout(m_surface_context->get_device()->get_handle(), &pipeline_layout_info, nullptr, &m_pipeline_layout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create pipeline layout");
-    }
+    m_pipeline_layout = std::make_unique<VK::PipelineLayout>(
+        m_surface_context->get_device(),
+        std::vector<VkDescriptorSetLayout> { m_descriptor_set_layout },
+        std::vector<VkPushConstantRange> {}
+    );
 
     VkGraphicsPipelineCreateInfo pipeline_info {};
     pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = pipeline_shader_stages.get_shader_stages().size();
-    pipeline_info.pStages = pipeline_shader_stages.get_shader_stages().data();
+    pipeline_info.stageCount = pipeline_factory.shader_stages.get_shader_stages().size();
+    pipeline_info.pStages = pipeline_factory.shader_stages.get_shader_stages().data();
     pipeline_info.pVertexInputState = &vertex_input_info;
-    pipeline_info.pInputAssemblyState = &pipeline_input_assembly.get_description();
+    pipeline_info.pInputAssemblyState = &pipeline_factory.input_assembly.get_description();
     pipeline_info.pViewportState = &viewport_state;
-    pipeline_info.pRasterizationState = &pipeline_rasterization_state.get_description();
-    pipeline_info.pMultisampleState = &pipeline_multisampling_state.get_description();
-    pipeline_info.pDepthStencilState = &pipeline_depth_stencil_states.get_description();
+    pipeline_info.pRasterizationState = &pipeline_factory.rasterization_state.get_description();
+    pipeline_info.pMultisampleState = &pipeline_factory.multisampling_state.get_description();
+    pipeline_info.pDepthStencilState = &pipeline_factory.depth_stencil_states.get_description();
     pipeline_info.pColorBlendState = &color_blending;
     pipeline_info.pDynamicState = &dynamic_state;
 
-    pipeline_info.layout = m_pipeline_layout;
+    pipeline_info.layout = m_pipeline_layout->get_handle();
     pipeline_info.renderPass = m_render_pass;
     pipeline_info.subpass = 0;
 
@@ -542,7 +531,7 @@ void HelloTriangleApplication::create_command_buffers() {
         VkDeviceSize offsets[] = { 0 };
         vkCmdBindVertexBuffers(command_buffer->get_handle(), 0, 1, vertex_buffers, offsets);
         vkCmdBindIndexBuffer(command_buffer->get_handle(), m_index_buffer->get_buffer().get_handle(), 0, VK_INDEX_TYPE_UINT32);
-        vkCmdBindDescriptorSets(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout, 0, 1, &m_descriptor_sets->get_descriptor_sets()[i], 0, nullptr);
+        vkCmdBindDescriptorSets(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout->get_handle(), 0, 1, &m_descriptor_sets->get_descriptor_sets()[i], 0, nullptr);
         vkCmdDrawIndexed(command_buffer->get_handle(), m_index_buffer_storage.size(), 1, 0, 0, 0);
         vkCmdEndRenderPass(command_buffer->get_handle());
 
@@ -654,10 +643,7 @@ void HelloTriangleApplication::cleanup_swap_chain() {
         m_graphics_pipeline = nullptr;
     }
 
-    if(m_pipeline_layout) {
-        vkDestroyPipelineLayout(m_surface_context->get_device()->get_handle(), m_pipeline_layout, nullptr);
-        m_pipeline_layout = nullptr;
-    }
+    if(m_pipeline_layout) m_pipeline_layout->destroy();
 
     if(m_render_pass) {
         vkDestroyRenderPass(m_surface_context->get_device()->get_handle(), m_render_pass, nullptr);

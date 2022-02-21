@@ -25,6 +25,7 @@
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/vk-memory-buffer.hpp"
 #include "vulkan/vk-memory-image2d.hpp"
+#include "vulkan/pipeline/vk-pipeline-layout.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -61,7 +62,7 @@ class HelloTriangleApplication {
     std::vector<std::unique_ptr<VK::MemoryBuffer>> m_uniform_buffers {};
 
     VkRenderPass m_render_pass {};
-    VkPipelineLayout m_pipeline_layout {};
+    std::unique_ptr<VK::PipelineLayout> m_pipeline_layout {};
     VkPipeline m_graphics_pipeline {};
 
     std::unique_ptr<VK::MemoryBuffer> m_vertex_buffer {};
