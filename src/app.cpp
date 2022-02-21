@@ -348,8 +348,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_factory.shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
     pipeline_factory.shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VK::PipelineInputVertexState input_vertex_state {};
-    auto vertex_array_binding = input_vertex_state.create_binding(0, 8 * sizeof(float));
+    auto vertex_array_binding = pipeline_factory.input_vertex_state.create_binding(0, 8 * sizeof(float));
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 0, sizeof(float) * 0);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
@@ -373,40 +372,13 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_factory.depth_stencil_states.set_depth_write_enable(true);
     pipeline_factory.depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
 
-    VkPipelineVertexInputStateCreateInfo vertex_input_info = input_vertex_state.compile();
-    VkPipelineViewportStateCreateInfo viewport_state = pipeline_factory.viewport_state.compile();
-    VkPipelineColorBlendStateCreateInfo color_blending = pipeline_factory.color_blend_state_create_info.compile();
-    VkPipelineDynamicStateCreateInfo dynamic_state = pipeline_factory.dynamic_states.compile();
-
     m_pipeline_layout = std::make_unique<VK::PipelineLayout>(
         m_surface_context->get_device(),
         std::vector<VkDescriptorSetLayout> { m_descriptor_set_layout },
         std::vector<VkPushConstantRange> {}
     );
 
-    VkGraphicsPipelineCreateInfo pipeline_info {};
-    pipeline_info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-    pipeline_info.stageCount = pipeline_factory.shader_stages.get_shader_stages().size();
-    pipeline_info.pStages = pipeline_factory.shader_stages.get_shader_stages().data();
-    pipeline_info.pVertexInputState = &vertex_input_info;
-    pipeline_info.pInputAssemblyState = &pipeline_factory.input_assembly.get_description();
-    pipeline_info.pViewportState = &viewport_state;
-    pipeline_info.pRasterizationState = &pipeline_factory.rasterization_state.get_description();
-    pipeline_info.pMultisampleState = &pipeline_factory.multisampling_state.get_description();
-    pipeline_info.pDepthStencilState = &pipeline_factory.depth_stencil_states.get_description();
-    pipeline_info.pColorBlendState = &color_blending;
-    pipeline_info.pDynamicState = &dynamic_state;
-
-    pipeline_info.layout = m_pipeline_layout->get_handle();
-    pipeline_info.renderPass = m_render_pass;
-    pipeline_info.subpass = 0;
-
-    pipeline_info.basePipelineHandle = nullptr; // Optional
-    pipeline_info.basePipelineIndex = -1; // Optional
-
-    if (vkCreateGraphicsPipelines(m_surface_context->get_device()->get_handle(), VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &m_graphics_pipeline) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create graphics pipeline");
-    }
+    m_graphics_pipeline = pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass);
 }
 
 void HelloTriangleApplication::create_render_pass() {
