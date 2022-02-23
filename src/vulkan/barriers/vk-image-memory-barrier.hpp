@@ -60,6 +60,14 @@ public:
     VkImageMemoryBarrier& get_description() {
         return m_description;
     }
+
+    void write(CommandBuffer* command_buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask) {
+        vkCmdPipelineBarrier(command_buffer->get_handle(),
+                             src_mask, dst_mask, 0,
+                             0, nullptr,
+                             0, nullptr,
+                             1, &m_description);
+    }
 };
 
 }

@@ -914,12 +914,7 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
         barrier.set_mip_level_base(i - 1);
         barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
         barrier.set_access_masks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
-
-        vkCmdPipelineBarrier(command_buffer->get_handle(),
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0,
-                             0, nullptr,
-                             0, nullptr,
-                             1, &barrier.get_description());
+        barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
         VK::ImageBlitCommand blit_command(image, image);
         blit_command.set_source_layout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -931,12 +926,7 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
 
         barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
         barrier.set_access_masks(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
-
-        vkCmdPipelineBarrier(command_buffer->get_handle(),
-                             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                             0, nullptr,
-                             0, nullptr,
-                             1, &barrier.get_description());
+        barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 
         if (mip_width > 1) mip_width /= 2;
         if (mip_height > 1) mip_height /= 2;
@@ -945,12 +935,7 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
     barrier.set_mip_level_base(image->get_mip_levels() - 1);
     barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     barrier.set_access_masks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
-
-    vkCmdPipelineBarrier(command_buffer->get_handle(),
-                         VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0,
-                         0, nullptr,
-                         0, nullptr,
-                         1, &barrier.get_description());
+    barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 }
 
 void HelloTriangleApplication::create_texture_sampler() {
