@@ -15,7 +15,7 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 #include "vulkan/commands/vk-copy-buffer-command.hpp"
-#include "vulkan/commands/copy-buffer-to-image-command.hpp"
+#include "vulkan/commands/vk-copy-buffer-to-image-command.hpp"
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/vk-memory-buffer.hpp"
 #include "vulkan/vk-staging-buffer.hpp"
@@ -35,6 +35,7 @@
 #include "vulkan/vk-attachment.hpp"
 #include "vulkan/vk-sampler-factory.hpp"
 #include "vulkan/vk-sampler.hpp"
+#include "vulkan/commands/vk-image-blit-command.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -928,25 +929,15 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
                              0, nullptr,
                              1, &barrier);
 
-        VkImageBlit blit{};
-        blit.srcOffsets[0] = { 0, 0, 0 };
-        blit.srcOffsets[1] = { mip_width, mip_height, 1 };
-        blit.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        blit.srcSubresource.mipLevel = i - 1;
-        blit.srcSubresource.baseArrayLayer = 0;
-        blit.srcSubresource.layerCount = 1;
-        blit.dstOffsets[0] = { 0, 0, 0 };
-        blit.dstOffsets[1] = { mip_width > 1 ? mip_width / 2 : 1, mip_height > 1 ? mip_height / 2 : 1, 1 };
-        blit.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        blit.dstSubresource.mipLevel = i;
-        blit.dstSubresource.baseArrayLayer = 0;
-        blit.dstSubresource.layerCount = 1;
+        VK::ImageBlitCommand blit_command(image, image);
 
-        vkCmdBlitImage(command_buffer->get_handle(),
-                       image->get_handle(), VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                       image->get_handle(), VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-                       1, &blit,
-                       VK_FILTER_LINEAR);
+        blit_command.set_source_layout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+        blit_command.set_destination_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
+        blit_command.set_source_mip_level(i - 1);
+        blit_command.set_destination_mip_level(i);
+
+        blit_command.setup_mip_offsets(mip_width, mip_height);
 
         barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
         barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -980,9 +971,7 @@ void HelloTriangleApplication::create_texture_sampler() {
     VK::SamplerFactory sampler_factory {};
     sampler_factory.set_mag_filter(VK_FILTER_LINEAR);
     sampler_factory.set_min_filter(VK_FILTER_LINEAR);
-    sampler_factory.set_address_mode_u(VK_SAMPLER_ADDRESS_MODE_REPEAT);
-    sampler_factory.set_address_mode_v(VK_SAMPLER_ADDRESS_MODE_REPEAT);
-    sampler_factory.set_address_mode_w(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    sampler_factory.set_address_modes_uvw(VK_SAMPLER_ADDRESS_MODE_REPEAT);
     sampler_factory.set_anisotropy_enable(VK_TRUE);
     sampler_factory.set_max_anisotropy(m_physical_device->get_physical_properties()->limits.maxSamplerAnisotropy);
     sampler_factory.set_max_lod((float) m_mip_levels);
