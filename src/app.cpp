@@ -33,6 +33,8 @@
 #include "vulkan/pipeline/vk-pipeline-color-blend-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-factory.hpp"
 #include "vulkan/vk-attachment.hpp"
+#include "vulkan/vk-sampler-factory.hpp"
+#include "vulkan/vk-sampler.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -259,11 +261,7 @@ void HelloTriangleApplication::cleanup() {
     }
     m_render_finished_semaphores.clear();
 
-    if(m_texture_sampler) {
-        vkDestroySampler(m_surface_context->get_device()->get_handle(), m_texture_sampler, nullptr);
-        m_texture_sampler = nullptr;
-    }
-
+    if(m_texture_sampler) m_texture_sampler->destroy();
     if(m_texture_image_view) m_texture_image_view->destroy();
     if(m_texture_image) m_texture_image->destroy();
 
@@ -383,39 +381,37 @@ void HelloTriangleApplication::create_graphics_pipeline() {
 }
 
 void HelloTriangleApplication::create_render_pass() {
+
+    m_swapchain->get_framebuffer_attachments().assign({
+        m_color_image_view.get(),
+        m_depth_image_view.get()
+    });
+
     VK::Attachment color_attachment { m_swapchain->get_image_format() };
     color_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
     color_attachment.set_samples(m_msaa_samples);
     color_attachment.set_final_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
-
-    VkAttachmentReference color_attachment_ref {};
-    color_attachment_ref.attachment = 0;
-    color_attachment_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
     VK::Attachment depth_attachment { find_depth_format() };
     depth_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
     depth_attachment.set_samples(m_msaa_samples);
     depth_attachment.set_final_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    VkAttachmentReference depth_attachment_ref {};
-    depth_attachment_ref.attachment = 1;
-    depth_attachment_ref.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
     VK::Attachment resolve_attachment { m_swapchain->get_image_format() };
     resolve_attachment.set_samples(VK_SAMPLE_COUNT_1_BIT);
     resolve_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE);
     resolve_attachment.set_final_layout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    VkAttachmentReference color_attachment_resolve_ref{};
-    color_attachment_resolve_ref.attachment = 2;
-    color_attachment_resolve_ref.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    VkAttachmentReference color_attachment_ref { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    VkAttachmentReference depth_attachment_ref { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
+    VkAttachmentReference color_resolve_attachment_ref { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
 
     VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
     subpass.colorAttachmentCount = 1;
     subpass.pColorAttachments = &color_attachment_ref;
     subpass.pDepthStencilAttachment = &depth_attachment_ref;
-    subpass.pResolveAttachments = &color_attachment_resolve_ref;
+    subpass.pResolveAttachments = &color_resolve_attachment_ref;
 
     VkSubpassDependency dependency {};
     dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
@@ -440,10 +436,6 @@ void HelloTriangleApplication::create_render_pass() {
         throw std::runtime_error("failed to create render pass");
     }
 
-    m_swapchain->get_framebuffer_attachments().assign({
-        m_color_image_view.get(),
-        m_depth_image_view.get()
-    });
     m_swapchain->create_images(m_render_pass);
 }
 
@@ -823,7 +815,7 @@ void HelloTriangleApplication::create_descriptor_sets() {
         VkDescriptorImageInfo image_info {};
         image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
         image_info.imageView = m_texture_image_view->get_handle();
-        image_info.sampler = m_texture_sampler;
+        image_info.sampler = m_texture_sampler->get_handle();
 
         VkWriteDescriptorSet descriptor_write[2] {};
         descriptor_write[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -985,36 +977,18 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
 }
 
 void HelloTriangleApplication::create_texture_sampler() {
-    VkSamplerCreateInfo sampler_info {};
-    sampler_info.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-    sampler_info.magFilter = VK_FILTER_LINEAR;
-    sampler_info.minFilter = VK_FILTER_LINEAR;
+    VK::SamplerFactory sampler_factory {};
+    sampler_factory.set_mag_filter(VK_FILTER_LINEAR);
+    sampler_factory.set_min_filter(VK_FILTER_LINEAR);
+    sampler_factory.set_address_mode_u(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    sampler_factory.set_address_mode_v(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    sampler_factory.set_address_mode_w(VK_SAMPLER_ADDRESS_MODE_REPEAT);
+    sampler_factory.set_anisotropy_enable(VK_TRUE);
+    sampler_factory.set_max_anisotropy(m_physical_device->get_physical_properties()->limits.maxSamplerAnisotropy);
+    sampler_factory.set_max_lod((float) m_mip_levels);
+    sampler_factory.set_min_lod((float) 0.0f);
 
-//    sampler_info.magFilter = VK_FILTER_NEAREST;
-//    sampler_info.minFilter = VK_FILTER_NEAREST;
-
-    sampler_info.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    sampler_info.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-
-    sampler_info.anisotropyEnable = VK_TRUE;
-
-    sampler_info.maxAnisotropy = m_physical_device->get_physical_properties()->limits.maxSamplerAnisotropy;
-    sampler_info.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-    sampler_info.unnormalizedCoordinates = VK_FALSE;
-    sampler_info.compareEnable = VK_FALSE;
-    sampler_info.compareOp = VK_COMPARE_OP_ALWAYS;
-    sampler_info.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    sampler_info.mipLodBias = 0.0f;
-//    sampler_info.maxLod = (float) m_mip_levels;
-//    sampler_info.minLod = (float) 0.0f;
-
-    sampler_info.maxLod = 0;
-    sampler_info.minLod = 0;
-
-    if (vkCreateSampler(m_surface_context->get_device()->get_handle(), &sampler_info, nullptr, &m_texture_sampler) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create texture sampler");
-    }
+    m_texture_sampler = std::make_unique<VK::Sampler>(sampler_factory.create(m_surface_context->get_device()), m_surface_context->get_device());
 }
 
 VkFormat HelloTriangleApplication::find_depth_format() {

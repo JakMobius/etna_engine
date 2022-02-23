@@ -27,6 +27,7 @@
 #include "vulkan/vk-memory-image2d.hpp"
 #include "vulkan/pipeline/vk-pipeline-layout.hpp"
 #include "vulkan/pipeline/vk-pipeline.hpp"
+#include "vulkan/vk-sampler.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -75,7 +76,7 @@ class HelloTriangleApplication {
 
     std::unique_ptr<VK::MemoryImage2D> m_texture_image {};
     std::unique_ptr<VK::ImageView> m_texture_image_view {};
-    VkSampler m_texture_sampler {};
+    std::unique_ptr<VK::Sampler> m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
