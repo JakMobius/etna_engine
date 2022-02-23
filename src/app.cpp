@@ -362,9 +362,6 @@ void HelloTriangleApplication::create_graphics_pipeline() {
 
     pipeline_factory.multisampling_state.set_rasterization_samples(m_msaa_samples);
 
-//    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_VIEWPORT);
-//    pipeline_dynamic_states.add_dynamic_state(VK_DYNAMIC_STATE_LINE_WIDTH);
-
     VK::PipelineColorAttachmentState pipeline_color_attachment_states {};
 
     pipeline_factory.color_blend_state_create_info.add_color_attachment(pipeline_color_attachment_states);
