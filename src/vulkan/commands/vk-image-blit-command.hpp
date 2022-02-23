@@ -40,8 +40,8 @@ public:
     void set_src_layer(int layer) { m_description.srcSubresource.baseArrayLayer = layer; }
     void set_dst_layer(int layer) { m_description.dstSubresource.baseArrayLayer = layer; }
 
-    void set_source_mip_level(int level) { m_description.srcSubresource.mipLevel = level; }
-    void set_destination_mip_level(int level) { m_description.dstSubresource.mipLevel = level; }
+    void set_source_mip_level(uint32_t level) { m_description.srcSubresource.mipLevel = level; }
+    void set_destination_mip_level(uint32_t level) { m_description.dstSubresource.mipLevel = level; }
 
     void set_filter(VkFilter filter) { m_filter = filter; }
     void set_source_layout(VkImageLayout source_layout) { m_source_layout = source_layout; }
