@@ -25,7 +25,7 @@ public:
 
     virtual ~DeviceResourceBase() = default;
 
-    T get_handle() const { return m_handle; };
+    const T& get_handle() const { return m_handle; };
     Device* get_device() const { return m_device; };
 };
 
@@ -51,6 +51,10 @@ public:
     using DeviceResourceBase<T>::operator=;
 
     ~DeviceResource() override = default;
+
+    UnownedDeviceResource<T> unowned_copy() {
+        return UnownedDeviceResource<T> { this->m_device, this->m_handle };
+    }
 };
 
 }

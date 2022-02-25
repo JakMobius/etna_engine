@@ -28,6 +28,8 @@
 #include "vulkan/pipeline/vk-pipeline-layout.hpp"
 #include "vulkan/pipeline/vk-pipeline.hpp"
 #include "vulkan/vk-sampler.hpp"
+#include "vulkan/vk-semaphore.hpp"
+#include "vulkan/vk-fence.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -54,10 +56,10 @@ class HelloTriangleApplication {
 
     std::unique_ptr<VK::Swapchain> m_swapchain {};
 
-    std::vector<VkSemaphore> m_image_available_semaphores {};
-    std::vector<VkSemaphore> m_render_finished_semaphores {};
-    std::vector<VkFence> m_in_flight_fences {};
-    std::vector<VkFence> m_in_flight_images {};
+    std::vector<VK::Semaphore> m_image_available_semaphores {};
+    std::vector<VK::Semaphore> m_render_finished_semaphores {};
+    std::vector<VK::Fence> m_in_flight_fences {};
+    std::vector<VK::UnownedFence> m_in_flight_images {};
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
 

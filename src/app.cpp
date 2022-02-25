@@ -250,19 +250,9 @@ void HelloTriangleApplication::cleanup() {
 
     cleanup_swap_chain();
 
-    for(auto& semaphore : m_image_available_semaphores) {
-        if(semaphore) {
-            vkDestroySemaphore(m_surface_context->get_device()->get_handle(), semaphore, nullptr);
-        }
-    }
     m_image_available_semaphores.clear();
-
-    for(auto& semaphore : m_render_finished_semaphores) {
-        if(semaphore) {
-            vkDestroySemaphore(m_surface_context->get_device()->get_handle(), semaphore, nullptr);
-        }
-    }
     m_render_finished_semaphores.clear();
+    m_in_flight_fences.clear();
 
     if(m_texture_sampler) m_texture_sampler->destroy();
     if(m_texture_image_view) m_texture_image_view->destroy();
@@ -277,11 +267,6 @@ void HelloTriangleApplication::cleanup() {
     if(m_vertex_buffer) m_vertex_buffer->destroy();
 
     m_debug_callback_handler.stop_listening();
-
-    for(auto& fence : m_in_flight_fences) {
-        vkDestroyFence(m_surface_context->get_device()->get_handle(), fence, nullptr);
-    }
-    m_in_flight_fences.clear();
 
     m_surface_context = nullptr;
     m_physical_device = nullptr;
@@ -485,34 +470,24 @@ void HelloTriangleApplication::create_command_buffers() {
 
 void HelloTriangleApplication::create_sync_objects() {
 
-    m_image_available_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_render_finished_semaphores.resize(MAX_FRAMES_IN_FLIGHT);
-    m_in_flight_fences.resize(MAX_FRAMES_IN_FLIGHT);
-    m_in_flight_images.resize(m_swapchain->get_image_count(), nullptr);
-
-    VkSemaphoreCreateInfo semaphore_info {};
-    semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    VkFenceCreateInfo fence_info {};
-    fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
+    m_image_available_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+    m_render_finished_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
+    m_in_flight_fences.reserve(MAX_FRAMES_IN_FLIGHT);
+    m_in_flight_images.resize(m_swapchain->get_image_count(), { nullptr, nullptr });
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        if(vkCreateSemaphore(m_surface_context->get_device()->get_handle(), &semaphore_info, nullptr, &m_image_available_semaphores[i]) != VK_SUCCESS ||
-           vkCreateSemaphore(m_surface_context->get_device()->get_handle(), &semaphore_info, nullptr, &m_render_finished_semaphores[i]) != VK_SUCCESS ||
-           vkCreateFence(m_surface_context->get_device()->get_handle(), &fence_info, nullptr, &m_in_flight_fences[i]) != VK_SUCCESS) {
-
-            throw std::runtime_error("failed to create synchronization objects for a frame");
-        }
+        m_image_available_semaphores.push_back(VK::Semaphore::create(m_surface_context->get_device()));
+        m_render_finished_semaphores.push_back(VK::Semaphore::create(m_surface_context->get_device()));
+        m_in_flight_fences.push_back(VK::Fence::create(m_surface_context->get_device(), VK_FENCE_CREATE_SIGNALED_BIT));
     }
 }
 
 void HelloTriangleApplication::draw_frame() {
 
-    vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame], VK_TRUE, UINT64_MAX);
+    vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame].get_handle(), VK_TRUE, UINT64_MAX);
 
     uint32_t image_index = 0;
-    auto result = vkAcquireNextImageKHR(m_surface_context->get_device()->get_handle(), m_swapchain->get_handle(), UINT64_MAX, m_image_available_semaphores[m_current_frame], VK_NULL_HANDLE, &image_index);
+    auto result = vkAcquireNextImageKHR(m_surface_context->get_device()->get_handle(), m_swapchain->get_handle(), UINT64_MAX, m_image_available_semaphores[m_current_frame].get_handle(), VK_NULL_HANDLE, &image_index);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         m_framebuffer_resized = false;
@@ -523,24 +498,24 @@ void HelloTriangleApplication::draw_frame() {
     }
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
-    if (m_in_flight_images[image_index] != nullptr) {
-        vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_images[image_index], VK_TRUE, UINT64_MAX);
+    if (m_in_flight_images[image_index].get_handle() != nullptr) {
+        vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_images[image_index].get_handle(), VK_TRUE, UINT64_MAX);
     }
     // Mark the image as now being in use by this frame
-    m_in_flight_images[image_index] = m_in_flight_fences[m_current_frame];
+    m_in_flight_images[image_index] = m_in_flight_fences[m_current_frame].unowned_copy();
 
     update_uniform_buffer(image_index);
 
-    vkResetFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame]);
+    vkResetFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame].get_handle());
 
     auto& swapchain_entry = m_swapchain->get_entries()[image_index];
 
     auto command_buffer = swapchain_entry.m_command_buffer.get();
 
-    command_buffer->get_wait_semaphores().assign({ m_image_available_semaphores[m_current_frame] });
-    command_buffer->get_signal_semaphores().assign({ m_render_finished_semaphores[m_current_frame] });
+    command_buffer->get_wait_semaphores().assign({ m_image_available_semaphores[m_current_frame].get_handle() });
+    command_buffer->get_signal_semaphores().assign({ m_render_finished_semaphores[m_current_frame].get_handle() });
 
-    command_buffer->submit(m_surface_context->get_device_graphics_queue(),m_in_flight_fences[m_current_frame]);
+    command_buffer->submit(m_surface_context->get_device_graphics_queue(),m_in_flight_fences[m_current_frame].get_handle());
 
     VkPresentInfoKHR present_info {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
