@@ -27,9 +27,10 @@
 #include "vulkan/image/vk-memory-image.hpp"
 #include "vulkan/pipeline/vk-pipeline-layout.hpp"
 #include "vulkan/pipeline/vk-pipeline.hpp"
-#include "vulkan/vk-sampler.hpp"
+#include "vulkan/sampler/vk-sampler.hpp"
 #include "vulkan/vk-semaphore.hpp"
 #include "vulkan/vk-fence.hpp"
+#include "vulkan/render-pass/vk-render-pass.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -65,7 +66,7 @@ class HelloTriangleApplication {
 
     std::vector<VK::MemoryBuffer> m_uniform_buffers {};
 
-    VkRenderPass m_render_pass {};
+    std::unique_ptr<VK::RenderPass> m_render_pass {};
     std::unique_ptr<VK::PipelineLayout> m_pipeline_layout {};
     std::unique_ptr<VK::Pipeline> m_graphics_pipeline {};
 

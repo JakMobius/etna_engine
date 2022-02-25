@@ -33,12 +33,12 @@
 #include "vulkan/pipeline/vk-pipeline-color-blend-state.hpp"
 #include "vulkan/pipeline/vk-pipeline-factory.hpp"
 #include "vulkan/vk-attachment.hpp"
-#include "vulkan/vk-sampler-factory.hpp"
-#include "vulkan/vk-sampler.hpp"
+#include "vulkan/sampler/vk-sampler-factory.hpp"
+#include "vulkan/sampler/vk-sampler.hpp"
 #include "vulkan/commands/vk-image-blit-command.hpp"
 #include "vulkan/barriers/vk-image-memory-barrier.hpp"
 #include "vulkan/image/vk-image-factory.hpp"
-#include "vulkan/vk-render-pass-factory.hpp"
+#include "vulkan/render-pass/vk-render-pass-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -363,7 +363,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
         std::vector<VkPushConstantRange> {}
     );
 
-    m_graphics_pipeline = std::make_unique<VK::Pipeline>(m_surface_context->get_device(), pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass));
+    m_graphics_pipeline = std::make_unique<VK::Pipeline>(m_surface_context->get_device(), pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass->get_handle()));
 }
 
 void HelloTriangleApplication::create_render_pass() {
@@ -414,8 +414,8 @@ void HelloTriangleApplication::create_render_pass() {
     render_pass_factory.get_subpass_descriptions().assign({ subpass });
     render_pass_factory.get_subpass_dependency_descriptions().assign({ dependency });
 
-    m_render_pass = render_pass_factory.create(m_surface_context->get_device());
-    m_swapchain->create_images(m_render_pass);
+    m_render_pass = std::make_unique<VK::RenderPass>(render_pass_factory.create(m_surface_context->get_device()));
+    m_swapchain->create_images(m_render_pass->get_handle());
 }
 
 void HelloTriangleApplication::create_command_buffers() {
@@ -434,7 +434,7 @@ void HelloTriangleApplication::create_command_buffers() {
 
         VkRenderPassBeginInfo render_pass_begin_info {};
         render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-        render_pass_begin_info.renderPass = m_render_pass;
+        render_pass_begin_info.renderPass = m_render_pass->get_handle();
         render_pass_begin_info.framebuffer = entry.m_framebuffer->get_handle();
 
         render_pass_begin_info.renderArea.offset = {0, 0};
@@ -553,12 +553,7 @@ void HelloTriangleApplication::cleanup_swap_chain() {
 
     if(m_graphics_pipeline) m_graphics_pipeline->destroy();
     if(m_pipeline_layout) m_pipeline_layout->destroy();
-
-    if(m_render_pass) {
-        vkDestroyRenderPass(m_surface_context->get_device()->get_handle(), m_render_pass, nullptr);
-        m_render_pass = nullptr;
-    }
-
+    if(m_render_pass) m_render_pass->destroy();
     if(m_swapchain) m_swapchain->destroy();
 }
 
