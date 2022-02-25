@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include <stdexcept>
 #include "vk-device.hpp"
+#include "vk-sampler.hpp"
 
 namespace VK {
 
@@ -64,12 +65,12 @@ public:
     void set_max_lod(float max_lod) { m_description.maxLod = max_lod; }
     void set_min_lod(float min_lod) { m_description.minLod = min_lod; }
 
-    VkSampler create(VK::Device* m_device) {
+    Sampler create(VK::Device* device) {
         VkSampler result;
-        if (vkCreateSampler(m_device->get_handle(), &m_description, nullptr, &result) != VK_SUCCESS) {
+        if (vkCreateSampler(device->get_handle(), &m_description, nullptr, &result) != VK_SUCCESS) {
             throw std::runtime_error("failed to create texture sampler");
         }
-        return result;
+        return { device, result };
     }
 };
 

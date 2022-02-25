@@ -38,6 +38,7 @@
 #include "vulkan/commands/vk-image-blit-command.hpp"
 #include "vulkan/barriers/vk-image-memory-barrier.hpp"
 #include "vulkan/image/vk-image-factory.hpp"
+#include "vulkan/vk-render-pass-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -406,21 +407,14 @@ void HelloTriangleApplication::create_render_pass() {
     dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
     dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 
-    VkAttachmentDescription attachments[3] = { color_attachment.get_description(), depth_attachment.get_description(), resolve_attachment.get_description() };
+    VK::RenderPassFactory render_pass_factory;
+    render_pass_factory.get_attachment_descriptions().assign({
+         color_attachment.get_description(), depth_attachment.get_description(), resolve_attachment.get_description()
+    });
+    render_pass_factory.get_subpass_descriptions().assign({ subpass });
+    render_pass_factory.get_subpass_dependency_descriptions().assign({ dependency });
 
-    VkRenderPassCreateInfo render_pass_info{};
-    render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-    render_pass_info.attachmentCount = 3;
-    render_pass_info.pAttachments = attachments;
-    render_pass_info.subpassCount = 1;
-    render_pass_info.pSubpasses = &subpass;
-    render_pass_info.dependencyCount = 1;
-    render_pass_info.pDependencies = &dependency;
-
-    if (vkCreateRenderPass(m_surface_context->get_device()->get_handle(), &render_pass_info, nullptr, &m_render_pass) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create render pass");
-    }
-
+    m_render_pass = render_pass_factory.create(m_surface_context->get_device());
     m_swapchain->create_images(m_render_pass);
 }
 
@@ -931,7 +925,7 @@ void HelloTriangleApplication::create_texture_sampler() {
     sampler_factory.set_max_lod((float) m_mip_levels);
     sampler_factory.set_min_lod((float) 0.0f);
 
-    m_texture_sampler = std::make_unique<VK::Sampler>(sampler_factory.create(m_surface_context->get_device()), m_surface_context->get_device());
+    m_texture_sampler = std::make_unique<VK::Sampler>(sampler_factory.create(m_surface_context->get_device()));
 }
 
 VkFormat HelloTriangleApplication::find_depth_format() {
