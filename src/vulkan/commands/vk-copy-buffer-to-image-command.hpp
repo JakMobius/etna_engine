@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vk-command.hpp"
-#include "../vk-buffer.hpp"
+#include "../buffer/vk-buffer.hpp"
 #include "../image/vk-image.hpp"
 
 namespace VK {

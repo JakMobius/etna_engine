@@ -17,7 +17,7 @@
 #include "vulkan/commands/vk-copy-buffer-command.hpp"
 #include "vulkan/commands/vk-copy-buffer-to-image-command.hpp"
 #include "vulkan/vk-swapchain.hpp"
-#include "vulkan/vk-memory-buffer.hpp"
+#include "vulkan/buffer/vk-memory-buffer.hpp"
 #include "vulkan/vk-staging-buffer.hpp"
 #include "vulkan/vk-shader.hpp"
 #include "vulkan/pipeline/vk-pipeline-vertex-array-binding.hpp"
@@ -658,18 +658,22 @@ void HelloTriangleApplication::create_mesh() {
 
 void HelloTriangleApplication::create_index_buffer() {
 
-    VK::StagingBuffer staging_buffer { m_surface_context->get_device(), m_index_buffer_storage };
+    auto index_buffer_size = m_index_buffer_storage.size() * sizeof(m_index_buffer_storage[0]);
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(m_surface_context->get_device(), m_index_buffer_storage);
 
-    m_index_buffer = std::make_unique<VK::MemoryBuffer>(m_surface_context->get_device());
-    m_index_buffer->get_buffer().set_size(staging_buffer.get_buffer().get_size());
-    m_index_buffer->get_buffer().set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
-    m_index_buffer->get_buffer().set_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    m_index_buffer->get_buffer().create();
+    VK::BufferFactory index_buffer_factory {};
+    index_buffer_factory.set_size(index_buffer_size);
+    index_buffer_factory.set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
+    index_buffer_factory.set_memory_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+    m_index_buffer = std::make_unique<VK::MemoryBuffer>(index_buffer_factory.create_memory_buffer(m_surface_context->get_device()));
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_index_buffer->get_buffer()).write(&command_buffer);
+    auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_index_buffer->get_buffer());
+    copy_command.set_size(index_buffer_size);
+    copy_command.write(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -677,18 +681,21 @@ void HelloTriangleApplication::create_index_buffer() {
 
 void HelloTriangleApplication::create_vertex_buffer() {
 
-    VK::StagingBuffer staging_buffer { m_surface_context->get_device(), m_vertex_buffer_storage };
+    auto vertex_buffer_size = m_vertex_buffer_storage.size() * sizeof(m_vertex_buffer_storage[0]);
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(m_surface_context->get_device(), m_vertex_buffer_storage);
 
-    m_vertex_buffer = std::make_unique<VK::MemoryBuffer>(m_surface_context->get_device());
-    m_vertex_buffer->get_buffer().set_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    m_vertex_buffer->get_buffer().set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
-    m_vertex_buffer->get_buffer().set_size(staging_buffer.get_buffer().get_size());
-    m_vertex_buffer->get_buffer().create();
+    VK::BufferFactory vertex_buffer_factory {};
+    vertex_buffer_factory.set_memory_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+    vertex_buffer_factory.set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+    vertex_buffer_factory.set_size(vertex_buffer_size);
+    m_vertex_buffer = std::make_unique<VK::MemoryBuffer>(vertex_buffer_factory.create_memory_buffer(m_surface_context->get_device()));
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_vertex_buffer->get_buffer()).write(&command_buffer);
+    auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_vertex_buffer->get_buffer());
+    copy_command.set_size(vertex_buffer_size);
+    copy_command.write(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
@@ -726,14 +733,13 @@ void HelloTriangleApplication::create_uniform_buffers() {
 
     m_uniform_buffers.resize(m_swapchain->get_image_count());
 
-    for (size_t i = 0; i < m_swapchain->get_image_count(); i++) {
-        m_uniform_buffers[i] = std::make_unique<VK::MemoryBuffer>(m_surface_context->get_device());
+    VK::BufferFactory factory {};
 
-        auto& buffer = m_uniform_buffers[i]->get_buffer();
-        buffer.set_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        buffer.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        buffer.set_size(buffer_size);
-        buffer.create();
+    for (size_t i = 0; i < m_swapchain->get_image_count(); i++) {
+        factory.set_memory_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+        factory.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+        factory.set_size(buffer_size);
+        m_uniform_buffers[i] = std::make_unique<VK::MemoryBuffer>(factory.create_memory_buffer(m_surface_context->get_device()));
     }
 }
 
@@ -858,7 +864,7 @@ void HelloTriangleApplication::create_texture_image() {
         std::swap(image[pix + 0], image[pix + 2]);
     }
 
-    VK::StagingBuffer staging_buffer { m_surface_context->get_device(), image, image_size };
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(m_surface_context->get_device(), image, image_size);
 
     FreeImage_Unload(converted);
 

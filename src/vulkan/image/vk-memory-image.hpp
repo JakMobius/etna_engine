@@ -7,12 +7,12 @@
 namespace VK {
 
 class MemoryImage {
-    VK::Memory m_memory;
-    VK::Image m_image;
+    Memory m_memory;
+    Image m_image;
 
 public:
-    explicit MemoryImage(VK::Image&& image): m_memory(image.get_device()), m_image(std::move(image)) {}
-    MemoryImage(MemoryImage&& move): m_memory(std::move(move.m_memory)), m_image(std::move(move.m_image)) {}
+    explicit MemoryImage(Image&& image): m_memory(image.get_device()), m_image(std::move(image)) {}
+    MemoryImage(MemoryImage&& move) noexcept: m_memory(std::move(move.m_memory)), m_image(std::move(move.m_image)) {}
     MemoryImage& operator=(MemoryImage&& move_assign)  noexcept {
         m_memory = std::move(move_assign.m_memory);
         m_image = std::move(move_assign.m_image);

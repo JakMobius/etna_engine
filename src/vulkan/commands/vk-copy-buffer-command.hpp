@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "../vk-buffer.hpp"
+#include "../buffer/vk-buffer.hpp"
 #include "vk-command.hpp"
 
 namespace VK {
@@ -13,9 +13,7 @@ class CopyBufferCommand : public Command {
     VK::Buffer* m_source;
     VK::Buffer* m_destination;
 public:
-    CopyBufferCommand(VK::Buffer* source, VK::Buffer* destination): m_source(source), m_destination(destination) {
-        m_size = std::min(source->get_size(), destination->get_size());
-    }
+    CopyBufferCommand(VK::Buffer* source, VK::Buffer* destination): m_source(source), m_destination(destination) {}
 
     void set_src_offset(VkDeviceSize src_offset) { m_src_offset = src_offset; }
     void set_dst_offset(VkDeviceSize dst_offset) { m_dst_offset = dst_offset; }
@@ -26,8 +24,6 @@ public:
     VkDeviceSize get_size() const { return m_size; }
 
     void write(VK::CommandBuffer* command_buffer) override {
-        if(m_src_offset + m_size > m_source->get_size()) throw std::invalid_argument("source buffer overflow");
-        if(m_dst_offset + m_size > m_destination->get_size()) throw std::invalid_argument("destination buffer overflow");
 
         VkBufferCopy copy_region {};
         copy_region.srcOffset = m_src_offset;

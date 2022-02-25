@@ -26,7 +26,7 @@ class ImageView {
 
 public:
 
-    explicit ImageView(UnownedImage  image): m_image(std::move(image)) {
+    explicit ImageView(UnownedImage image): m_image(std::move(image)) {
         m_format = VK_FORMAT_MAX_ENUM;
         m_subresource_range.levelCount = 1;
         m_subresource_range.layerCount = 1;

@@ -109,7 +109,7 @@ public:
     }
 
     MemoryImage create(Device* device) {
-        Image image { device, create_raw_image(device) };
+        Image image {device, create_raw_image(device) };
         MemoryImage memory_image {std::move(image) };
         memory_image.create(m_memory_properties);
         return memory_image;
