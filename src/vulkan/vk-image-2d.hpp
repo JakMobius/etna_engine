@@ -34,7 +34,6 @@ public:
 
     VkExtent2D get_size() const { return { m_extent.width, m_extent.height }; }
 
-    void perform_layout_transition(VK::CommandBuffer* command_buffer, VkImageLayout old_layout, VkImageLayout new_layout);
 };
 
 }

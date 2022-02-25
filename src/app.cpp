@@ -871,13 +871,16 @@ void HelloTriangleApplication::create_texture_image() {
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    m_texture_image->get_image().perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    VK::ImageMemoryBarrier layout_conversion_barrier { &m_texture_image->get_image() };
+    layout_conversion_barrier.set_layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    layout_conversion_barrier.set_mip_level_count(m_mip_levels);
+    layout_conversion_barrier.set_access_masks(0, VK_ACCESS_TRANSFER_WRITE_BIT);
+    layout_conversion_barrier.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
+    layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), &m_texture_image->get_image());
     copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copy_command.write(&command_buffer);
-
-//    m_texture_image->perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
     generate_mipmaps(&command_buffer, &m_texture_image->get_image());
 
@@ -977,7 +980,11 @@ void HelloTriangleApplication::create_depth_resources() {
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    m_depth_image->get_image().perform_layout_transition(&command_buffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    VK::ImageMemoryBarrier layout_conversion_barrier { &m_depth_image->get_image() };
+    layout_conversion_barrier.set_layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+    layout_conversion_barrier.set_access_masks(0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
+    layout_conversion_barrier.set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT);
+    layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
