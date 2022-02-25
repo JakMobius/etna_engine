@@ -37,6 +37,7 @@
 #include "vulkan/vk-sampler.hpp"
 #include "vulkan/commands/vk-image-blit-command.hpp"
 #include "vulkan/barriers/vk-image-memory-barrier.hpp"
+#include "vulkan/image/vk-image-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -861,12 +862,13 @@ void HelloTriangleApplication::create_texture_image() {
 
     FreeImage_Unload(converted);
 
-    m_texture_image = std::make_unique<VK::MemoryImage2D>(m_surface_context->get_device());
-    m_texture_image->get_image().set_size({ image_width, image_height });
-    m_texture_image->get_image().set_mip_levels(m_mip_levels);
-    m_texture_image->get_image().set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    m_texture_image->get_image().set_format(VK_FORMAT_R8G8B8A8_SRGB);
-    m_texture_image->get_image().create();
+    VK::ImageFactory image_factory;
+    image_factory.set_extent({image_width, image_height, 1});
+    image_factory.set_mip_levels(m_mip_levels);
+    image_factory.set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_factory.set_format(VK_FORMAT_R8G8B8A8_SRGB);
+
+    m_texture_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -879,37 +881,37 @@ void HelloTriangleApplication::create_texture_image() {
     layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
 
     auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), &m_texture_image->get_image());
+    copy_command.set_image_extent(image_factory.get_extent());
     copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
     copy_command.write(&command_buffer);
 
-    generate_mipmaps(&command_buffer, &m_texture_image->get_image());
+    generate_mipmaps(&command_buffer, &m_texture_image->get_image(), image_factory.get_format(), { image_width, image_height }, image_factory.get_mip_levels());
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
 
-    m_texture_image_view = std::make_unique<VK::ImageView>(&m_texture_image->get_image());
+    m_texture_image_view = std::make_unique<VK::ImageView>(m_texture_image->get_image().unowned_copy());
+    m_texture_image_view->set_format(image_factory.get_format());
     m_texture_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_texture_image_view->create();
 }
 
-void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image2D* image) {
+void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels) {
 
     VkFormatProperties format_properties {};
-    m_physical_device->get_format_properties(&format_properties, image->get_format());
+    m_physical_device->get_format_properties(&format_properties, format);
 
     if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
         throw std::runtime_error("texture image format does not support linear blitting");
     }
 
-    auto image_size = image->get_size();
-
-    auto mip_width = (int32_t) image_size.width;
-    auto mip_height = (int32_t) image_size.height;
+    auto mip_width = (int32_t) extent.width;
+    auto mip_height = (int32_t) extent.height;
 
     VK::ImageMemoryBarrier barrier { image };
     barrier.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
 
-    for (uint32_t i = 1; i < m_mip_levels; i++) {
+    for (uint32_t i = 1; i < mip_levels; i++) {
 
         barrier.set_mip_level_base(i - 1);
         barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
@@ -932,7 +934,7 @@ void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffe
         if (mip_height > 1) mip_height /= 2;
     }
 
-    barrier.set_mip_level_base(image->get_mip_levels() - 1);
+    barrier.set_mip_level_base(mip_levels - 1);
     barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
     barrier.set_access_masks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
     barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
@@ -966,14 +968,16 @@ bool HelloTriangleApplication::has_stencil_component(VkFormat format) {
 void HelloTriangleApplication::create_depth_resources() {
     VkFormat depth_format = find_depth_format();
 
-    m_depth_image = std::make_unique<VK::MemoryImage2D>(m_surface_context->get_device());
-    m_depth_image->get_image().set_samples(m_msaa_samples);
-    m_depth_image->get_image().set_size(m_swapchain->get_extent());
-    m_depth_image->get_image().set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    m_depth_image->get_image().set_format(depth_format);
-    m_depth_image->get_image().create();
+    VK::ImageFactory image_factory;
+    image_factory.set_samples(m_msaa_samples);
+    image_factory.set_extent({ m_swapchain->get_extent().width, m_swapchain->get_extent().height, 1 });
+    image_factory.set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image_factory.set_format(depth_format);
 
-    m_depth_image_view = std::make_unique<VK::ImageView>(&m_depth_image->get_image());
+    m_depth_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
+
+    m_depth_image_view = std::make_unique<VK::ImageView>(m_depth_image->get_image().unowned_copy());
+    m_depth_image_view->set_format(depth_format);
     m_depth_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
     m_depth_image_view->create();
 
@@ -993,14 +997,15 @@ void HelloTriangleApplication::create_depth_resources() {
 void HelloTriangleApplication::create_color_resources() {
     VkFormat color_format = m_swapchain->get_image_format();
 
-    m_color_image = std::make_unique<VK::MemoryImage2D>(m_surface_context->get_device());
-    m_color_image->get_image().set_size(m_swapchain->get_extent());
-    m_color_image->get_image().set_samples(m_msaa_samples);
-    m_color_image->get_image().set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    m_color_image->get_image().set_format(color_format);
-    m_color_image->get_image().create();
+    VK::ImageFactory image_factory;
+    image_factory.set_extent({m_swapchain->get_extent().width, m_swapchain->get_extent().height, 1});
+    image_factory.set_samples(m_msaa_samples);
+    image_factory.set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_factory.set_format(color_format);
 
-    m_color_image_view = std::make_unique<VK::ImageView>(&m_color_image->get_image());
+    m_color_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
+    m_color_image_view = std::make_unique<VK::ImageView>(m_color_image->get_image().unowned_copy());
+    m_color_image_view->set_format(color_format);
     m_color_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_color_image_view->create();
 }

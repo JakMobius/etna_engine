@@ -10,7 +10,7 @@ void VK::SwapchainEntry::destroy() {
 }
 
 void VK::SwapchainEntry::create_image_view() {
-    m_image_view = std::make_unique<ImageView>(m_image, m_swapchain->get_surface_context()->get_device());
+    m_image_view = std::make_unique<ImageView>(m_image);
     m_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
     m_image_view->set_format(m_swapchain->get_image_format());
     m_image_view->set_view_type(VK_IMAGE_VIEW_TYPE_2D);

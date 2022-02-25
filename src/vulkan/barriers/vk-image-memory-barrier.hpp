@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vk-image-2d.hpp"
+#include "../image/vk-image.hpp"
 
 namespace VK {
 
@@ -9,7 +9,7 @@ class ImageMemoryBarrier {
     VkImageMemoryBarrier m_description {};
 
 public:
-    explicit ImageMemoryBarrier(Image2D* image) {
+    explicit ImageMemoryBarrier(Image* image) {
         m_description.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
         m_description.image = image->get_handle();
 

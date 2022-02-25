@@ -19,11 +19,21 @@ class Memory {
 public:
     explicit Memory(Device* device): m_device(device) {}
     Memory(): m_device(nullptr) {};
-
-    // As Memory class holds a Vulkan resource, we won't
-    // allow one to copy/move it.
-    Memory(const Memory& m_copy) = delete;
-    Memory(Memory&& m_move) = delete;
+    Memory(Memory&& move) noexcept: m_handle(move.m_handle), m_size(move.m_size), m_device(move.m_device), m_memory_type(move.m_memory_type) {
+        move.m_handle = nullptr;
+    }
+    Memory& operator=(Memory&& move_assign) noexcept {
+        if(this == &move_assign) return *this;
+        free();
+        m_device = move_assign.m_device;
+        m_handle = move_assign.m_handle;
+        m_size = move_assign.m_size;
+        m_memory_type = move_assign.m_memory_type;
+        move_assign.m_handle = nullptr;
+        return *this;
+    }
+    Memory(const Memory& copy) = delete;
+    Memory& operator=(const Memory& copy_assign) = delete;
 
     ~Memory() {
         free();

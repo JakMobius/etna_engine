@@ -10,17 +10,19 @@ class Swapchain;
 #include <vulkan/vulkan_core.h>
 #include "vk-surface-context.hpp"
 #include "vk-swap-chain-support-details.hpp"
-#include "vk-image-view.hpp"
+#include "image/vk-image-view.hpp"
 #include "vk-framebuffer.hpp"
 
 namespace VK {
 
 struct SwapchainEntry {
     Swapchain* m_swapchain = nullptr;
-    VkImage m_image {};
+    UnownedImage m_image;
     std::unique_ptr<ImageView> m_image_view {};
     std::unique_ptr<Framebuffer> m_framebuffer {};
     std::unique_ptr<CommandBuffer> m_command_buffer {};
+
+    explicit SwapchainEntry(const UnownedImage& image): m_image(image) {};
 
     void create_image_view();
     void create_framebuffer(VkRenderPass render_pass);
@@ -38,13 +40,12 @@ class Swapchain {
     std::vector<SwapchainEntry> m_entries {};
     std::vector<ImageView*> m_framebuffer_attachments {};
 
-    void create_entries(const std::vector<VkImage>& images, VkRenderPass render_pass) {
-        for(auto image : images) {
-            m_entries.emplace_back();
+    void create_entries(const std::vector<VK::UnownedImage>& images, VkRenderPass render_pass) {
+        for(auto& image : images) {
+            m_entries.emplace_back(image);
             auto& entry = m_entries.back();
 
             entry.m_swapchain = this;
-            entry.m_image = image;
             entry.create_image_view();
             entry.create_framebuffer(render_pass);
 
@@ -108,16 +109,24 @@ public:
         m_image_format = surface_format.format;
     }
 
-    void create_images(VkRenderPass render_pass) {
+    std::vector<UnownedImage> get_swapchain_images() {
         auto device = m_surface_context->get_device();
-
-        uint32_t image_count;
+        uint32_t image_count = 0;
         std::vector<VkImage> images {};
         vkGetSwapchainImagesKHR(device->get_handle(), m_handle, &image_count, nullptr);
         images.resize(image_count);
         vkGetSwapchainImagesKHR(device->get_handle(), m_handle, &image_count, images.data());
 
-        create_entries(images, render_pass);
+        std::vector<VK::UnownedImage> result;
+        result.reserve(image_count);
+
+        for(int i = 0; i < image_count; i++) result.emplace_back(device, images[i]);
+
+        return result;
+    }
+
+    void create_images(VkRenderPass render_pass) {
+        create_entries(get_swapchain_images(), render_pass);
     }
 
     void destroy() {

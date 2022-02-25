@@ -1,21 +1,21 @@
 #pragma once
 
 #include "vk-command.hpp"
-#include "../vk-image-2d.hpp"
+#include "../image/vk-image.hpp"
 
 namespace VK {
 
 class ImageBlitCommand : public Command {
 
     VkImageBlit m_description {};
-    Image2D* m_source = nullptr;
-    Image2D* m_destination = nullptr;
+    Image* m_source = nullptr;
+    Image* m_destination = nullptr;
     VkFilter m_filter = VK_FILTER_LINEAR;
     VkImageLayout m_source_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout m_destination_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 public:
-    ImageBlitCommand(Image2D* source, Image2D* destination): m_source(source), m_destination(destination) {
+    ImageBlitCommand(Image* source, Image* destination): m_source(source), m_destination(destination) {
         m_description.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
         m_description.srcSubresource.mipLevel = 0;
         m_description.srcSubresource.baseArrayLayer = 0;

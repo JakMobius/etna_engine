@@ -18,13 +18,13 @@
 #include "vulkan/vk-memory.hpp"
 #include "vulkan/vk-buffer.hpp"
 #include "vulkan/vk-surface-context.hpp"
-#include "vulkan/vk-image-2d.hpp"
-#include "vulkan/vk-image-view.hpp"
+#include "vulkan/image/vk-image.hpp"
+#include "vulkan/image/vk-image-view.hpp"
 #include "vulkan/vk-descriptor-set-array.hpp"
 #include "vulkan/vk-framebuffer.hpp"
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/vk-memory-buffer.hpp"
-#include "vulkan/vk-memory-image2d.hpp"
+#include "vulkan/image/vk-memory-image.hpp"
 #include "vulkan/pipeline/vk-pipeline-layout.hpp"
 #include "vulkan/pipeline/vk-pipeline.hpp"
 #include "vulkan/vk-sampler.hpp"
@@ -74,17 +74,17 @@ class HelloTriangleApplication {
     VkDescriptorPool m_descriptor_pool {};
     std::unique_ptr<VK::DescriptorSetArray> m_descriptor_sets {};
 
-    std::unique_ptr<VK::MemoryImage2D> m_texture_image {};
+    std::unique_ptr<VK::MemoryImage> m_texture_image {};
     std::unique_ptr<VK::ImageView> m_texture_image_view {};
     std::unique_ptr<VK::Sampler> m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
-    std::unique_ptr<VK::MemoryImage2D> m_color_image;
+    std::unique_ptr<VK::MemoryImage> m_color_image;
     std::unique_ptr<VK::ImageView> m_color_image_view;
 
-    std::unique_ptr<VK::MemoryImage2D> m_depth_image {};
+    std::unique_ptr<VK::MemoryImage> m_depth_image {};
     std::unique_ptr<VK::ImageView> m_depth_image_view {};
 
     size_t m_current_frame = 0;
@@ -167,7 +167,7 @@ private:
 
     bool is_device_suitable(const VK::PhysicalDevice* physical_device);
 
-    void generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image2D* image);
+    void generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels);
 
     VkFormat find_depth_format();
 

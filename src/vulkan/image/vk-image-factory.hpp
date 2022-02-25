@@ -1,19 +1,13 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include <exception>
-#include <vector>
-#include "vk-memory.hpp"
+#include "../vk-memory.hpp"
+#include "vk-memory-image.hpp"
 
 namespace VK {
 
-class BaseImage {
+class ImageFactory {
 
-protected:
-    VkImage m_handle = nullptr;
-    Memory* m_memory = nullptr;
-
-    VkImageType m_image_type = VK_IMAGE_TYPE_MAX_ENUM;
     VkExtent3D m_extent = {0, 0, 0};
     VkImageCreateFlags m_flags = 0;
     VkFormat m_format = VK_FORMAT_MAX_ENUM;
@@ -23,72 +17,60 @@ protected:
     VkImageTiling m_tiling = VK_IMAGE_TILING_OPTIMAL;
     VkImageUsageFlags m_usage = 0;
     VkImageLayout m_initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
+    VkSharingMode m_sharing_mode = VK_SHARING_MODE_EXCLUSIVE;
+    VkImageType m_image_type = VK_IMAGE_TYPE_2D;
     VkMemoryPropertyFlags m_memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
-    VkSharingMode m_sharing_mode = VK_SHARING_MODE_EXCLUSIVE;
-    std::vector<uint32_t> m_queue_family_indices {};
-
-
-    static void report_illegal_state_change() {
-        throw std::runtime_error("cannot change VK::Image internal state while it is created");
-    }
-
-    BaseImage() = default;
-
 public:
-
-    VkImage get_handle() { return m_handle; }
+    ImageFactory() = default;
 
     void set_flags(VkImageCreateFlags flags) {
-        if(m_handle) report_illegal_state_change();
         m_flags = flags;
     }
 
     void set_format(VkFormat format) {
-        if(m_handle) report_illegal_state_change();
         m_format = format;
     }
 
     void set_mip_levels(uint32_t mip_levels) {
-        if(m_handle) report_illegal_state_change();
         m_mip_levels = mip_levels;
     }
 
     void set_array_layers(uint32_t array_layers) {
-        if(m_handle) report_illegal_state_change();
         m_array_layers = array_layers;
     }
 
     void set_samples(VkSampleCountFlagBits samples) {
-        if(m_handle) report_illegal_state_change();
         m_samples = samples;
     }
 
     void set_tiling(VkImageTiling tiling) {
-        if(m_handle) report_illegal_state_change();
         m_tiling = tiling;
     }
 
     void set_usage(VkBufferUsageFlags usage) {
-        if(m_handle) report_illegal_state_change();
         m_usage = usage;
     }
 
     void set_initial_layout(VkImageLayout initial_layout) {
-        if(m_handle) report_illegal_state_change();
         m_initial_layout = initial_layout;
     }
 
     void set_sharing_mode(VkSharingMode sharing_mode) {
-        if(m_handle) report_illegal_state_change();
         m_sharing_mode = sharing_mode;
     }
 
     void set_memory_properties(VkMemoryPropertyFlags memory_properties) {
-        if(m_handle) report_illegal_state_change();
         m_memory_properties = memory_properties;
     }
 
+    void set_image_type(VkImageType image_type) {
+        m_image_type = image_type;
+    }
+
+    void set_extent(VkExtent3D extent) {
+        m_extent = extent;
+    }
 
     VkImageType get_image_type()                  const { return m_image_type; }
     VkImageCreateFlags get_flags()                const { return m_flags; }
@@ -101,10 +83,36 @@ public:
     VkImageLayout get_initial_layout()            const { return m_initial_layout; }
     VkSharingMode get_sharing_mode()              const { return m_sharing_mode; }
     VkMemoryPropertyFlags get_memory_properties() const { return m_memory_properties; }
-    VK::Memory* get_memory()                      const { return m_memory; }
+    VkExtent3D get_extent()                       const { return m_extent; }
 
-    std::vector<uint32_t>& get_queue_family_indices() {
-        return m_queue_family_indices;
+    VkImage create_raw_image(Device* device) {
+        VkImageCreateInfo image_info {};
+        image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
+        image_info.imageType = VK_IMAGE_TYPE_2D;
+        image_info.extent = m_extent;
+        image_info.mipLevels = m_mip_levels;
+        image_info.arrayLayers = m_array_layers;
+        image_info.format = m_format;
+        image_info.tiling = m_tiling;
+        image_info.initialLayout = m_initial_layout;
+        image_info.usage = m_usage;
+        image_info.samples = m_samples;
+        image_info.sharingMode = m_sharing_mode;
+
+        VkImage handle = nullptr;
+
+        if (vkCreateImage(device->get_handle(), &image_info, nullptr, &handle) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create image!");
+        }
+
+        return handle;
+    }
+
+    MemoryImage create(Device* device) {
+        Image image { device, create_raw_image(device) };
+        MemoryImage memory_image {std::move(image) };
+        memory_image.create(m_memory_properties);
+        return memory_image;
     }
 };
 

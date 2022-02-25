@@ -1,14 +1,17 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "vk-base-image.hpp"
+
+#include <utility>
+#include "vk-image.hpp"
 
 namespace VK {
 
+// TODO: implement a factory
 class ImageView {
 
     VkImageViewCreateFlags m_flags = 0;
-    VkImageViewType m_view_type = VK_IMAGE_VIEW_TYPE_MAX_ENUM;
+    VkImageViewType m_view_type = VK_IMAGE_VIEW_TYPE_2D;
     VkFormat m_format = VK_FORMAT_MAX_ENUM;
     VkComponentMapping m_components = {
         VK_COMPONENT_SWIZZLE_R,
@@ -19,33 +22,12 @@ class ImageView {
     VkImageSubresourceRange m_subresource_range {};
 
     VkImageView m_handle = nullptr;
-
-    VkImage m_image_handle;
-    VK::Device* m_device = nullptr;
+    UnownedImage m_image;
 
 public:
 
-    explicit ImageView(BaseImage* image):
-            m_image_handle(image->get_handle()),
-            m_device(image->get_memory()->get_device()){
-        auto type = image->get_image_type();
-
-        switch(type) {
-            case VK_IMAGE_TYPE_1D: m_view_type = VK_IMAGE_VIEW_TYPE_1D; break;
-            case VK_IMAGE_TYPE_2D: m_view_type = VK_IMAGE_VIEW_TYPE_2D; break;
-            case VK_IMAGE_TYPE_3D: m_view_type = VK_IMAGE_VIEW_TYPE_3D; break;
-            default: break;
-        }
-
-        m_format = image->get_format();
-        m_subresource_range.levelCount = image->get_mip_levels();
-        m_subresource_range.layerCount = image->get_array_layers();
-        m_subresource_range.aspectMask = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
-        m_subresource_range.baseArrayLayer = 0;
-        m_subresource_range.baseMipLevel = 0;
-    }
-
-    explicit ImageView(VkImage image, VK::Device* device): m_image_handle(image), m_device(device) {
+    explicit ImageView(UnownedImage  image): m_image(std::move(image)) {
+        m_format = VK_FORMAT_MAX_ENUM;
         m_subresource_range.levelCount = 1;
         m_subresource_range.layerCount = 1;
         m_subresource_range.aspectMask = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
@@ -60,19 +42,19 @@ public:
     void create() {
         VkImageViewCreateInfo view_info {};
         view_info.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        view_info.image = m_image_handle;
+        view_info.image = m_image.get_handle();
         view_info.viewType = m_view_type;
         view_info.format = m_format;
         view_info.subresourceRange = m_subresource_range;
 
-        if (vkCreateImageView(m_device->get_handle(), &view_info, nullptr, &m_handle) != VK_SUCCESS) {
+        if (vkCreateImageView(m_image.get_device()->get_handle(), &view_info, nullptr, &m_handle) != VK_SUCCESS) {
             throw std::runtime_error("failed to create image view");
         }
     }
 
     void destroy() {
         if(m_handle) {
-            vkDestroyImageView(m_device->get_handle(), m_handle, nullptr);
+            vkDestroyImageView(m_image.get_device()->get_handle(), m_handle, nullptr);
             m_handle = nullptr;
         }
     }
@@ -98,7 +80,6 @@ public:
     VkFormat get_format() { return m_format; }
     VkComponentMapping get_components() { return m_components; }
     VkImageSubresourceRange& get_subresource_range() { return m_subresource_range; }
-    VkImage get_image_handle() { return m_image_handle; }
     VkImageView get_handle() { return m_handle; }
 };
 
