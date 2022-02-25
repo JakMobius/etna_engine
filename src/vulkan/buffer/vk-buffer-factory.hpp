@@ -39,7 +39,9 @@ public:
     }
 
     VkBuffer create_raw_buffer(Device* device) {
-        auto physical_device = device->get_physical_device();
+
+        m_create_info.pQueueFamilyIndices = m_queue_families.data();
+        m_create_info.queueFamilyIndexCount = m_queue_families.size();
 
         VkBuffer buffer = nullptr;
 
@@ -68,7 +70,7 @@ public:
     VkDeviceSize get_size() const { return m_create_info.size; }
     VkBufferUsageFlags get_usage() const { return m_create_info.usage; }
     VkBufferUsageFlags get_flags() const { return m_create_info.flags; }
-    const VkMemoryPropertyFlags& get_pset_memory_properties() const { return m_memory_properties; }
+    const VkMemoryPropertyFlags& get_set_memory_properties() const { return m_memory_properties; }
 };
 
 }

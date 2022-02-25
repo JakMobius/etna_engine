@@ -5,9 +5,25 @@
 
 namespace VK {
 
-using UnownedFence = UnownedDeviceResource<VkFence>;
+class FenceBase: public DeviceResourceBase<VkFence> {
+public:
+    using DeviceResourceBase::DeviceResourceBase;
+    FenceBase& operator=(FenceBase&& move_assign) = default;
 
-class Fence: public DeviceResource<VkFence> {
+    void waitOne(uint64_t timeout = UINT64_MAX) const {
+        vkWaitForFences(m_device->get_handle(), 1, &m_handle, VK_TRUE, timeout);
+    }
+
+    void resetOne() {
+        vkResetFences(m_device->get_handle(), 1, &m_handle);
+    }
+
+    ~FenceBase() override = default;
+};
+
+using UnownedFence = UnownedDeviceResource<VkFence, FenceBase>;
+
+class Fence: public DeviceResource<VkFence, FenceBase> {
 public:
     using DeviceResource::DeviceResource;
     using DeviceResource::operator=;

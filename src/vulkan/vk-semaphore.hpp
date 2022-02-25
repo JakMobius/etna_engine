@@ -5,9 +5,17 @@
 
 namespace VK {
 
-using UnownedSemaphore = UnownedDeviceResource<VkSemaphore>;
+class SemaphoreBase: public DeviceResourceBase<VkSemaphore> {
+public:
+    using DeviceResourceBase::DeviceResourceBase;
+    SemaphoreBase& operator=(SemaphoreBase&& move_assign) = default;
 
-class Semaphore: public DeviceResource<VkSemaphore> {
+    ~SemaphoreBase() override = default;
+};
+
+using UnownedSemaphore = UnownedDeviceResource<VkSemaphore, SemaphoreBase>;
+
+class Semaphore: public DeviceResource<VkSemaphore, SemaphoreBase> {
 public:
     using DeviceResource::DeviceResource;
     using DeviceResource::operator=;

@@ -484,7 +484,7 @@ void HelloTriangleApplication::create_sync_objects() {
 
 void HelloTriangleApplication::draw_frame() {
 
-    vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame].get_handle(), VK_TRUE, UINT64_MAX);
+    m_in_flight_fences[m_current_frame].waitOne();
 
     uint32_t image_index = 0;
     auto result = vkAcquireNextImageKHR(m_surface_context->get_device()->get_handle(), m_swapchain->get_handle(), UINT64_MAX, m_image_available_semaphores[m_current_frame].get_handle(), VK_NULL_HANDLE, &image_index);
@@ -499,14 +499,14 @@ void HelloTriangleApplication::draw_frame() {
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
     if (m_in_flight_images[image_index].get_handle() != nullptr) {
-        vkWaitForFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_images[image_index].get_handle(), VK_TRUE, UINT64_MAX);
+        m_in_flight_images[image_index].waitOne();
     }
     // Mark the image as now being in use by this frame
     m_in_flight_images[image_index] = m_in_flight_fences[m_current_frame].unowned_copy();
 
     update_uniform_buffer(image_index);
 
-    vkResetFences(m_surface_context->get_device()->get_handle(), 1, &m_in_flight_fences[m_current_frame].get_handle());
+    m_in_flight_fences[m_current_frame].resetOne();
 
     auto& swapchain_entry = m_swapchain->get_entries()[image_index];
 
@@ -706,7 +706,7 @@ void HelloTriangleApplication::create_descriptor_set_layout() {
 void HelloTriangleApplication::create_uniform_buffers() {
     VkDeviceSize buffer_size = sizeof(UniformBufferObject);
 
-    m_uniform_buffers.resize(m_swapchain->get_image_count());
+    m_uniform_buffers.reserve(m_swapchain->get_image_count());
 
     VK::BufferFactory factory {};
 
@@ -714,7 +714,7 @@ void HelloTriangleApplication::create_uniform_buffers() {
         factory.set_memory_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         factory.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         factory.set_size(buffer_size);
-        m_uniform_buffers[i] = std::make_unique<VK::MemoryBuffer>(factory.create_memory_buffer(m_surface_context->get_device()));
+        m_uniform_buffers.push_back(factory.create_memory_buffer(m_surface_context->get_device()));
     }
 }
 
@@ -759,7 +759,7 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
 
     ubo.proj[1][1] *= -1;
 
-    m_uniform_buffers[image_index]->get_memory().set_data(&ubo, sizeof(ubo));
+    m_uniform_buffers[image_index].get_memory().set_data(&ubo, sizeof(ubo));
 }
 
 void HelloTriangleApplication::create_descriptor_pool() {
@@ -789,7 +789,7 @@ void HelloTriangleApplication::create_descriptor_sets() {
 
     for (size_t i = 0; i < m_swapchain->get_image_count(); i++) {
         VkDescriptorBufferInfo buffer_info {};
-        buffer_info.buffer = m_uniform_buffers[i]->get_buffer().get_handle();
+        buffer_info.buffer = m_uniform_buffers[i].get_buffer().get_handle();
         buffer_info.offset = 0;
         buffer_info.range = sizeof(UniformBufferObject);
 

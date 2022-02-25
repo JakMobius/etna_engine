@@ -63,7 +63,7 @@ class HelloTriangleApplication {
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
 
-    std::vector<std::unique_ptr<VK::MemoryBuffer>> m_uniform_buffers {};
+    std::vector<VK::MemoryBuffer> m_uniform_buffers {};
 
     VkRenderPass m_render_pass {};
     std::unique_ptr<VK::PipelineLayout> m_pipeline_layout {};
