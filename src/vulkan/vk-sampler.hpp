@@ -2,30 +2,26 @@
 
 #include <vulkan/vulkan_core.h>
 #include "vk-device.hpp"
+#include "./vk-device-resource.hpp"
 
 namespace VK {
 
-class Sampler {
+using UnownedSampler = UnownedDeviceResource<VkSampler>;
 
-    VkSampler m_handle;
-    VK::Device* m_device;
-
+class Sampler: public DeviceResource<VkSampler> {
 public:
-    Sampler(VkSampler sampler, VK::Device* device): m_handle(sampler), m_device(device) {
+    using DeviceResource::DeviceResource;
+    using DeviceResource::operator=;
 
-    }
+    Sampler(Sampler&& move) noexcept = default;
+    Sampler& operator=(Sampler&& move_assign) = default;
 
-    ~Sampler() {
-        destroy();
-    }
-
-    VkSampler get_handle() { return m_handle; }
+    ~Sampler() override { destroy(); }
 
     void destroy() {
-        if(m_handle) {
-            vkDestroySampler(m_device->get_handle(), m_handle, nullptr);
-            m_handle = nullptr;
-        }
+        if(!m_handle) return;
+        vkDestroySampler(m_device->get_handle(), m_handle, nullptr);
+        m_handle = nullptr;
     }
 };
 

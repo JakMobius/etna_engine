@@ -65,8 +65,8 @@ public:
 
     std::vector<ImageView*>& get_attachments() { return m_attachments; }
     VkFramebuffer get_handle() { return m_handle; }
-    uint32_t get_layers() { return m_layers; }
-    VkExtent2D get_size() { return m_size; }
+    uint32_t get_layers() const { return m_layers; }
+    VkExtent2D get_size() const { return m_size; }
 
 };
 
