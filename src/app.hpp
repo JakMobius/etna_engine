@@ -31,6 +31,7 @@
 #include "vulkan/vk-semaphore.hpp"
 #include "vulkan/vk-fence.hpp"
 #include "vulkan/render-pass/vk-render-pass.hpp"
+#include "vulkan/descriptors/vk-descriptor-pool.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -60,6 +61,7 @@ class HelloTriangleApplication {
     std::vector<VK::Semaphore> m_image_available_semaphores {};
     std::vector<VK::Semaphore> m_render_finished_semaphores {};
     std::vector<VK::Fence> m_in_flight_fences {};
+    std::vector<std::unique_ptr<VK::CommandBuffer>> m_command_buffers {};
     std::vector<VK::UnownedFence> m_in_flight_images {};
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
@@ -74,7 +76,7 @@ class HelloTriangleApplication {
     std::unique_ptr<VK::MemoryBuffer> m_index_buffer {};
 
     VkDescriptorSetLayout m_descriptor_set_layout = {};
-    VkDescriptorPool m_descriptor_pool {};
+    std::unique_ptr<VK::DescriptorPool> m_descriptor_pool {};
     std::unique_ptr<VK::DescriptorSetArray> m_descriptor_sets {};
 
     std::unique_ptr<VK::MemoryImage> m_texture_image {};
@@ -90,7 +92,7 @@ class HelloTriangleApplication {
     std::unique_ptr<VK::MemoryImage> m_depth_image {};
     std::unique_ptr<VK::ImageView> m_depth_image_view {};
 
-    size_t m_current_frame = 0;
+    uint32_t m_current_frame = 0;
 
     const std::vector<const char*> m_required_validation_layers = {
         "VK_LAYER_KHRONOS_validation"
@@ -159,6 +161,8 @@ private:
     void draw_frame();
 
     const VK::PhysicalDevice* select_best_physical_device(const std::vector<VK::PhysicalDevice>& devices);
+
+    void record_command_buffer(uint32_t frame_index, uint32_t swapchain_frame_index);
 
     std::vector<const char*> get_required_extensions() const;
 

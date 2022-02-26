@@ -20,7 +20,6 @@ struct SwapchainEntry {
     UnownedImage m_image;
     std::unique_ptr<ImageView> m_image_view {};
     std::unique_ptr<Framebuffer> m_framebuffer {};
-    std::unique_ptr<CommandBuffer> m_command_buffer {};
 
     explicit SwapchainEntry(const UnownedImage& image): m_image(image) {};
 

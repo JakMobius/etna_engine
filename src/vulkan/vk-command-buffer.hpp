@@ -30,6 +30,10 @@ public:
         move.m_handle = nullptr;
     }
 
+    void reset(VkCommandBufferResetFlags flags = 0) {
+        vkResetCommandBuffer(m_handle, flags);
+    }
+
     void begin(VkCommandBufferUsageFlags flags) {
         VkCommandBufferBeginInfo begin_info {};
         begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;

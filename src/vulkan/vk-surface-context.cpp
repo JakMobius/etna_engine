@@ -19,7 +19,7 @@ void VK::SurfaceContext::create_command_pool() {
     VkCommandPoolCreateInfo pool_info{};
     pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     pool_info.queueFamilyIndex = get_graphics_queue_index();
-    pool_info.flags = 0; // Optional
+    pool_info.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 
     VkCommandPool command_pool;
 
