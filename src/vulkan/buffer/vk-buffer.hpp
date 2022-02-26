@@ -1,8 +1,6 @@
 #pragma once
 
 #include <exception>
-#include "../vk-memory.hpp"
-#include "../vk-command-buffer.hpp"
 #include "../vk-device-resource.hpp"
 
 namespace VK {

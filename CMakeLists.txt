@@ -8,7 +8,7 @@ find_package(GLFW REQUIRED)
 find_package(glm REQUIRED)
 find_package(FreeImage REQUIRED)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-O0 -fsanitize=address")
 
 file(GLOB_RECURSE files "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.hpp")

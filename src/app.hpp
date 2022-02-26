@@ -57,12 +57,13 @@ class HelloTriangleApplication {
     VkSurfaceKHR m_surface {};
 
     std::unique_ptr<VK::Swapchain> m_swapchain {};
+    std::vector<VK::UnownedFence> m_in_flight_images {};
 
     std::vector<VK::Semaphore> m_image_available_semaphores {};
     std::vector<VK::Semaphore> m_render_finished_semaphores {};
     std::vector<VK::Fence> m_in_flight_fences {};
     std::vector<std::unique_ptr<VK::CommandBuffer>> m_command_buffers {};
-    std::vector<VK::UnownedFence> m_in_flight_images {};
+
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
 

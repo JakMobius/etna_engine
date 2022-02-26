@@ -447,16 +447,18 @@ void HelloTriangleApplication::record_command_buffer(uint32_t frame_index, uint3
     render_pass_begin_info.clearValueCount = 2;
     render_pass_begin_info.pClearValues = clear_values;
 
-    vkCmdBeginRenderPass(command_buffer->get_handle(), &render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    vkCmdBindPipeline(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline->get_handle());
+    command_buffer->begin_render_pass(&render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    command_buffer->bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_graphics_pipeline);
 
+    VkDescriptorSet descriptors[] = { m_descriptor_sets->get_descriptor_sets()[frame_index] };
     VkBuffer vertex_buffers[] = { m_vertex_buffer->get_buffer().get_handle() };
     VkDeviceSize offsets[] = { 0 };
-    vkCmdBindVertexBuffers(command_buffer->get_handle(), 0, 1, vertex_buffers, offsets);
-    vkCmdBindIndexBuffer(command_buffer->get_handle(), m_index_buffer->get_buffer().get_handle(), 0, VK_INDEX_TYPE_UINT32);
-    vkCmdBindDescriptorSets(command_buffer->get_handle(), VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout->get_handle(), 0, 1, &m_descriptor_sets->get_descriptor_sets()[frame_index], 0, nullptr);
-    vkCmdDrawIndexed(command_buffer->get_handle(), m_index_buffer_storage.size(), 1, 0, 0, 0);
-    vkCmdEndRenderPass(command_buffer->get_handle());
+
+    command_buffer->bind_vertex_buffers(vertex_buffers, offsets);
+    command_buffer->bind_index_buffer(m_index_buffer->get_buffer(), 0, VK_INDEX_TYPE_UINT32);
+    command_buffer->bind_descriptor_sets(VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout->get_handle(), descriptors, {});
+    command_buffer->draw_indexed(m_index_buffer_storage.size(), 1, 0, 0, 0);
+    command_buffer->end_render_pass();
 
     command_buffer->end();
 }
