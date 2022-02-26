@@ -39,6 +39,8 @@
 #include "vulkan/barriers/vk-image-memory-barrier.hpp"
 #include "vulkan/image/vk-image-factory.hpp"
 #include "vulkan/render-pass/vk-render-pass-factory.hpp"
+#include "vulkan/descriptors/vk-buffer_descriptor.hpp"
+#include "vulkan/descriptors/vk-sampler-descriptor.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -771,44 +773,18 @@ void HelloTriangleApplication::create_descriptor_pool() {
 }
 
 void HelloTriangleApplication::create_descriptor_sets() {
-
     m_descriptor_sets = std::make_unique<VK::DescriptorSetArray>(m_surface_context->get_device(), m_descriptor_pool);
     m_descriptor_sets->get_layouts().resize(m_swapchain->get_image_count(), m_descriptor_set_layout);
     m_descriptor_sets->create();
 
-    for (size_t i = 0; i < m_swapchain->get_image_count(); i++) {
-        VkDescriptorBufferInfo buffer_info {};
-        buffer_info.buffer = m_uniform_buffers[i].get_buffer().get_handle();
-        buffer_info.offset = 0;
-        buffer_info.range = sizeof(UniformBufferObject);
+    for (int i = 0; i < m_swapchain->get_image_count(); i++) {
 
-        VkDescriptorImageInfo image_info {};
-        image_info.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        image_info.imageView = m_texture_image_view->get_handle();
-        image_info.sampler = m_texture_sampler->get_handle();
+        VK::BufferDescriptor uniform_buffer_descriptor(m_uniform_buffers[i].get_buffer(), 0, sizeof(UniformBufferObject));
+        VK::SamplerDescriptor texture_sampler_descriptor(*m_texture_sampler, *m_texture_image_view);
 
-        VkWriteDescriptorSet descriptor_write[2] {};
-        descriptor_write[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write[0].dstSet = m_descriptor_sets->get_descriptor_sets()[i];
-        descriptor_write[0].dstBinding = 0;
-        descriptor_write[0].dstArrayElement = 0;
-        descriptor_write[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-        descriptor_write[0].descriptorCount = 1;
-        descriptor_write[0].pBufferInfo = &buffer_info;
-        descriptor_write[0].pImageInfo = nullptr; // Optional
-        descriptor_write[0].pTexelBufferView = nullptr; // Optional
-
-        descriptor_write[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-        descriptor_write[1].dstSet = m_descriptor_sets->get_descriptor_sets()[i];
-        descriptor_write[1].dstBinding = 1;
-        descriptor_write[1].dstArrayElement = 0;
-        descriptor_write[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-        descriptor_write[1].descriptorCount = 1;
-        descriptor_write[1].pImageInfo = &image_info;
-
-        vkUpdateDescriptorSets(m_surface_context->get_device()->get_handle(), 2, descriptor_write, 0, nullptr);
+        m_descriptor_sets->bind_descriptor(i, 0, uniform_buffer_descriptor);
+        m_descriptor_sets->bind_descriptor(i, 1, texture_sampler_descriptor);
     }
-
 }
 
 void HelloTriangleApplication::create_texture_image() {

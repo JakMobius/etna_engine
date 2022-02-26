@@ -1,6 +1,7 @@
 #pragma once
 
-#include "vk-device.hpp"
+#include "../vk-device.hpp"
+#include "vk-descriptor.hpp"
 
 namespace VK {
 
@@ -19,6 +20,15 @@ public:
 
     std::vector<VkDescriptorSetLayout>& get_layouts() { return m_layouts; }
     const std::vector<VkDescriptorSet>& get_descriptor_sets() { return m_descriptor_sets; }
+
+    void bind_descriptor(int descriptor_set_index, uint32_t binding, Descriptor& descriptor) {
+        auto& description = descriptor.get_description();
+        description.dstSet = m_descriptor_sets[descriptor_set_index];
+        description.dstBinding = binding;
+
+        // TODO: batch update calls
+        vkUpdateDescriptorSets(m_device->get_handle(), 1, &description, 0, nullptr);
+    }
 
     void create() {
         VkDescriptorSetAllocateInfo alloc_info {};

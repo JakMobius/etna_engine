@@ -75,12 +75,12 @@ public:
         m_components = components;
     }
 
-    VkImageViewCreateFlags get_flags() { return m_flags; }
-    VkImageViewType get_view_type() { return m_view_type; }
-    VkFormat get_format() { return m_format; }
-    VkComponentMapping get_components() { return m_components; }
+    VkImageViewCreateFlags get_flags() const { return m_flags; }
+    VkImageViewType get_view_type() const { return m_view_type; }
+    VkFormat get_format() const { return m_format; }
+    VkComponentMapping get_components() const { return m_components; }
     VkImageSubresourceRange& get_subresource_range() { return m_subresource_range; }
-    VkImageView get_handle() { return m_handle; }
+    VkImageView get_handle() const { return m_handle; }
 };
 
 }

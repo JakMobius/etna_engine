@@ -20,7 +20,7 @@
 #include "vulkan/vk-surface-context.hpp"
 #include "vulkan/image/vk-image.hpp"
 #include "vulkan/image/vk-image-view.hpp"
-#include "vulkan/vk-descriptor-set-array.hpp"
+#include "vulkan/descriptors/vk-descriptor-set-array.hpp"
 #include "vulkan/vk-framebuffer.hpp"
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/buffer/vk-memory-buffer.hpp"
