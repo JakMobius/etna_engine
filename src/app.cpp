@@ -44,12 +44,11 @@ void HelloTriangleApplication::create_instance() {
     appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
     appInfo.apiVersion = VK_API_VERSION_1_0;
 
+    std::vector<const char*> required_extensions = get_required_extensions();
+
     VkInstanceCreateInfo create_info {};
     create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     create_info.pApplicationInfo = &appInfo;
-
-    std::vector<const char*> required_extensions = get_required_extensions();
-
     create_info.enabledExtensionCount = required_extensions.size();
     create_info.ppEnabledExtensionNames = required_extensions.data();
 
@@ -68,16 +67,9 @@ void HelloTriangleApplication::create_instance() {
 
     m_instance = VK::Instance(instance);
 
-    uint32_t extension_count = 0;
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
-
-    std::vector<VkExtensionProperties> extensions(extension_count);
-
-    vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
-
     std::cout << "Supported extensions:\n";
-    for(auto& ext : extensions) {
-        std::cout << "\t" << ext.extensionName << " ver. " << VK::VersionCode(ext.specVersion) << "\n";
+    for(auto& extension : m_instance.get_extensions()) {
+        std::cout << "\t" << extension.extensionName << " ver. " << VK::VersionCode(extension.specVersion) << "\n";
     }
 }
 

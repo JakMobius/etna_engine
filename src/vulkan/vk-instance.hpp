@@ -45,6 +45,14 @@ public:
         return physical_devices;
     }
 
+    std::vector<VkExtensionProperties> get_extensions() {
+        uint32_t extension_count = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+        std::vector<VkExtensionProperties> extensions(extension_count);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
+        return extensions;
+    }
+
     void destroy() {
         if(m_handle) {
             vkDestroyInstance(m_handle, nullptr);
