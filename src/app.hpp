@@ -19,7 +19,7 @@
 #include "vulkan/buffer/vk-buffer.hpp"
 #include "vulkan/vk-surface-context.hpp"
 #include "vulkan/image/vk-image.hpp"
-#include "vulkan/image/vk-image-view.hpp"
+#include "vulkan/image/view/vk-image-view.hpp"
 #include "vulkan/descriptors/sets/vk-descriptor-set-array.hpp"
 #include "vulkan/vk-framebuffer.hpp"
 #include "vulkan/vk-swapchain.hpp"
@@ -70,29 +70,29 @@ class HelloTriangleApplication {
 
     std::vector<VK::MemoryBuffer> m_uniform_buffers {};
 
-    std::unique_ptr<VK::RenderPass> m_render_pass {};
-    std::unique_ptr<VK::PipelineLayout> m_pipeline_layout {};
-    std::unique_ptr<VK::Pipeline> m_graphics_pipeline {};
+    VK::RenderPass m_render_pass {};
+    VK::PipelineLayout m_pipeline_layout {};
+    VK::Pipeline m_graphics_pipeline {};
 
     std::unique_ptr<VK::MemoryBuffer> m_vertex_buffer {};
     std::unique_ptr<VK::MemoryBuffer> m_index_buffer {};
 
-    std::unique_ptr<VK::DescriptorSetLayout> m_descriptor_set_layout = {};
-    std::unique_ptr<VK::DescriptorPool> m_descriptor_pool {};
-    std::unique_ptr<VK::DescriptorSetArray> m_descriptor_sets {};
+    VK::DescriptorSetLayout m_descriptor_set_layout = {};
+    VK::DescriptorPool m_descriptor_pool {};
+    std::unique_ptr<VK::DescriptorSetArray> m_descriptor_set_array {};
 
     std::unique_ptr<VK::MemoryImage> m_texture_image {};
-    std::unique_ptr<VK::ImageView> m_texture_image_view {};
-    std::unique_ptr<VK::Sampler> m_texture_sampler {};
+    VK::ImageView m_texture_image_view {};
+    VK::Sampler m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
     std::unique_ptr<VK::MemoryImage> m_color_image;
-    std::unique_ptr<VK::ImageView> m_color_image_view;
+    VK::ImageView m_color_image_view;
 
     std::unique_ptr<VK::MemoryImage> m_depth_image {};
-    std::unique_ptr<VK::ImageView> m_depth_image_view {};
+    VK::ImageView m_depth_image_view {};
 
     uint32_t m_current_frame = 0;
 

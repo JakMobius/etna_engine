@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "vk-device.hpp"
-#include "image/vk-image-view.hpp"
+#include "image/view/vk-image-view.hpp"
 
 namespace VK {
 
@@ -10,7 +10,7 @@ class Framebuffer {
 
     Device* m_device;
     VkRenderPass m_render_pass;
-    std::vector<ImageView*> m_attachments {};
+    std::vector<UnownedImageView> m_attachments {};
     VkExtent2D m_size {};
     uint32_t m_layers = 1;
 
@@ -31,7 +31,7 @@ public:
         image_views.reserve(m_attachments.size());
 
         for(auto attachment : m_attachments) {
-            image_views.push_back(attachment->get_handle());
+            image_views.push_back(attachment.get_handle());
         }
 
         VkFramebufferCreateInfo framebuffer_info {};
@@ -63,7 +63,7 @@ public:
         m_layers = layers;
     }
 
-    std::vector<ImageView*>& get_attachments() { return m_attachments; }
+    std::vector<UnownedImageView>& get_attachments() { return m_attachments; }
     VkFramebuffer get_handle() { return m_handle; }
     uint32_t get_layers() const { return m_layers; }
     VkExtent2D get_size() const { return m_size; }

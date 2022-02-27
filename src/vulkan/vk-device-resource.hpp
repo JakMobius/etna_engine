@@ -25,6 +25,10 @@ public:
 
     virtual ~DeviceResourceBase() = default;
 
+    bool is_null() { return !m_handle; }
+    bool operator!() { return is_null(); }
+    explicit operator bool() { return !is_null(); }
+
     const Handle& get_handle() const { return m_handle; };
     Device* get_device() const { return m_device; };
 };
@@ -33,6 +37,7 @@ template<typename Handle, typename Base = DeviceResourceBase<Handle>>
 class UnownedDeviceResource : public Base {
 public:
     UnownedDeviceResource(VK::Device* device, Handle handle): Base(device, handle) {}
+    UnownedDeviceResource(): Base(nullptr, nullptr) {}
     UnownedDeviceResource(UnownedDeviceResource&& move) noexcept: Base(move.m_device, move.m_handle) { move.m_handle = nullptr; }
     UnownedDeviceResource(const UnownedDeviceResource& copy): Base(copy.m_device, copy.m_handle) {};
     UnownedDeviceResource& operator=(UnownedDeviceResource&& move_assign) noexcept = default;
@@ -48,6 +53,7 @@ class DeviceResource : public Base {
 
 public:
     DeviceResource(Device* device, Handle handle): Base(device, handle) {}
+    DeviceResource(): Base(nullptr, nullptr) {}
     DeviceResource(DeviceResource&& move) noexcept: Base(move.m_device, move.m_handle) { move.m_handle = nullptr; }
     DeviceResource& operator=(DeviceResource&& move_assign) noexcept = default;
     using Base::operator=;

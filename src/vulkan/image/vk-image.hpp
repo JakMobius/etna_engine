@@ -7,6 +7,7 @@
 
 namespace VK {
 
+using ImageBase = DeviceResourceBase<VkImage>;
 using UnownedImage = UnownedDeviceResource<VkImage>;
 
 class Image: public DeviceResource<VkImage> {

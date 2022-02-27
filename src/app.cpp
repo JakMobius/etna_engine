@@ -35,6 +35,7 @@
 #include "vulkan/descriptors/vk-sampler-descriptor.hpp"
 #include "vulkan/descriptors/pool/vk-descriptor-pool-factory.hpp"
 #include "vulkan/descriptors/sets/vk-descriptor-set-layout-factory.hpp"
+#include "vulkan/image/view/vk-image-view-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -251,11 +252,11 @@ void HelloTriangleApplication::cleanup() {
     m_render_finished_semaphores.clear();
     m_in_flight_fences.clear();
 
-    if(m_texture_sampler) m_texture_sampler->destroy();
-    if(m_texture_image_view) m_texture_image_view->destroy();
+    m_texture_image_view.destroy();
+    if(m_texture_sampler) m_texture_sampler.destroy();
     if(m_texture_image) m_texture_image->destroy();
 
-    if(m_descriptor_set_layout) m_descriptor_set_layout->destroy();
+    m_descriptor_set_layout.destroy();
 
     if(m_index_buffer) m_index_buffer->destroy();
     if(m_vertex_buffer) m_vertex_buffer->destroy();
@@ -350,20 +351,17 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_factory.depth_stencil_states.set_depth_write_enable(true);
     pipeline_factory.depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
 
-    VkDescriptorSetLayout descriptors[] { m_descriptor_set_layout->get_handle() };
+    VkDescriptorSetLayout descriptors[] { m_descriptor_set_layout.get_handle() };
 
-    m_pipeline_layout = std::make_unique<VK::PipelineLayout>( VK::PipelineLayout::create(
-        m_surface_context->get_device(), descriptors, {}
-    ));
-
-    m_graphics_pipeline = std::make_unique<VK::Pipeline>(m_surface_context->get_device(), pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass->get_handle()));
+    m_pipeline_layout = VK::PipelineLayout::create(m_surface_context->get_device(), descriptors, {});
+    m_graphics_pipeline = pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout.get_handle(), m_render_pass.get_handle());
 }
 
 void HelloTriangleApplication::create_render_pass() {
 
     m_swapchain->get_framebuffer_attachments().assign({
-        m_color_image_view.get(),
-        m_depth_image_view.get()
+        m_color_image_view.unowned_copy(),
+        m_depth_image_view.unowned_copy()
     });
 
     VK::Attachment color_attachment { m_swapchain->get_image_format() };
@@ -407,8 +405,8 @@ void HelloTriangleApplication::create_render_pass() {
     render_pass_factory.get_subpass_descriptions().assign({ subpass });
     render_pass_factory.get_subpass_dependency_descriptions().assign({ dependency });
 
-    m_render_pass = std::make_unique<VK::RenderPass>(render_pass_factory.create(m_surface_context->get_device()));
-    m_swapchain->create_images(m_render_pass->get_handle());
+    m_render_pass = render_pass_factory.create(m_surface_context->get_device());
+    m_swapchain->create_images(m_render_pass.get_handle());
 }
 
 void HelloTriangleApplication::create_command_buffers() {
@@ -432,7 +430,7 @@ void HelloTriangleApplication::record_command_buffer(uint32_t frame_index, uint3
 
     VkRenderPassBeginInfo render_pass_begin_info {};
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = m_render_pass->get_handle();
+    render_pass_begin_info.renderPass = m_render_pass.get_handle();
     render_pass_begin_info.framebuffer = swapchain_entry.m_framebuffer->get_handle();
 
     render_pass_begin_info.renderArea.offset = {0, 0};
@@ -446,15 +444,15 @@ void HelloTriangleApplication::record_command_buffer(uint32_t frame_index, uint3
     render_pass_begin_info.pClearValues = clear_values;
 
     command_buffer->begin_render_pass(&render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
-    command_buffer->bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, *m_graphics_pipeline);
+    command_buffer->bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 
-    VkDescriptorSet descriptors[] = { m_descriptor_sets->get_descriptor_sets()[frame_index] };
+    VkDescriptorSet descriptors[] = {m_descriptor_set_array->get_descriptor_sets()[frame_index] };
     VkBuffer vertex_buffers[] = { m_vertex_buffer->get_buffer().get_handle() };
     VkDeviceSize offsets[] = { 0 };
 
     command_buffer->bind_vertex_buffers(vertex_buffers, offsets);
     command_buffer->bind_index_buffer(m_index_buffer->get_buffer(), 0, VK_INDEX_TYPE_UINT32);
-    command_buffer->bind_descriptor_sets(VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout->get_handle(), descriptors, {});
+    command_buffer->bind_descriptor_sets(VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipeline_layout.get_handle(), descriptors, {});
     command_buffer->draw_indexed(m_index_buffer_storage.size(), 1, 0, 0, 0);
     command_buffer->end_render_pass();
 
@@ -477,7 +475,7 @@ void HelloTriangleApplication::create_sync_objects() {
 
 void HelloTriangleApplication::draw_frame() {
 
-    m_in_flight_fences[m_current_frame].waitOne();
+    m_in_flight_fences[m_current_frame].wait_one();
 
     uint32_t image_index = 0;
     auto result = vkAcquireNextImageKHR(m_surface_context->get_device()->get_handle(), m_swapchain->get_handle(), UINT64_MAX, m_image_available_semaphores[m_current_frame].get_handle(), VK_NULL_HANDLE, &image_index);
@@ -491,15 +489,15 @@ void HelloTriangleApplication::draw_frame() {
     }
 
     // Check if a previous frame is using this image (i.e. there is its fence to wait on)
-    if (m_in_flight_images[image_index].get_handle() != nullptr) {
-        m_in_flight_images[image_index].waitOne();
+    if (!m_in_flight_images[image_index].is_null()) {
+        m_in_flight_images[image_index].wait_one();
     }
     // Mark the image as now being in use by this frame
     m_in_flight_images[image_index] = m_in_flight_fences[m_current_frame].unowned_copy();
 
     update_uniform_buffer(m_current_frame);
 
-    m_in_flight_fences[m_current_frame].resetOne();
+    m_in_flight_fences[m_current_frame].reset_one();
 
     auto& swapchain_entry = m_swapchain->get_entries()[image_index];
     auto command_buffer = m_command_buffers[m_current_frame].get();
@@ -538,19 +536,19 @@ void HelloTriangleApplication::draw_frame() {
 
 void HelloTriangleApplication::cleanup_swap_chain() {
 
-    if(m_color_image_view) m_color_image_view->destroy();
-    if(m_color_image) m_color_image->destroy();
+    m_color_image_view.destroy();
+    m_depth_image_view.destroy();
 
-    if(m_depth_image_view) m_depth_image_view->destroy();
+    if(m_color_image) m_color_image->destroy();
     if(m_depth_image) m_depth_image->destroy();
 
     m_command_buffers.clear();
     m_uniform_buffers.clear();
 
-    if(m_descriptor_pool) m_descriptor_pool->destroy();
-    if(m_graphics_pipeline) m_graphics_pipeline->destroy();
-    if(m_pipeline_layout) m_pipeline_layout->destroy();
-    if(m_render_pass) m_render_pass->destroy();
+    m_descriptor_pool.destroy();
+    m_graphics_pipeline.destroy();
+    m_pipeline_layout.destroy();
+    m_render_pass.destroy();
     if(m_swapchain) m_swapchain->destroy();
 }
 
@@ -733,7 +731,7 @@ void HelloTriangleApplication::create_descriptor_set_layout() {
     factory.add_binding(ubo_layout_binding);
     factory.add_binding(sampler_layout_binding);
 
-    m_descriptor_set_layout = std::make_unique<VK::DescriptorSetLayout>(factory.create(m_surface_context->get_device()));
+    m_descriptor_set_layout = factory.create(m_surface_context->get_device());
 }
 
 void HelloTriangleApplication::create_descriptor_pool() {
@@ -742,21 +740,21 @@ void HelloTriangleApplication::create_descriptor_pool() {
     factory.add_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT);
     factory.set_max_sets(MAX_FRAMES_IN_FLIGHT);
 
-    m_descriptor_pool = std::make_unique<VK::DescriptorPool>(factory.create(m_surface_context->get_device()));
+    m_descriptor_pool = factory.create(m_surface_context->get_device());
 }
 
 void HelloTriangleApplication::create_descriptor_sets() {
-    m_descriptor_sets = std::make_unique<VK::DescriptorSetArray>(m_descriptor_pool->unowned_copy());
-    m_descriptor_sets->get_layouts().resize(MAX_FRAMES_IN_FLIGHT, m_descriptor_set_layout->get_handle());
-    m_descriptor_sets->create();
+    m_descriptor_set_array = std::make_unique<VK::DescriptorSetArray>(m_descriptor_pool.unowned_copy());
+    m_descriptor_set_array->get_layouts().resize(MAX_FRAMES_IN_FLIGHT, m_descriptor_set_layout.get_handle());
+    m_descriptor_set_array->create();
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
         VK::BufferDescriptor uniform_buffer_descriptor(m_uniform_buffers[i].get_buffer(), 0, sizeof(UniformBufferObject));
-        VK::SamplerDescriptor texture_sampler_descriptor(*m_texture_sampler, *m_texture_image_view);
+        VK::SamplerDescriptor texture_sampler_descriptor(m_texture_sampler, m_texture_image_view);
 
-        m_descriptor_sets->bind_descriptor(i, 0, uniform_buffer_descriptor);
-        m_descriptor_sets->bind_descriptor(i, 1, texture_sampler_descriptor);
+        m_descriptor_set_array->bind_descriptor(i, 0, uniform_buffer_descriptor);
+        m_descriptor_set_array->bind_descriptor(i, 1, texture_sampler_descriptor);
     }
 }
 
@@ -809,10 +807,10 @@ void HelloTriangleApplication::create_texture_image() {
     command_buffer.end();
     command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
 
-    m_texture_image_view = std::make_unique<VK::ImageView>(m_texture_image->get_image().unowned_copy());
-    m_texture_image_view->set_format(image_factory.get_format());
-    m_texture_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_texture_image_view->create();
+    VK::ImageViewFactory image_view_factory;
+    image_view_factory.set_format(image_factory.get_format());
+    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_texture_image_view = image_view_factory.create(m_surface_context->get_device(), m_texture_image->get_image());
 }
 
 void HelloTriangleApplication::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels) {
@@ -869,7 +867,7 @@ void HelloTriangleApplication::create_texture_sampler() {
     sampler_factory.set_max_lod((float) m_mip_levels);
     sampler_factory.set_min_lod((float) 0.0f);
 
-    m_texture_sampler = std::make_unique<VK::Sampler>(sampler_factory.create(m_surface_context->get_device()));
+    m_texture_sampler = sampler_factory.create(m_surface_context->get_device());
 }
 
 VkFormat HelloTriangleApplication::find_depth_format() {
@@ -895,10 +893,10 @@ void HelloTriangleApplication::create_depth_resources() {
 
     m_depth_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
 
-    m_depth_image_view = std::make_unique<VK::ImageView>(m_depth_image->get_image().unowned_copy());
-    m_depth_image_view->set_format(depth_format);
-    m_depth_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_depth_image_view->create();
+    VK::ImageViewFactory image_view_factory;
+    image_view_factory.set_format(depth_format);
+    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+    m_depth_image_view = image_view_factory.create(m_surface_context->get_device(), m_depth_image->get_image());
 
     auto command_buffer = m_surface_context->get_command_pool()->create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -921,10 +919,10 @@ void HelloTriangleApplication::create_color_resources() {
     image_factory.set_samples(m_msaa_samples);
     image_factory.set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image_factory.set_format(color_format);
-
     m_color_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
-    m_color_image_view = std::make_unique<VK::ImageView>(m_color_image->get_image().unowned_copy());
-    m_color_image_view->set_format(color_format);
-    m_color_image_view->get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_color_image_view->create();
+
+    VK::ImageViewFactory image_view_factory;
+    image_view_factory.set_format(color_format);
+    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_color_image_view = image_view_factory.create(m_surface_context->get_device(), m_color_image->get_image());
 }

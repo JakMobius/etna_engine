@@ -25,7 +25,7 @@ public:
     PipelineColorBlendState color_blend_state_create_info {};
     PipelineDepthStencilState depth_stencil_states {};
 
-    VkPipeline create(Device* device, VkPipelineLayout pipeline_layout, VkRenderPass render_pass) {
+    Pipeline create(Device* device, VkPipelineLayout pipeline_layout, VkRenderPass render_pass) {
         auto vk_vertex_input_info = input_vertex_state.compile();
         auto vk_viewport_state = viewport_state.compile();
         auto vk_color_blending = color_blend_state_create_info.compile();
@@ -59,7 +59,7 @@ public:
             throw std::runtime_error("failed to create graphics pipeline");
         }
 
-        return pipeline;
+        return { device, pipeline };
     }
 };
 

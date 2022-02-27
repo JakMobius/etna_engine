@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vk-descriptor.hpp"
-#include "../image/vk-image-view.hpp"
+#include "../image/view/vk-image-view.hpp"
 #include "../sampler/vk-sampler.hpp"
 
 namespace VK {

@@ -10,7 +10,7 @@ class Swapchain;
 #include <vulkan/vulkan_core.h>
 #include "vk-surface-context.hpp"
 #include "vk-swap-chain-support-details.hpp"
-#include "image/vk-image-view.hpp"
+#include "image/view/vk-image-view.hpp"
 #include "vk-framebuffer.hpp"
 
 namespace VK {
@@ -18,7 +18,7 @@ namespace VK {
 struct SwapchainEntry {
     Swapchain* m_swapchain = nullptr;
     UnownedImage m_image;
-    std::unique_ptr<ImageView> m_image_view {};
+    ImageView m_image_view {};
     std::unique_ptr<Framebuffer> m_framebuffer {};
 
     explicit SwapchainEntry(const UnownedImage& image): m_image(image) {};
@@ -37,7 +37,7 @@ class Swapchain {
     VkExtent2D m_extent {};
 
     std::vector<SwapchainEntry> m_entries {};
-    std::vector<ImageView*> m_framebuffer_attachments {};
+    std::vector<UnownedImageView> m_framebuffer_attachments {};
 
     void create_entries(const std::vector<VK::UnownedImage>& images, VkRenderPass render_pass) {
         for(auto& image : images) {
@@ -140,7 +140,7 @@ public:
 
     VkSwapchainKHR get_handle() { return m_handle; };
 
-    std::vector<ImageView*>& get_framebuffer_attachments() { return m_framebuffer_attachments; }
+    std::vector<UnownedImageView>& get_framebuffer_attachments() { return m_framebuffer_attachments; }
     SurfaceContext* get_surface_context() { return m_surface_context; }
     VkFormat get_image_format() { return m_image_format; };
     VkExtent2D get_extent() { return m_extent; };

@@ -10,11 +10,11 @@ public:
     using DeviceResourceBase::DeviceResourceBase;
     FenceBase& operator=(FenceBase&& move_assign) = default;
 
-    void waitOne(uint64_t timeout = UINT64_MAX) const {
+    void wait_one(uint64_t timeout = UINT64_MAX) const {
         vkWaitForFences(m_device->get_handle(), 1, &m_handle, VK_TRUE, timeout);
     }
 
-    void resetOne() {
+    void reset_one() {
         vkResetFences(m_device->get_handle(), 1, &m_handle);
     }
 
