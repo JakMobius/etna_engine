@@ -18,7 +18,7 @@ public:
 
     ~DescriptorSetLayout() override { destroy(); }
 
-    void destroy() {
+    void destroy() final {
         if(!this->m_handle || !this->m_device) return;
         vkDestroyDescriptorSetLayout(this->m_device->get_handle(), this->m_handle, nullptr);
         this->m_handle = nullptr;

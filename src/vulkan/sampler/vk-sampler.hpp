@@ -18,7 +18,7 @@ public:
 
     ~Sampler() override { destroy(); }
 
-    void destroy() {
+    void destroy() final {
         if(!m_handle) return;
         vkDestroySampler(m_device->get_handle(), m_handle, nullptr);
         m_handle = nullptr;

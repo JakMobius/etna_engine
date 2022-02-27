@@ -3,6 +3,7 @@
 //
 
 #include "vk-swapchain.hpp"
+#include "framebuffer.hpp"
 #include "image/view/vk-image-view-factory.hpp"
 
 void VK::SwapchainEntry::destroy() {
@@ -17,17 +18,16 @@ void VK::SwapchainEntry::create_image_view() {
     m_image_view = factory.create(m_swapchain->get_surface_context()->get_device(), m_image);
 }
 
-void VK::SwapchainEntry::create_framebuffer(VkRenderPass render_pass) {
-    auto device = m_swapchain->get_surface_context()->get_device();
+void VK::SwapchainEntry::create_framebuffer(const VK::RenderPass& render_pass) {
 
-    m_framebuffer = std::make_unique<Framebuffer>(device, render_pass);
-    auto& attachments = m_framebuffer->get_attachments();
+    VK::FramebufferFactory factory;
+    factory.set_size(m_swapchain->get_extent());
+    auto& attachments = factory.get_attachments();
 
     for(auto& attachment : m_swapchain->get_framebuffer_attachments()) {
-        attachments.push_back(attachment);
+        factory.get_attachments().push_back(attachment);
     }
     attachments.push_back(m_image_view.unowned_copy());
 
-    m_framebuffer->set_size(m_swapchain->get_extent());
-    m_framebuffer->create();
+    m_framebuffer = factory.create(render_pass);
 }

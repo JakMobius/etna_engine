@@ -12,11 +12,14 @@ public:
     ResourceBase(const ResourceBase& copy) = delete;
     ResourceBase& operator=(const ResourceBase& copy_assign) = delete;
     ResourceBase& operator=(ResourceBase&& move_assign) noexcept {
+        if(&move_assign == this) return *this;
+        destroy();
         this->m_handle = move_assign.m_handle;
         move_assign.m_handle = nullptr;
         return *this;
     }
 
+    virtual void destroy() {};
     virtual ~ResourceBase() = default;
 
     bool is_null() { return !m_handle; }

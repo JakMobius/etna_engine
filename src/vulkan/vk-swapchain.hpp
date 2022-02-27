@@ -11,7 +11,8 @@ class Swapchain;
 #include "vk-surface-context.hpp"
 #include "vk-swap-chain-support-details.hpp"
 #include "image/view/vk-image-view.hpp"
-#include "vk-framebuffer.hpp"
+#include "framebuffer/vk-framebuffer.hpp"
+#include "render-pass/vk-render-pass.hpp"
 
 namespace VK {
 
@@ -19,12 +20,12 @@ struct SwapchainEntry {
     Swapchain* m_swapchain = nullptr;
     UnownedImage m_image;
     ImageView m_image_view {};
-    std::unique_ptr<Framebuffer> m_framebuffer {};
+    Framebuffer m_framebuffer {};
 
     explicit SwapchainEntry(const UnownedImage& image): m_image(image) {};
 
     void create_image_view();
-    void create_framebuffer(VkRenderPass render_pass);
+    void create_framebuffer(const RenderPass& render_pass);
     void destroy();
 };
 
@@ -39,7 +40,7 @@ class Swapchain {
     std::vector<SwapchainEntry> m_entries {};
     std::vector<UnownedImageView> m_framebuffer_attachments {};
 
-    void create_entries(const std::vector<VK::UnownedImage>& images, VkRenderPass render_pass) {
+    void create_entries(const std::vector<VK::UnownedImage>& images, const RenderPass& render_pass) {
         for(auto& image : images) {
             m_entries.emplace_back(image);
             auto& entry = m_entries.back();
@@ -124,7 +125,7 @@ public:
         return result;
     }
 
-    void create_images(VkRenderPass render_pass) {
+    void create_images(const RenderPass& render_pass) {
         create_entries(get_swapchain_images(), render_pass);
     }
 

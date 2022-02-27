@@ -1,7 +1,5 @@
 #pragma once
 
-#include <vulkan/vulkan.h>
-
 #include <iostream>
 #include <stdexcept>
 #include <cstdlib>
@@ -113,10 +111,7 @@ private:
     void init_window();
     void init_vulkan();
 
-    void setup_validation_layers();
     void create_instance();
-    void setup_debug_messenger();
-    void create_surface();
     void create_logical_device();
     void create_swap_chain();
     void create_render_pass();
@@ -143,8 +138,6 @@ private:
 
     void draw_frame();
 
-    const VK::PhysicalDevice* select_best_physical_device(const std::vector<VK::PhysicalDevice>& devices);
-
     void record_command_buffer(uint32_t frame_index, uint32_t swapchain_frame_index);
 
     std::vector<const char*> get_required_extensions() const;
@@ -160,8 +153,6 @@ private:
     void generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels);
 
     VkFormat find_depth_format();
-
-    bool has_stencil_component(VkFormat format);
 
     void create_color_resources();
 };

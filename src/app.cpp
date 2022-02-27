@@ -6,10 +6,8 @@
 #include <random>
 #include <chrono>
 #include <thread>
-
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
-
 #include "app.hpp"
 
 void HelloTriangleApplication::create_instance() {
@@ -17,7 +15,6 @@ void HelloTriangleApplication::create_instance() {
 
     factory.set_app_name("ETNA example");
     factory.set_app_version({1, 0, 0});
-
     factory.get_enabled_extension_names() = get_required_extensions();
 
     if (m_enable_validation_layers) {
@@ -26,23 +23,24 @@ void HelloTriangleApplication::create_instance() {
 
     m_instance = factory.create();
 
-    std::cout << "Supported extensions:\n";
-    for(auto& extension : m_instance.get_extensions()) {
-        std::cout << "\t" << extension.extensionName << " ver. " << VK::VersionCode(extension.specVersion) << "\n";
+    if (glfwCreateWindowSurface(m_instance.get_handle(), m_window, nullptr, &m_surface) != VK_SUCCESS) {
+        throw std::runtime_error("failed to create window surface");
+    }
+
+    if (m_enable_validation_layers && !check_validation_layer_support()) {
+        throw std::runtime_error("some requested validation layers are not available");
+    }
+
+    if(m_enable_debug_messenger && !m_debug_callback_handler.listen(m_instance.get_handle())) {
+        throw std::runtime_error("debug callback handler failed to initialize");
     }
 }
 
 std::vector<const char*> HelloTriangleApplication::get_required_extensions() const {
     uint32_t glfw_extension_count = 0;
-    const char** glfw_extensions;
+    const char** glfw_extensions = nullptr;
 
     glfw_extensions = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-
-    std::cout << "Required GLFW extensions:\n";
-    for(int i = 0; i < glfw_extension_count; i++) {
-        std::cout << "\t" << glfw_extensions[i] << "\n";
-    }
-
     std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
     if(m_enable_validation_layers) {
@@ -53,10 +51,7 @@ std::vector<const char*> HelloTriangleApplication::get_required_extensions() con
 }
 
 void HelloTriangleApplication::init_vulkan() {
-    setup_validation_layers();
     create_instance();
-    setup_debug_messenger();
-    create_surface();
     create_logical_device();
     create_swap_chain();
     create_mesh();
@@ -76,24 +71,6 @@ void HelloTriangleApplication::init_vulkan() {
     create_command_buffers();
 }
 
-void HelloTriangleApplication::create_surface() {
-    if (glfwCreateWindowSurface(m_instance.get_handle(), m_window, nullptr, &m_surface) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create window surface!");
-    }
-}
-
-void HelloTriangleApplication::setup_validation_layers() {
-    if (m_enable_validation_layers && !check_validation_layer_support()) {
-        throw std::runtime_error("some requested validation layers are not available");
-    }
-}
-
-void HelloTriangleApplication::setup_debug_messenger() {
-    if(m_enable_debug_messenger && !m_debug_callback_handler.listen(m_instance.get_handle())) {
-        throw std::runtime_error("debug callback handler failed to initialize");
-    }
-}
-
 VK::PhysicalDevice HelloTriangleApplication::get_best_physical_device() {
     auto physical_devices = m_instance.get_physical_devices();
 
@@ -101,44 +78,31 @@ VK::PhysicalDevice HelloTriangleApplication::get_best_physical_device() {
         throw std::runtime_error("could not find any Vulkan-compatible GPU");
     }
 
-    return *select_best_physical_device(physical_devices);
-}
-
-const VK::PhysicalDevice* HelloTriangleApplication::select_best_physical_device(const std::vector<VK::PhysicalDevice>& devices) {
-    const VK::PhysicalDevice* discrete_gpu = nullptr;
     const VK::PhysicalDevice* any_suitable_gpu = nullptr;
 
-    for(auto& device : devices) {
-
+    for(auto& device : physical_devices) {
         if(!is_device_suitable(&device)) continue;
 
         if(device.get_physical_properties()->deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
-            discrete_gpu = &device;
-            break;
-        } else {
-            any_suitable_gpu = &device;
+            return device;
         }
+
+        any_suitable_gpu = &device;
     }
 
-    if(!discrete_gpu && !any_suitable_gpu) {
+    if(!any_suitable_gpu) {
         throw std::runtime_error("could not find any suitable GPU");
     }
 
-    if(discrete_gpu) return discrete_gpu;
-    return any_suitable_gpu;
+    return *any_suitable_gpu;
 }
 
 bool HelloTriangleApplication::is_device_suitable(const VK::PhysicalDevice* device) {
 
-    auto graphics_family = device->get_queue_family_indices()->find_family(VK_QUEUE_GRAPHICS_BIT);
-    if(graphics_family < 0) return false;
-
-    auto surface_family = device->get_queue_family_indices()->find_surface_present_family(m_surface);
-    if(surface_family < 0) return false;
-
+    if(device->get_queue_family_indices()->find_family(VK_QUEUE_GRAPHICS_BIT) < 0) return false;
+    if(device->get_queue_family_indices()->find_surface_present_family(m_surface) < 0) return false;
     if(!device->supports_extensions(m_device_extensions)) return false;
     if(!VK::SwapChainSupportDetails(device, m_surface).is_complete()) return false;
-
     if(!device->get_physical_features()->samplerAnisotropy) return false;
 
     return true;
@@ -175,7 +139,7 @@ void HelloTriangleApplication::main_loop() {
 
         draw_frame();
     }
-    vkDeviceWaitIdle(m_surface_context->get_device()->get_handle());
+    m_surface_context->get_device()->wait_idle();
 }
 
 void HelloTriangleApplication::cleanup() {
@@ -337,7 +301,7 @@ void HelloTriangleApplication::create_render_pass() {
     render_pass_factory.get_subpass_dependency_descriptions().assign({ dependency });
 
     m_render_pass = render_pass_factory.create(m_surface_context->get_device());
-    m_swapchain->create_images(m_render_pass.get_handle());
+    m_swapchain->create_images(m_render_pass);
 }
 
 void HelloTriangleApplication::create_command_buffers() {
@@ -362,7 +326,7 @@ void HelloTriangleApplication::record_command_buffer(uint32_t frame_index, uint3
     VkRenderPassBeginInfo render_pass_begin_info {};
     render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
     render_pass_begin_info.renderPass = m_render_pass.get_handle();
-    render_pass_begin_info.framebuffer = swapchain_entry.m_framebuffer->get_handle();
+    render_pass_begin_info.framebuffer = swapchain_entry.m_framebuffer.get_handle();
 
     render_pass_begin_info.renderArea.offset = {0, 0};
     render_pass_begin_info.renderArea.extent = m_swapchain->get_extent();
@@ -491,7 +455,7 @@ void HelloTriangleApplication::recreate_swap_chain() {
         glfwWaitEvents();
     }
 
-    vkDeviceWaitIdle(m_surface_context->get_device()->get_handle());
+    m_surface_context->get_device()->wait_idle();
 
     cleanup_swap_chain();
 
@@ -807,10 +771,6 @@ VkFormat HelloTriangleApplication::find_depth_format() {
             VK_IMAGE_TILING_OPTIMAL,
             VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT
     );
-}
-
-bool HelloTriangleApplication::has_stencil_component(VkFormat format) {
-    return format == VK_FORMAT_D32_SFLOAT_S8_UINT || format == VK_FORMAT_D24_UNORM_S8_UINT;
 }
 
 void HelloTriangleApplication::create_depth_resources() {

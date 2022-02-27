@@ -52,7 +52,7 @@ public:
 
     ~Instance() override { destroy(); }
 
-    void destroy() {
+    void destroy() final {
         if(!m_handle) return
         vkDestroyInstance(m_handle, nullptr);
         m_handle = nullptr;

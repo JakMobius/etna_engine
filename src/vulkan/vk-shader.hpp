@@ -52,7 +52,7 @@ public:
         return { device, handle };
     }
 
-    void destroy() {
+    void destroy() final {
         if(!this->m_handle || !this->m_device) return;
         vkDestroyShaderModule(this->m_device->get_handle(), this->m_handle, nullptr);
         this->m_handle = nullptr;

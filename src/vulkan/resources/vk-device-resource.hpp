@@ -17,6 +17,8 @@ public:
     DeviceResourceBase(const DeviceResourceBase& copy) = delete;
     DeviceResourceBase& operator=(const DeviceResourceBase& copy_assign) = delete;
     DeviceResourceBase& operator=(DeviceResourceBase&& move_assign) noexcept {
+        if(&move_assign == this) return *this;
+        this->destroy();
         this->m_handle = move_assign.m_handle;
         m_device = move_assign.m_device;
         move_assign.m_handle = nullptr;

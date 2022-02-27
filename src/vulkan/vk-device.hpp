@@ -31,6 +31,10 @@ public:
         return m_handle;
     }
 
+    void wait_idle() {
+        vkDeviceWaitIdle(m_handle);
+    }
+
     void destroy() {
         if(!m_handle) return;
         vkDestroyDevice(m_handle, nullptr);
