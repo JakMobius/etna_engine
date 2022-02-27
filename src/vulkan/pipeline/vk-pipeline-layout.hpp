@@ -1,18 +1,22 @@
 #pragma once
 
-#include <vector>
+#include <span>
 #include <vulkan/vulkan_core.h>
 #include "../vk-device.hpp"
+#include "../vk-device-resource.hpp"
 
 namespace VK {
 
-class PipelineLayout {
-    VkPipelineLayout m_handle = nullptr;
-    VK::Device* m_device;
+using UnownedPipelineLayout = UnownedDeviceResource<VkPipelineLayout>;
+
+class PipelineLayout: public DeviceResource<VkPipelineLayout> {
 public:
-    PipelineLayout(Device* device,
-                   const std::vector<VkDescriptorSetLayout>& descriptor_set_layouts,
-                   const std::vector<VkPushConstantRange>& push_constant_ranges): m_device(device) {
+    using DeviceResource::DeviceResource;
+    using DeviceResource::operator=;
+
+    static PipelineLayout create(Device* device,
+                   std::span<VkDescriptorSetLayout> descriptor_set_layouts,
+                   std::span<VkPushConstantRange> push_constant_ranges) {
         VkPipelineLayoutCreateInfo pipeline_layout_info {};
         pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
         pipeline_layout_info.setLayoutCount = descriptor_set_layouts.size();
@@ -20,23 +24,25 @@ public:
         pipeline_layout_info.pushConstantRangeCount = push_constant_ranges.size();
         pipeline_layout_info.pPushConstantRanges = push_constant_ranges.data();
 
-        if(vkCreatePipelineLayout(device->get_handle(), &pipeline_layout_info, nullptr, &m_handle) != VK_SUCCESS) {
+        VkPipelineLayout handle = nullptr;
+
+        if(vkCreatePipelineLayout(device->get_handle(), &pipeline_layout_info, nullptr, &handle) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout");
         }
+
+        return { device, handle };
     }
 
-    ~PipelineLayout() {
-        destroy();
-    }
+    PipelineLayout(PipelineLayout&& move) noexcept = default;
+    PipelineLayout& operator=(PipelineLayout&& move_assign) = default;
+
+    ~PipelineLayout() override { destroy(); }
 
     void destroy() {
-        if(m_handle) {
-            vkDestroyPipelineLayout(m_device->get_handle(), m_handle, nullptr);
-            m_handle = nullptr;
-        }
+        if(!this->m_handle || !this->m_device) return;
+        vkDestroyPipelineLayout(this->m_device->get_handle(), this->m_handle, nullptr);
+        this->m_handle = nullptr;
     }
-
-    VkPipelineLayout get_handle() { return m_handle; }
 };
 
 }

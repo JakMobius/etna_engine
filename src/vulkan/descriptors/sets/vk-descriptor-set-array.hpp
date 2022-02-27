@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../vk-device.hpp"
-#include "vk-descriptor.hpp"
-#include "vk-descriptor-pool.hpp"
+#include "../../vk-device.hpp"
+#include "../vk-descriptor.hpp"
+#include "../pool/vk-descriptor-pool.hpp"
 
 namespace VK {
 

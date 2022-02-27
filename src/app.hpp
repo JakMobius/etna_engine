@@ -20,7 +20,7 @@
 #include "vulkan/vk-surface-context.hpp"
 #include "vulkan/image/vk-image.hpp"
 #include "vulkan/image/vk-image-view.hpp"
-#include "vulkan/descriptors/vk-descriptor-set-array.hpp"
+#include "vulkan/descriptors/sets/vk-descriptor-set-array.hpp"
 #include "vulkan/vk-framebuffer.hpp"
 #include "vulkan/vk-swapchain.hpp"
 #include "vulkan/buffer/vk-memory-buffer.hpp"
@@ -31,7 +31,8 @@
 #include "vulkan/vk-semaphore.hpp"
 #include "vulkan/vk-fence.hpp"
 #include "vulkan/render-pass/vk-render-pass.hpp"
-#include "vulkan/descriptors/vk-descriptor-pool.hpp"
+#include "vulkan/descriptors/pool/vk-descriptor-pool.hpp"
+#include "vulkan/descriptors/sets/vk-descriptor-set-layout.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -76,7 +77,7 @@ class HelloTriangleApplication {
     std::unique_ptr<VK::MemoryBuffer> m_vertex_buffer {};
     std::unique_ptr<VK::MemoryBuffer> m_index_buffer {};
 
-    VkDescriptorSetLayout m_descriptor_set_layout = {};
+    std::unique_ptr<VK::DescriptorSetLayout> m_descriptor_set_layout = {};
     std::unique_ptr<VK::DescriptorPool> m_descriptor_pool {};
     std::unique_ptr<VK::DescriptorSetArray> m_descriptor_sets {};
 

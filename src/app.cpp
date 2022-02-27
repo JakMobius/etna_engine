@@ -33,7 +33,8 @@
 #include "vulkan/render-pass/vk-render-pass-factory.hpp"
 #include "vulkan/descriptors/vk-buffer-descriptor.hpp"
 #include "vulkan/descriptors/vk-sampler-descriptor.hpp"
-#include "vulkan/descriptors/vk-descriptor-pool-factory.hpp"
+#include "vulkan/descriptors/pool/vk-descriptor-pool-factory.hpp"
+#include "vulkan/descriptors/sets/vk-descriptor-set-layout-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VkApplicationInfo appInfo {};
@@ -254,10 +255,7 @@ void HelloTriangleApplication::cleanup() {
     if(m_texture_image_view) m_texture_image_view->destroy();
     if(m_texture_image) m_texture_image->destroy();
 
-    if(m_descriptor_set_layout) {
-        vkDestroyDescriptorSetLayout(m_surface_context->get_device()->get_handle(), m_descriptor_set_layout, nullptr);
-        m_descriptor_set_layout = nullptr;
-    }
+    if(m_descriptor_set_layout) m_descriptor_set_layout->destroy();
 
     if(m_index_buffer) m_index_buffer->destroy();
     if(m_vertex_buffer) m_vertex_buffer->destroy();
@@ -352,11 +350,11 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     pipeline_factory.depth_stencil_states.set_depth_write_enable(true);
     pipeline_factory.depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
 
-    m_pipeline_layout = std::make_unique<VK::PipelineLayout>(
-        m_surface_context->get_device(),
-        std::vector<VkDescriptorSetLayout> { m_descriptor_set_layout },
-        std::vector<VkPushConstantRange> {}
-    );
+    VkDescriptorSetLayout descriptors[] { m_descriptor_set_layout->get_handle() };
+
+    m_pipeline_layout = std::make_unique<VK::PipelineLayout>( VK::PipelineLayout::create(
+        m_surface_context->get_device(), descriptors, {}
+    ));
 
     m_graphics_pipeline = std::make_unique<VK::Pipeline>(m_surface_context->get_device(), pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout->get_handle(), m_render_pass->get_handle()));
 }
@@ -730,16 +728,12 @@ void HelloTriangleApplication::create_descriptor_set_layout() {
     sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
     sampler_layout_binding.pImmutableSamplers = nullptr;
 
-    VkDescriptorSetLayoutBinding bindings[] = { ubo_layout_binding, sampler_layout_binding };
+    VK::DescriptorSetLayoutFactory factory;
 
-    VkDescriptorSetLayoutCreateInfo layout_info {};
-    layout_info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    layout_info.bindingCount = 2;
-    layout_info.pBindings = bindings;
+    factory.add_binding(ubo_layout_binding);
+    factory.add_binding(sampler_layout_binding);
 
-    if (vkCreateDescriptorSetLayout(m_surface_context->get_device()->get_handle(), &layout_info, nullptr, &m_descriptor_set_layout) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create descriptor set layout");
-    }
+    m_descriptor_set_layout = std::make_unique<VK::DescriptorSetLayout>(factory.create(m_surface_context->get_device()));
 }
 
 void HelloTriangleApplication::create_descriptor_pool() {
@@ -753,7 +747,7 @@ void HelloTriangleApplication::create_descriptor_pool() {
 
 void HelloTriangleApplication::create_descriptor_sets() {
     m_descriptor_sets = std::make_unique<VK::DescriptorSetArray>(m_descriptor_pool->unowned_copy());
-    m_descriptor_sets->get_layouts().resize(MAX_FRAMES_IN_FLIGHT, m_descriptor_set_layout);
+    m_descriptor_sets->get_layouts().resize(MAX_FRAMES_IN_FLIGHT, m_descriptor_set_layout->get_handle());
     m_descriptor_sets->create();
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
