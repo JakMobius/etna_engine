@@ -2,6 +2,9 @@
 // Created by Артем on 14.02.2022.
 //
 
+#include <memory>
+#include <iostream>
+#include <set>
 #include "vk-physical-device.hpp"
 
 const VK::QueueFamilyIndices* VK::PhysicalDevice::get_queue_family_indices() const {

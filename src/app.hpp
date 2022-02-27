@@ -12,28 +12,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
-#include "vulkan/codes/vk-version-code.hpp"
-#include "vulkan/vk-debug-callback-handler.hpp"
-#include "vulkan/vk-queue-family-indices.hpp"
-#include "vulkan/vk-memory.hpp"
-#include "vulkan/buffer/vk-buffer.hpp"
-#include "vulkan/vk-surface-context.hpp"
-#include "vulkan/image/vk-image.hpp"
-#include "vulkan/image/view/vk-image-view.hpp"
-#include "vulkan/descriptors/sets/vk-descriptor-set-array.hpp"
-#include "vulkan/vk-framebuffer.hpp"
-#include "vulkan/vk-swapchain.hpp"
-#include "vulkan/buffer/vk-memory-buffer.hpp"
-#include "vulkan/image/vk-memory-image.hpp"
-#include "vulkan/pipeline/vk-pipeline-layout.hpp"
-#include "vulkan/pipeline/vk-pipeline.hpp"
-#include "vulkan/sampler/vk-sampler.hpp"
-#include "vulkan/vk-semaphore.hpp"
-#include "vulkan/vk-fence.hpp"
-#include "vulkan/render-pass/vk-render-pass.hpp"
-#include "vulkan/descriptors/pool/vk-descriptor-pool.hpp"
-#include "vulkan/descriptors/sets/vk-descriptor-set-layout.hpp"
-#include "vulkan/instance/vk-instance.hpp"
+#include "vulkan/vulkan.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;

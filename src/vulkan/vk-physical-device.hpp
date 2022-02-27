@@ -5,9 +5,6 @@ class PhysicalDevice;
 }
 
 #include <vulkan/vulkan_core.h>
-#include <memory>
-#include <iostream>
-#include <set>
 #include "codes/vk-version-code.hpp"
 #include "codes/vk-physical-device-type-code.hpp"
 #include "vk-queue-family-indices.hpp"
@@ -21,7 +18,6 @@ class PhysicalDevice {
     mutable std::unique_ptr<VkPhysicalDeviceProperties> m_physical_properties = nullptr;
     mutable std::unique_ptr<VkPhysicalDeviceFeatures> m_physical_features = nullptr;
     mutable std::unique_ptr<QueueFamilyIndices> m_queue_family_indices = nullptr;
-
 
 public:
     PhysicalDevice(): m_handle(nullptr) {}

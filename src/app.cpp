@@ -2,39 +2,15 @@
 // Created by Артем on 09.02.2022.
 //
 
-#include "app.hpp"
-#include "vulkan/codes/vk-physical-device-type-code.hpp"
-#include "vulkan/vk-swap-chain-support-details.hpp"
 #include <FreeImage.h>
-#include <set>
 #include <random>
 #include <chrono>
 #include <thread>
 
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
-#include "vulkan/commands/vk-copy-buffer-command.hpp"
-#include "vulkan/commands/vk-copy-buffer-to-image-command.hpp"
-#include "vulkan/vk-swapchain.hpp"
-#include "vulkan/buffer/vk-memory-buffer.hpp"
-#include "vulkan/vk-staging-buffer.hpp"
-#include "vulkan/vk-shader.hpp"
-#include "vulkan/vk-viewport.hpp"
-#include "vulkan/pipeline/vk-pipeline-dynamic-state.hpp"
-#include "vulkan/pipeline/vk-pipeline-color-blend-attachment-state.hpp"
-#include "vulkan/pipeline/vk-pipeline-factory.hpp"
-#include "vulkan/vk-attachment.hpp"
-#include "vulkan/sampler/vk-sampler-factory.hpp"
-#include "vulkan/commands/vk-image-blit-command.hpp"
-#include "vulkan/barriers/vk-image-memory-barrier.hpp"
-#include "vulkan/image/vk-image-factory.hpp"
-#include "vulkan/render-pass/vk-render-pass-factory.hpp"
-#include "vulkan/descriptors/vk-buffer-descriptor.hpp"
-#include "vulkan/descriptors/vk-sampler-descriptor.hpp"
-#include "vulkan/descriptors/pool/vk-descriptor-pool-factory.hpp"
-#include "vulkan/descriptors/sets/vk-descriptor-set-layout-factory.hpp"
-#include "vulkan/image/view/vk-image-view-factory.hpp"
-#include "vulkan/instance/vk-instance-factory.hpp"
+
+#include "app.hpp"
 
 void HelloTriangleApplication::create_instance() {
     VK::InstanceFactory factory;

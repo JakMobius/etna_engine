@@ -16,6 +16,8 @@ public:
         m_handle = device;
         m_physical_device = physical_device;
     }
+    Device(const Device& copy) = delete;
+    Device& operator=(const Device* copy_assign) = delete;
 
     ~Device() {
         destroy();
@@ -30,10 +32,9 @@ public:
     }
 
     void destroy() {
-        if(m_handle) {
-            vkDestroyDevice(m_handle, nullptr);
-            m_handle = nullptr;
-        }
+        if(!m_handle) return;
+        vkDestroyDevice(m_handle, nullptr);
+        m_handle = nullptr;
     }
 };
 
