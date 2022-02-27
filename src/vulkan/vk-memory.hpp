@@ -6,7 +6,7 @@ class Memory;
 
 #include <vulkan/vulkan_core.h>
 #include <stdexcept>
-#include "vk-device.hpp"
+#include "device/vk-device.hpp"
 
 namespace VK {
 

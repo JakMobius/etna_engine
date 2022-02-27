@@ -11,6 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
 #include "vulkan/vulkan.hpp"
+#include "vulkan/vk-surface.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -20,7 +21,7 @@ struct UniformBufferObject {
 
 // TODO: Check if exceptions are used safely in this class
 
-class HelloTriangleApplication {
+class Application {
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
 
@@ -34,15 +35,15 @@ class HelloTriangleApplication {
     std::unique_ptr<VK::PhysicalDevice> m_physical_device {};
     std::unique_ptr<VK::SurfaceContext> m_surface_context {};
 
-    VkSurfaceKHR m_surface {};
+    VK::Surface m_surface {};
 
-    std::unique_ptr<VK::Swapchain> m_swapchain {};
+    std::unique_ptr<VK::SwapchainImages> m_swapchain_images {};
     std::vector<VK::UnownedFence> m_in_flight_images {};
 
     std::vector<VK::Semaphore> m_image_available_semaphores {};
     std::vector<VK::Semaphore> m_render_finished_semaphores {};
     std::vector<VK::Fence> m_in_flight_fences {};
-    std::vector<std::unique_ptr<VK::CommandBuffer>> m_command_buffers {};
+    std::vector<VK::CommandBuffer> m_command_buffers {};
 
     std::vector<float> m_vertex_buffer_storage {};
     std::vector<uint32_t> m_index_buffer_storage {};
@@ -102,7 +103,7 @@ public:
         cleanup();
     }
 
-    ~HelloTriangleApplication() {
+    ~Application() {
         cleanup();
     }
 
@@ -155,4 +156,6 @@ private:
     VkFormat find_depth_format();
 
     void create_color_resources();
+
+    void create_surface();
 };

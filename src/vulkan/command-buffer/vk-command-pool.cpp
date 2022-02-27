@@ -3,8 +3,9 @@
 //
 
 #include "vk-command-pool.hpp"
+#include "vk-command-buffer.hpp"
 
-VK::CommandBuffer VK::CommandPool::create_command_buffer() {
+VK::CommandBuffer VK::CommandPoolBase::create_command_buffer() {
     VkCommandBufferAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.commandPool = m_handle;
@@ -17,13 +18,9 @@ VK::CommandBuffer VK::CommandPool::create_command_buffer() {
 
     VkCommandBuffer command_buffer = nullptr;
 
-    if (vkAllocateCommandBuffers(m_surface_context->get_device()->get_handle(), &alloc_info, &command_buffer) != VK_SUCCESS) {
+    if (vkAllocateCommandBuffers(m_device->get_handle(), &alloc_info, &command_buffer) != VK_SUCCESS) {
         throw std::runtime_error("failed to allocate command buffers");
     }
 
-    return VK::CommandBuffer(command_buffer, this);
-}
-
-VK::CommandPool::~CommandPool() {
-    vkDestroyCommandPool(m_surface_context->get_device()->get_handle(), m_handle, nullptr);
+    return CommandBuffer { m_device, this, command_buffer };
 }

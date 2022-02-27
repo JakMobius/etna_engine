@@ -2,14 +2,9 @@
 // Created by Артем on 17.02.2022.
 //
 
-#include "vk-swapchain.hpp"
-#include "framebuffer.hpp"
-#include "image/view/vk-image-view-factory.hpp"
-
-void VK::SwapchainEntry::destroy() {
-
-
-}
+#include "vk-swapchain-images.hpp"
+#include "../framebuffer.hpp"
+#include "../image/view/vk-image-view-factory.hpp"
 
 void VK::SwapchainEntry::create_image_view() {
     ImageViewFactory factory;

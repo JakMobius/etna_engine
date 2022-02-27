@@ -3,7 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <vulkan/vulkan_core.h>
-#include "vk-device.hpp"
+#include "device/vk-device.hpp"
 #include "resources/vk-device-resource.hpp"
 
 namespace VK {

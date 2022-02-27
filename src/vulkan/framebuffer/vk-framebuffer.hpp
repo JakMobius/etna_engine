@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "../vk-device.hpp"
+#include "../device/vk-device.hpp"
 #include "../image/view/vk-image-view.hpp"
 
 namespace VK {

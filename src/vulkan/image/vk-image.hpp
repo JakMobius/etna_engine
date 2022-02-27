@@ -3,7 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include "../resources/vk-device-resource.hpp"
 #include "../vk-memory.hpp"
-#include "../vk-command-buffer.hpp"
+#include "../command-buffer/vk-command-buffer.hpp"
 
 namespace VK {
 

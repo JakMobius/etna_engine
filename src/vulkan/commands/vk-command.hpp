@@ -1,6 +1,7 @@
 #pragma once
 
-#include "../vk-command-pool.hpp"
+#include "../command-buffer/vk-command-pool.hpp"
+#include "../command-buffer/vk-command-buffer.hpp"
 
 namespace VK {
 

@@ -2,8 +2,8 @@
 
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "vk-physical-device.hpp"
-#include "vk-surface-context.hpp"
+#include "../vk-physical-device.hpp"
+#include "../vk-surface-context.hpp"
 
 namespace VK {
 
@@ -11,20 +11,10 @@ struct SwapChainSupportDetails {
     VkSurfaceCapabilitiesKHR m_capabilities {};
     std::vector<VkSurfaceFormatKHR> m_formats {};
     std::vector<VkPresentModeKHR> m_present_modes {};
-    const PhysicalDevice* m_device;
-    VkSurfaceKHR m_surface;
+    VK::UnownedSurface m_surface;
+    const VK::PhysicalDevice* m_device;
 
-    explicit SwapChainSupportDetails(const PhysicalDevice* device, VkSurfaceKHR surface) :
-            m_device(device), m_surface(surface) {
-
-        get_capabilities();
-        get_formats();
-        get_present_modes();
-
-    }
-
-    explicit SwapChainSupportDetails(SurfaceContext* ctx) :
-            m_device(ctx->get_device()->get_physical_device()), m_surface(ctx->get_surface()) {
+    SwapChainSupportDetails(const VK::PhysicalDevice* device, const VK::UnownedSurface& surface): m_device(device), m_surface(surface) {
 
         get_capabilities();
         get_formats();
@@ -34,25 +24,25 @@ struct SwapChainSupportDetails {
 
     void get_present_modes() {
         uint32_t present_mode_count = 0;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->get_handle(), m_surface, &present_mode_count, nullptr);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->get_handle(), m_surface.get_handle(), &present_mode_count, nullptr);
 
         if(present_mode_count != 0) {
             m_present_modes.resize(present_mode_count);
-            vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->get_handle(), m_surface, &present_mode_count, m_present_modes.data());
+            vkGetPhysicalDeviceSurfacePresentModesKHR(m_device->get_handle(), m_surface.get_handle(), &present_mode_count, m_present_modes.data());
         }
     }
 
     void get_capabilities() {
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->get_handle(), m_surface, &m_capabilities);
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_device->get_handle(), m_surface.get_handle(), &m_capabilities);
     }
 
     void get_formats() {
         uint32_t format_count = 0;
-        vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->get_handle(), m_surface, &format_count, nullptr);
+        vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->get_handle(), m_surface.get_handle(), &format_count, nullptr);
 
         if(format_count != 0) {
             m_formats.resize(format_count);
-            vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->get_handle(), m_surface, &format_count, m_formats.data());
+            vkGetPhysicalDeviceSurfaceFormatsKHR(m_device->get_handle(), m_surface.get_handle(), &format_count, m_formats.data());
         }
     }
 
@@ -81,7 +71,7 @@ struct SwapChainSupportDetails {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    VkExtent2D choose_best_swap_extent(int window_width, int window_height) const {
+    VkExtent2D choose_best_swap_extent(uint32_t window_width, uint32_t window_height) const {
         if(m_capabilities.currentExtent.width != UINT32_MAX) {
             return m_capabilities.currentExtent;
         } else {

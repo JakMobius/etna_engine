@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vk-device.hpp"
+#include "../device/vk-device.hpp"
 #include "../vk-memory.hpp"
 #include "vk-image.hpp"
 

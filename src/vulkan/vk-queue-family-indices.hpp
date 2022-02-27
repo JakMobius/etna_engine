@@ -10,6 +10,7 @@ struct QueueFamilyIndices;
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include "vk-physical-device.hpp"
+#include "vk-surface.hpp"
 
 namespace VK {
 
@@ -22,7 +23,7 @@ struct QueueFamilyIndices {
     explicit QueueFamilyIndices(const PhysicalDevice* physical_device);
 
     int find_family(VkQueueFlagBits flags) const;
-    int find_surface_present_family(VkSurfaceKHR m_surface) const;
+    int find_surface_present_family(const SurfaceBase& m_surface) const;
 };
 
 }

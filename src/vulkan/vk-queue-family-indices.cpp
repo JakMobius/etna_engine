@@ -10,10 +10,10 @@ VK::QueueFamilyIndices::QueueFamilyIndices(const VK::PhysicalDevice* physical_de
     vkGetPhysicalDeviceQueueFamilyProperties(physical_device->get_handle(), &m_queue_family_count, queue_families.data());
 }
 
-int VK::QueueFamilyIndices::find_surface_present_family(VkSurfaceKHR m_surface) const {
+int VK::QueueFamilyIndices::find_surface_present_family(const VK::SurfaceBase& m_surface) const {
     for(int i = 0; i < m_queue_family_count; i++) {
         VkBool32 present_support = false;
-        vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device->get_handle(), i, m_surface, &present_support);
+        vkGetPhysicalDeviceSurfaceSupportKHR(m_physical_device->get_handle(), i, m_surface.get_handle(), &present_support);
         if(present_support) return i;
     }
     return -1;

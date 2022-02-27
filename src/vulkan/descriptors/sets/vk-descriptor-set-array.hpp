@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../../vk-device.hpp"
+#include "../../device/vk-device.hpp"
 #include "../vk-descriptor.hpp"
 #include "../pool/vk-descriptor-pool.hpp"
 

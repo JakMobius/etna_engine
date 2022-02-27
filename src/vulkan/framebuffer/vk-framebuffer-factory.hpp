@@ -2,7 +2,7 @@
 
 #include "../render-pass/vk-render-pass.hpp"
 #include "../image/view/vk-image-view.hpp"
-#include "../framebuffer.hpp"
+#include "../framebuffer/vk-framebuffer.hpp"
 
 namespace VK {
 
@@ -13,6 +13,7 @@ class FramebufferFactory {
 public:
     FramebufferFactory() {
         m_description.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+        m_description.layers = 1;
     }
 
     void set_size(const VkExtent2D& size) {

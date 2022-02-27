@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "../vk-device.hpp"
+#include "../device/vk-device.hpp"
 #include "../vk-memory.hpp"
 #include "vk-memory-buffer.hpp"
 
