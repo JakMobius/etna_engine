@@ -34,38 +34,21 @@
 #include "vulkan/descriptors/pool/vk-descriptor-pool-factory.hpp"
 #include "vulkan/descriptors/sets/vk-descriptor-set-layout-factory.hpp"
 #include "vulkan/image/view/vk-image-view-factory.hpp"
+#include "vulkan/instance/vk-instance-factory.hpp"
 
 void HelloTriangleApplication::create_instance() {
-    VkApplicationInfo appInfo {};
-    appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-    appInfo.pApplicationName = "Hello Triangle";
-    appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.pEngineName = "No Engine";
-    appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-    appInfo.apiVersion = VK_API_VERSION_1_0;
+    VK::InstanceFactory factory;
 
-    std::vector<const char*> required_extensions = get_required_extensions();
+    factory.set_app_name("ETNA example");
+    factory.set_app_version({1, 0, 0});
 
-    VkInstanceCreateInfo create_info {};
-    create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-    create_info.pApplicationInfo = &appInfo;
-    create_info.enabledExtensionCount = required_extensions.size();
-    create_info.ppEnabledExtensionNames = required_extensions.data();
+    factory.get_enabled_extension_names() = get_required_extensions();
 
     if (m_enable_validation_layers) {
-        create_info.enabledLayerCount = static_cast<uint32_t>(m_required_validation_layers.size());
-        create_info.ppEnabledLayerNames = m_required_validation_layers.data();
-    } else {
-        create_info.enabledLayerCount = 0;
+        factory.get_enabled_layer_names() = m_required_validation_layers;
     }
 
-    VkInstance instance = nullptr;
-
-    if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
-        throw std::runtime_error("failed to create instance!");
-    }
-
-    m_instance = VK::Instance(instance);
+    m_instance = factory.create();
 
     std::cout << "Supported extensions:\n";
     for(auto& extension : m_instance.get_extensions()) {
@@ -197,16 +180,11 @@ bool HelloTriangleApplication::check_validation_layer_support() {
     }
 
     for (const char* required_layer : m_required_validation_layers) {
-        bool layerFound = false;
+        auto layer = std::find_if(available_layers.begin(), available_layers.end(), [required_layer](auto available_layer) -> bool {
+            return strcmp(required_layer, available_layer.layerName) == 0;
+        });
 
-        for (const auto& available_layer : available_layers) {
-            if (strcmp(required_layer, available_layer.layerName) == 0) {
-                layerFound = true;
-                break;
-            }
-        }
-
-        if (!layerFound) {
+        if(layer == available_layers.end()) {
             result = false;
             std::cout << "Warning: Validation layer '" << required_layer << "' is required but not available\n";
         }

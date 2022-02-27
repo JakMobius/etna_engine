@@ -33,7 +33,7 @@
 #include "vulkan/render-pass/vk-render-pass.hpp"
 #include "vulkan/descriptors/pool/vk-descriptor-pool.hpp"
 #include "vulkan/descriptors/sets/vk-descriptor-set-layout.hpp"
-#include "vulkan/vk-instance.hpp"
+#include "vulkan/instance/vk-instance.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;

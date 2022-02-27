@@ -2,7 +2,7 @@
 
 #include <vulkan/vulkan_core.h>
 #include "../vk-image.hpp"
-#include "../../vk-device-resource.hpp"
+#include "../../resources/vk-device-resource.hpp"
 
 namespace VK {
 

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <exception>
-#include "../vk-device-resource.hpp"
+#include "../resources/vk-device-resource.hpp"
 
 namespace VK {
 

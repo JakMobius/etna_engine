@@ -1,30 +1,16 @@
+#pragma once
 
 #include <vector>
-#include <string>
 #include <vulkan/vulkan_core.h>
-#include "vk-physical-device.hpp"
+#include "../vk-physical-device.hpp"
+#include "../resources/vk-resource.hpp"
 
 namespace VK {
 
-class Instance {
-
-    VkInstance m_handle;
-
+class InstanceBase : public ResourceBase<VkInstance> {
 public:
-    Instance(): m_handle(nullptr) {}
-    explicit Instance(VkInstance handle): m_handle(handle) {}
-    Instance(Instance&& move) noexcept : Instance(move.m_handle) { move.m_handle = nullptr; }
-    Instance(const Instance& copy) = delete;
-    Instance &operator=(Instance &&move_assign)  noexcept {
-        if(this == &move_assign) return *this;
-        destroy();
-        m_handle = move_assign.m_handle;
-        move_assign.m_handle = nullptr;
-        return *this;
-    }
-    Instance& operator=(const Instance& copy_assign) = delete;
-
-    ~Instance() { destroy(); }
+    using ResourceBase::ResourceBase;
+    InstanceBase& operator=(InstanceBase&& move_assign) = default;
 
     std::vector<VkLayerProperties> get_validation_layers() {
         uint32_t layer_count = 0;
@@ -52,19 +38,25 @@ public:
         vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
         return extensions;
     }
+};
+
+using UnownedInstance = UnownedResource<VkInstance, InstanceBase>;
+
+class Instance : public Resource<VkInstance, InstanceBase> {
+public:
+    using Resource::Resource;
+    using Resource::operator=;
+
+    Instance(Instance&& move) noexcept = default;
+    Instance& operator=(Instance&& move_assign) = default;
+
+    ~Instance() override { destroy(); }
 
     void destroy() {
-        if(m_handle) {
-            vkDestroyInstance(m_handle, nullptr);
-            m_handle = nullptr;
-        }
+        if(!m_handle) return
+        vkDestroyInstance(m_handle, nullptr);
+        m_handle = nullptr;
     }
-
-    bool is_null() { return !m_handle; }
-    explicit operator bool() { return m_handle != nullptr; }
-
-    VkInstance get_handle() { return m_handle; }
-
 };
 
 }

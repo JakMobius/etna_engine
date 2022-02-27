@@ -1,23 +1,23 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "vk-device.hpp"
+#include "../vk-device.hpp"
+#include "vk-resource.hpp"
 
 namespace VK {
 
 template<typename Handle>
-class DeviceResourceBase {
+class DeviceResourceBase : public ResourceBase<Handle> {
 protected:
-    Handle m_handle;
     Device* m_device;
 
-    DeviceResourceBase(Device* device, Handle handle): m_handle(handle), m_device(device) {}
+    DeviceResourceBase(Device* device, Handle handle): ResourceBase<Handle>(handle), m_device(device) {}
 public:
 
     DeviceResourceBase(const DeviceResourceBase& copy) = delete;
     DeviceResourceBase& operator=(const DeviceResourceBase& copy_assign) = delete;
     DeviceResourceBase& operator=(DeviceResourceBase&& move_assign) noexcept {
-        m_handle = move_assign.m_handle;
+        this->m_handle = move_assign.m_handle;
         m_device = move_assign.m_device;
         move_assign.m_handle = nullptr;
         return *this;
@@ -25,11 +25,6 @@ public:
 
     virtual ~DeviceResourceBase() = default;
 
-    bool is_null() { return !m_handle; }
-    bool operator!() { return is_null(); }
-    explicit operator bool() { return !is_null(); }
-
-    const Handle& get_handle() const { return m_handle; };
     Device* get_device() const { return m_device; };
 };
 
@@ -56,7 +51,7 @@ public:
     DeviceResource(): Base(nullptr, nullptr) {}
     DeviceResource(DeviceResource&& move) noexcept: Base(move.m_device, move.m_handle) { move.m_handle = nullptr; }
     DeviceResource& operator=(DeviceResource&& move_assign) noexcept = default;
-    using Base::operator=;
+    DeviceResource& operator=(const DeviceResource& copy_assign) = default;
 
     ~DeviceResource() override = default;
 

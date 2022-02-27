@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "../../vk-device-resource.hpp"
+#include "../../resources/vk-device-resource.hpp"
 #include "../../vk-memory.hpp"
 
 namespace VK {
