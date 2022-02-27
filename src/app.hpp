@@ -33,6 +33,7 @@
 #include "vulkan/render-pass/vk-render-pass.hpp"
 #include "vulkan/descriptors/pool/vk-descriptor-pool.hpp"
 #include "vulkan/descriptors/sets/vk-descriptor-set-layout.hpp"
+#include "vulkan/vk-instance.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -50,7 +51,8 @@ class HelloTriangleApplication {
     GLFWwindow* m_window = nullptr;
     const uint32_t m_window_width = 800;
     const uint32_t m_window_height = 600;
-    VkInstance m_instance {};
+
+    VK::Instance m_instance;
 
     std::unique_ptr<VK::PhysicalDevice> m_physical_device {};
     std::unique_ptr<VK::SurfaceContext> m_surface_context {};

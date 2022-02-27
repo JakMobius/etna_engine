@@ -12,7 +12,7 @@ public:
 
     PipelineShaderStage() {}
 
-    void add_shader(VK::Shader &shader, VkShaderStageFlagBits stage) {
+    void add_shader(ShaderModule &shader, VkShaderStageFlagBits stage) {
         m_shader_stages.emplace_back();
         auto &shader_stage_info = m_shader_stages.back();
 

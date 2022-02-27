@@ -5,7 +5,6 @@
 #include "app.hpp"
 #include "vulkan/codes/vk-physical-device-type-code.hpp"
 #include "vulkan/vk-swap-chain-support-details.hpp"
-#include "shader-reader.hpp"
 #include <FreeImage.h>
 #include <set>
 #include <random>
@@ -26,7 +25,6 @@
 #include "vulkan/pipeline/vk-pipeline-factory.hpp"
 #include "vulkan/vk-attachment.hpp"
 #include "vulkan/sampler/vk-sampler-factory.hpp"
-#include "vulkan/sampler/vk-sampler.hpp"
 #include "vulkan/commands/vk-image-blit-command.hpp"
 #include "vulkan/barriers/vk-image-memory-barrier.hpp"
 #include "vulkan/image/vk-image-factory.hpp"
@@ -62,9 +60,13 @@ void HelloTriangleApplication::create_instance() {
         create_info.enabledLayerCount = 0;
     }
 
-    if (vkCreateInstance(&create_info, nullptr, &m_instance) != VK_SUCCESS) {
+    VkInstance instance = nullptr;
+
+    if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
         throw std::runtime_error("failed to create instance!");
     }
+
+    m_instance = VK::Instance(instance);
 
     uint32_t extension_count = 0;
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
@@ -124,7 +126,7 @@ void HelloTriangleApplication::init_vulkan() {
 }
 
 void HelloTriangleApplication::create_surface() {
-    if (glfwCreateWindowSurface(m_instance, m_window, nullptr, &m_surface) != VK_SUCCESS) {
+    if (glfwCreateWindowSurface(m_instance.get_handle(), m_window, nullptr, &m_surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface!");
     }
 }
@@ -136,26 +138,16 @@ void HelloTriangleApplication::setup_validation_layers() {
 }
 
 void HelloTriangleApplication::setup_debug_messenger() {
-    if(m_enable_debug_messenger && !m_debug_callback_handler.listen(m_instance)) {
+    if(m_enable_debug_messenger && !m_debug_callback_handler.listen(m_instance.get_handle())) {
         throw std::runtime_error("debug callback handler failed to initialize");
     }
 }
 
 VK::PhysicalDevice HelloTriangleApplication::get_best_physical_device() {
-    uint32_t device_count = 0;
-    vkEnumeratePhysicalDevices(m_instance, &device_count, nullptr);
-    if(device_count == 0) {
+    auto physical_devices = m_instance.get_physical_devices();
+
+    if(physical_devices.empty()) {
         throw std::runtime_error("could not find any Vulkan-compatible GPU");
-    }
-
-    std::vector<VkPhysicalDevice> devices(device_count);
-    vkEnumeratePhysicalDevices(m_instance, &device_count, devices.data());
-
-    std::vector<VK::PhysicalDevice> physical_devices {};
-    physical_devices.reserve(devices.size());
-
-    for(auto& device : devices) {
-        physical_devices.emplace_back(device);
     }
 
     return *select_best_physical_device(physical_devices);
@@ -204,10 +196,7 @@ bool HelloTriangleApplication::is_device_suitable(const VK::PhysicalDevice* devi
 bool HelloTriangleApplication::check_validation_layer_support() {
     bool result = true;
 
-    uint32_t layer_count = 0;
-    vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
-    std::vector<VkLayerProperties> available_layers(layer_count);
-    vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+    auto available_layers = m_instance.get_validation_layers();
 
     std::cout << "Supported validation layers:\n";
 
@@ -267,11 +256,11 @@ void HelloTriangleApplication::cleanup() {
     m_physical_device = nullptr;
 
     if(m_surface) {
-        vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+        vkDestroySurfaceKHR(m_instance.get_handle(), m_surface, nullptr);
         m_surface = nullptr;
     }
 
-    vkDestroyInstance(m_instance, nullptr);
+    m_instance.destroy();
 
     glfwDestroyWindow(m_window);
     glfwTerminate();
@@ -287,7 +276,6 @@ static void framebuffer_resize_callback(GLFWwindow* window, int width, int heigh
 void HelloTriangleApplication::init_window() {
     glfwInit();
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-//    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
     m_window = glfwCreateWindow(m_window_width, m_window_height, "Vulkan", nullptr, nullptr);
     glfwSetWindowUserPointer(m_window, this);
     glfwSetFramebufferSizeCallback(m_window, framebuffer_resize_callback);
@@ -321,11 +309,8 @@ void HelloTriangleApplication::create_graphics_pipeline() {
 
     VK::PipelineFactory pipeline_factory {};
 
-    auto vert_shader_code = read_file("resources/shaders/vert.spv");
-    auto frag_shader_code = read_file("resources/shaders/frag.spv");
-
-    VK::Shader vertex_shader   { m_surface_context->get_device(), vert_shader_code };
-    VK::Shader fragment_shader { m_surface_context->get_device(), frag_shader_code };
+    auto vertex_shader = VK::ShaderModule::from_file(m_surface_context->get_device(), "resources/shaders/vert.spv");
+    auto fragment_shader = VK::ShaderModule::from_file(m_surface_context->get_device(), "resources/shaders/frag.spv");
 
     pipeline_factory.shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
     pipeline_factory.shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -354,7 +339,7 @@ void HelloTriangleApplication::create_graphics_pipeline() {
     VkDescriptorSetLayout descriptors[] { m_descriptor_set_layout.get_handle() };
 
     m_pipeline_layout = VK::PipelineLayout::create(m_surface_context->get_device(), descriptors, {});
-    m_graphics_pipeline = pipeline_factory.create(m_surface_context->get_device(), m_pipeline_layout.get_handle(), m_render_pass.get_handle());
+    m_graphics_pipeline = pipeline_factory.create(m_pipeline_layout, m_render_pass);
 }
 
 void HelloTriangleApplication::create_render_pass() {
@@ -714,8 +699,8 @@ void HelloTriangleApplication::update_uniform_buffer(uint32_t image_index) {
 void HelloTriangleApplication::create_descriptor_set_layout() {
     VkDescriptorSetLayoutBinding ubo_layout_binding {};
     ubo_layout_binding.binding = 0;
-    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_layout_binding.descriptorCount = 1;
+    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
     ubo_layout_binding.pImmutableSamplers = nullptr;
 
