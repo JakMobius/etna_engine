@@ -1,7 +1,7 @@
 #pragma once
 
-#include "buffer/vk-memory-buffer.hpp"
-#include "buffer/vk-buffer-factory.hpp"
+#include "vk-memory-buffer.hpp"
+#include "vk-buffer-factory.hpp"
 
 namespace VK {
 

@@ -3,7 +3,7 @@
 //
 
 #include "vk-instance.hpp"
-#include "../vk-physical-device.hpp"
+#include "../device/vk-physical-device.hpp"
 
 std::vector<VkLayerProperties> VK::InstanceBase::get_validation_layers() {
     uint32_t layer_count = 0;
@@ -34,6 +34,6 @@ std::vector<VkExtensionProperties> VK::InstanceBase::get_extensions() {
 
 void VK::Instance::destroy() {
     if(!m_handle) return
-                vkDestroyInstance(m_handle, nullptr);
+    vkDestroyInstance(m_handle, nullptr);
     m_handle = nullptr;
 }

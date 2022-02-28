@@ -1,9 +1,12 @@
 #pragma once
 
 #include <vulkan/vulkan_core.h>
-#include "../vk-physical-device.hpp"
+#include "../resources/vk-resource.hpp"
+#include "vk-physical-device.hpp"
 
 namespace VK {
+
+using Queue = UnownedResource<VkQueue, class QueueBase>;
 
 class Device {
 
@@ -32,7 +35,7 @@ public:
         vkDeviceWaitIdle(m_handle);
     }
 
-    VkQueue get_queue(uint32_t queue_family, uint32_t index);
+    VK::Queue get_queue(uint32_t queue_family, uint32_t index);
 
     void destroy();
 

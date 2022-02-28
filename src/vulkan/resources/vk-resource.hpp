@@ -39,7 +39,6 @@ public:
     UnownedResource& operator=(UnownedResource&& move_assign) noexcept = default;
     UnownedResource& operator=(const UnownedResource& copy_assign) {
         this->m_handle = copy_assign.m_handle;
-        this->m_device = copy_assign.m_device;
         return *this;
     }
 };

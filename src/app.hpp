@@ -36,8 +36,8 @@ class Application {
     int m_graphics_queue_family = -1;
     int m_present_queue_family = -1;
 
-    VkQueue m_device_graphics_queue = nullptr;
-    VkQueue m_device_present_queue = nullptr;
+    VK::Queue m_device_graphics_queue {};
+    VK::Queue m_device_present_queue {};
 
     VK::Surface m_surface {};
 

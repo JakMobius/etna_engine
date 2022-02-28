@@ -5,7 +5,7 @@ class PhysicalDevice;
 }
 
 #include <vulkan/vulkan_core.h>
-#include "vk-queue-family-indices.hpp"
+#include "../queue/vk-queue-family-indices.hpp"
 
 namespace VK {
 

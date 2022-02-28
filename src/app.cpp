@@ -460,27 +460,23 @@ void Application::draw_frame() {
 
     record_command_buffer(m_current_frame, image_index);
 
-    VkSemaphore signal_semaphores[] = { m_render_finished_semaphores[m_current_frame].get_handle() };
-    VkSemaphore wait_semaphores[] = { m_image_available_semaphores[m_current_frame].get_handle() };
-    VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSemaphore signal_semaphores[]     = { m_render_finished_semaphores[m_current_frame].get_handle() };
+    VkSemaphore wait_semaphores[]       = { m_image_available_semaphores[m_current_frame].get_handle() };
+    VkPipelineStageFlags wait_stages[]  = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+    VkSwapchainKHR present_swapchains[] = { m_swapchain.get_handle() };
+    uint32_t present_swapchain_images[] = { image_index };
 
     command_buffer.submit(
             m_device_graphics_queue,
-            m_in_flight_fences[m_current_frame].get_handle(),
+            m_in_flight_fences[m_current_frame],
             signal_semaphores, wait_semaphores, wait_stages);
 
-    VkSwapchainKHR swap_chains[] = { m_swapchain.get_handle() };
+    VK::QueuePresentInfo queue_present_info {};
+    queue_present_info.set_wait_semaphores(signal_semaphores);
+    queue_present_info.set_swapchains(present_swapchains);
+    queue_present_info.set_images(present_swapchain_images);
 
-    VkPresentInfoKHR present_info {};
-    present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-    present_info.waitSemaphoreCount = 1;
-    present_info.pWaitSemaphores = signal_semaphores;
-    present_info.swapchainCount = 1;
-    present_info.pSwapchains = swap_chains;
-    present_info.pImageIndices = &image_index;
-    present_info.pResults = nullptr; // Optional
-
-    result = vkQueuePresentKHR(m_device_graphics_queue, &present_info);
+    result = m_device_graphics_queue.present(queue_present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebuffer_resized) {
         m_framebuffer_resized = false;
@@ -489,7 +485,7 @@ void Application::draw_frame() {
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    vkQueueWaitIdle(m_device_present_queue);
+    m_device_present_queue.wait_idle();
 
     m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -588,7 +584,7 @@ void Application::create_index_buffer() {
     copy_command.write(&command_buffer);
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue);
 }
 
 void Application::create_vertex_buffer() {
@@ -610,7 +606,7 @@ void Application::create_vertex_buffer() {
     copy_command.write(&command_buffer);
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue);
 }
 
 void Application::create_uniform_buffers() {
@@ -758,7 +754,7 @@ void Application::create_texture_image() {
     generate_mipmaps(&command_buffer, &m_texture_image->get_image(), image_factory.get_format(), { image_width, image_height }, image_factory.get_mip_levels());
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue);
 
     VK::ImageViewFactory image_view_factory;
     image_view_factory.set_format(image_factory.get_format());
@@ -857,7 +853,7 @@ void Application::create_depth_resources() {
     layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue);
 }
 
 void Application::create_color_resources() {

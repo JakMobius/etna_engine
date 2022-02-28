@@ -2,7 +2,7 @@
 
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "../vk-physical-device.hpp"
+#include "../device/vk-physical-device.hpp"
 
 namespace VK {
 

@@ -3,6 +3,7 @@
 //
 
 #include "vk-device.hpp"
+#include "../queue/vk-queue.hpp"
 
 VK::Device &VK::Device::operator=(VK::Device &&move_assign) noexcept {
     if(this == &move_assign) return *this;
@@ -13,10 +14,10 @@ VK::Device &VK::Device::operator=(VK::Device &&move_assign) noexcept {
     return *this;
 }
 
-VkQueue VK::Device::get_queue(uint32_t queue_family, uint32_t index) {
+VK::Queue VK::Device::get_queue(uint32_t queue_family, uint32_t index) {
     VkQueue result = nullptr;
     vkGetDeviceQueue(m_handle, queue_family, index, &result);
-    return result;
+    return VK::Queue { result };
 }
 
 void VK::Device::destroy() {

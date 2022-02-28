@@ -9,8 +9,8 @@ struct DeviceQueueFamilies;
 #include <cstdint>
 #include <vulkan/vulkan_core.h>
 #include <vector>
-#include "vk-physical-device.hpp"
-#include "vk-surface.hpp"
+#include "../device/vk-physical-device.hpp"
+#include "../vk-surface.hpp"
 
 namespace VK {
 

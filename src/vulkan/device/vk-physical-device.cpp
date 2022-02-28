@@ -6,8 +6,8 @@
 #include <iostream>
 #include <set>
 #include "vk-physical-device.hpp"
-#include "codes/vk-physical-device-type-code.hpp"
-#include "codes/vk-version-code.hpp"
+#include "../codes/vk-physical-device-type-code.hpp"
+#include "../codes/vk-version-code.hpp"
 
 const VK::DeviceQueueFamilies* VK::PhysicalDevice::get_queue_family_indices() const {
     if(!m_queue_family_indices) {

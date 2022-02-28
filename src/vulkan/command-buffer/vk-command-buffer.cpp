@@ -4,6 +4,7 @@
 
 #include "vk-command-buffer.hpp"
 #include "vk-command-pool.hpp"
+#include "../queue/vk-queue.hpp"
 
 void VK::CommandBufferBase::reset(VkCommandBufferResetFlags flags) {
     vkResetCommandBuffer(m_handle, flags);
@@ -25,15 +26,16 @@ void VK::CommandBufferBase::end() {
     }
 }
 
-void VK::CommandBufferBase::submit_and_wait(VkQueue queue, VkFence fence,
+void VK::CommandBufferBase::submit_and_wait(VK::Queue& queue, const VK::Fence& fence,
                                             std::span<VkSemaphore> signal_semaphores,
                                             std::span<VkSemaphore> wait_semaphores,
                                             std::span<VkPipelineStageFlags> wait_stages) {
     submit(queue, fence, signal_semaphores, wait_semaphores, wait_stages);
-    vkQueueWaitIdle(queue);
+    queue.wait_idle();
 }
 
-void VK::CommandBufferBase::submit(VkQueue queue, VkFence fence,
+
+void VK::CommandBufferBase::submit(VK::Queue& queue, const VK::Fence& fence,
                                    std::span<VkSemaphore> signal_semaphores,
                                    std::span<VkSemaphore> wait_semaphores,
                                    std::span<VkPipelineStageFlags> wait_stages) {
@@ -49,7 +51,7 @@ void VK::CommandBufferBase::submit(VkQueue queue, VkFence fence,
     submit_info.commandBufferCount = 1;
     submit_info.pCommandBuffers = &m_handle;
 
-    if(vkQueueSubmit(queue, 1, &submit_info, fence) != VK_SUCCESS){
+    if(vkQueueSubmit(queue.get_handle(), 1, &submit_info, fence.get_handle()) != VK_SUCCESS){
         throw std::runtime_error("failed to submit command buffer");
     }
 }

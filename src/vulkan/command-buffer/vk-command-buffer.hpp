@@ -11,6 +11,7 @@ class CommandBuffer;
 #include "../resources/vk-command-pool-resource.hpp"
 #include "../buffer/vk-buffer.hpp"
 #include "../pipeline/vk-pipeline.hpp"
+#include "../vk-fence.hpp"
 
 namespace VK {
 
@@ -25,14 +26,14 @@ public:
 
     void end();
 
-    void submit_and_wait(VkQueue queue,
-                         VkFence fence,
+    void submit_and_wait(Queue& queue,
+                         const Fence& fence = {},
                          std::span<VkSemaphore> signal_semaphores = {},
                          std::span<VkSemaphore> wait_semaphores = {},
                          std::span<VkPipelineStageFlags> wait_stages = {});
 
-    void submit(VkQueue queue,
-                VkFence fence,
+    void submit(Queue& queue,
+                const Fence& fence = {},
                 std::span<VkSemaphore> signal_semaphores = {},
                 std::span<VkSemaphore> wait_semaphores = {},
                 std::span<VkPipelineStageFlags> wait_stages = {});
