@@ -3,7 +3,6 @@
 #include <vector>
 #include <vulkan/vulkan_core.h>
 #include "../vk-physical-device.hpp"
-#include "../vk-surface-context.hpp"
 
 namespace VK {
 

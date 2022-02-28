@@ -66,6 +66,7 @@ void Application::init_vulkan() {
     create_color_resources();
     create_depth_resources();
     create_render_pass();
+    create_swapchain_images();
     create_descriptor_set_layout();
     create_graphics_pipeline();
     create_texture_image();
@@ -141,7 +142,7 @@ void Application::main_loop() {
 
         draw_frame();
     }
-    m_surface_context->get_device()->wait_idle();
+    m_device.wait_idle();
 }
 
 void Application::cleanup() {
@@ -164,7 +165,7 @@ void Application::cleanup() {
 
     m_debug_callback_handler.stop_listening();
 
-    m_surface_context = nullptr;
+    m_swapchain.destroy();
     m_physical_device = nullptr;
 
     m_surface.destroy();
@@ -192,16 +193,38 @@ void Application::init_window() {
 void Application::create_logical_device() {
 
     m_physical_device = std::make_unique<VK::PhysicalDevice>(get_best_physical_device());
-    m_surface_context = std::make_unique<VK::SurfaceContext>(m_physical_device.get(), m_surface.unowned_copy());
+    auto queue_family_indices = m_physical_device->get_queue_family_indices();
+
+    m_graphics_queue_family = queue_family_indices->find_family(VK_QUEUE_GRAPHICS_BIT);
+    m_present_queue_family = queue_family_indices->find_surface_present_family(m_surface);
+
+    VK::DeviceFactory device_factory;
 
     if(m_enable_validation_layers) {
-        m_surface_context->create_logical_device(m_device_extensions, m_required_validation_layers);
-    } else {
-        m_surface_context->create_logical_device(m_device_extensions, {});
+        device_factory.get_validation_layers() = m_required_validation_layers;
+    }
+    device_factory.get_enabled_extensions() = m_device_extensions;
+
+    float queue_priorities[] = { 1.0f };
+    device_factory.add_queue(0, m_graphics_queue_family, queue_priorities);
+    if(m_graphics_queue_family != m_present_queue_family) {
+        device_factory.add_queue(0, m_present_queue_family, queue_priorities);
     }
 
+    device_factory.get_device_features().samplerAnisotropy = VK_TRUE;
+
+    m_device = device_factory.create(m_physical_device.get());
+
+    m_device_graphics_queue = m_device.get_queue(m_graphics_queue_family, 0);
+    m_device_present_queue = m_device.get_queue(m_present_queue_family, 0);
+
     m_msaa_samples = m_physical_device->get_max_usable_sample_count();
-    m_surface_context->create_command_pool();
+
+    m_command_pool = VK::CommandPool::create(
+        &m_device,
+        m_graphics_queue_family,
+        VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
+    );
 }
 
 void Application::create_swap_chain() {
@@ -209,16 +232,41 @@ void Application::create_swap_chain() {
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_window, &width, &height);
 
-    m_swapchain_images = std::make_unique<VK::SwapchainImages>(m_surface_context.get());
-    m_swapchain_images->create(width, height);
+    VK::SwapChainSupportDetails swap_chain_support(m_physical_device.get(), m_surface.unowned_copy());
+
+    VkSurfaceFormatKHR surface_format = swap_chain_support.choose_best_format();
+    m_swapchain_extent = swap_chain_support.choose_best_swap_extent(width, height);
+    uint32_t image_count = swap_chain_support.get_optimal_chain_image_count();
+
+    m_swapchain_image_format = surface_format.format;
+
+    VK::SwapchainFactory factory;
+    factory.set_surface(m_surface);
+    factory.set_min_image_count(image_count);
+    factory.set_image_format(surface_format.format);
+    factory.set_image_color_space(surface_format.colorSpace);
+    factory.set_image_extent(m_swapchain_extent);
+    factory.set_image_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    factory.set_pre_transform(swap_chain_support.m_capabilities.currentTransform);
+    factory.set_composite_alpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
+    factory.set_clipped(VK_TRUE);
+
+    if (m_graphics_queue_family != m_present_queue_family) {
+        factory.set_image_sharing_mode(VK_SHARING_MODE_CONCURRENT);
+        factory.get_queue_family_indices().assign({(uint32_t)m_graphics_queue_family, (uint32_t)m_present_queue_family});
+    } else {
+        factory.set_image_sharing_mode(VK_SHARING_MODE_EXCLUSIVE);
+    }
+
+    m_swapchain = factory.create(&m_device);
 }
 
 void Application::create_graphics_pipeline() {
 
     VK::PipelineFactory pipeline_factory {};
 
-    auto vertex_shader = VK::ShaderModule::from_file(m_surface_context->get_device(), "resources/shaders/vert.spv");
-    auto fragment_shader = VK::ShaderModule::from_file(m_surface_context->get_device(), "resources/shaders/frag.spv");
+    auto vertex_shader = VK::ShaderModule::from_file(&m_device, "resources/shaders/vert.spv");
+    auto fragment_shader = VK::ShaderModule::from_file(&m_device, "resources/shaders/frag.spv");
 
     pipeline_factory.shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
     pipeline_factory.shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -228,8 +276,8 @@ void Application::create_graphics_pipeline() {
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
-    pipeline_factory.viewport_state.add_viewport(VK::Viewport(m_swapchain_images->get_extent()));
-    pipeline_factory.viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain_images->get_extent()});
+    pipeline_factory.viewport_state.add_viewport(VK::Viewport(m_swapchain_extent));
+    pipeline_factory.viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain_extent});
 
     pipeline_factory.rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
     pipeline_factory.rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -246,18 +294,13 @@ void Application::create_graphics_pipeline() {
 
     VkDescriptorSetLayout descriptors[] { m_descriptor_set_layout.get_handle() };
 
-    m_pipeline_layout = VK::PipelineLayout::create(m_surface_context->get_device(), descriptors, {});
+    m_pipeline_layout = VK::PipelineLayout::create(&m_device, descriptors, {});
     m_graphics_pipeline = pipeline_factory.create(m_pipeline_layout, m_render_pass);
 }
 
 void Application::create_render_pass() {
 
-    m_swapchain_images->get_framebuffer_attachments().assign({
-        m_color_image_view.unowned_copy(),
-        m_depth_image_view.unowned_copy()
-    });
-
-    VK::Attachment color_attachment {m_swapchain_images->get_image_format() };
+    VK::Attachment color_attachment { m_swapchain_image_format };
     color_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
     color_attachment.set_samples(m_msaa_samples);
     color_attachment.set_final_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -267,7 +310,7 @@ void Application::create_render_pass() {
     depth_attachment.set_samples(m_msaa_samples);
     depth_attachment.set_final_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    VK::Attachment resolve_attachment {m_swapchain_images->get_image_format() };
+    VK::Attachment resolve_attachment { m_swapchain_image_format };
     resolve_attachment.set_samples(VK_SAMPLE_COUNT_1_BIT);
     resolve_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE);
     resolve_attachment.set_final_layout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
@@ -297,14 +340,36 @@ void Application::create_render_pass() {
     });
     render_pass_factory.get_subpass_descriptions().assign({ subpass });
     render_pass_factory.get_subpass_dependency_descriptions().assign({ dependency });
+    m_render_pass = render_pass_factory.create(&m_device);
+}
 
-    m_render_pass = render_pass_factory.create(m_surface_context->get_device());
-    m_swapchain_images->create_images(m_render_pass);
+void Application::create_swapchain_images() {
+    auto swapchain_images = m_swapchain.get_swapchain_images();
+
+    for(auto& swapchain_image : swapchain_images) {
+        m_swapchain_images.emplace_back();
+        auto& image = m_swapchain_images.back();
+
+        VK::ImageViewFactory image_view_factory;
+        image_view_factory.set_format(m_swapchain_image_format);
+        image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image.m_image_view = image_view_factory.create(&m_device, swapchain_image);
+
+        VK::FramebufferFactory framebuffer_factory;
+        framebuffer_factory.set_size(m_swapchain_extent);
+        framebuffer_factory.get_attachments().assign({
+                                                             m_color_image_view.unowned_copy(),
+                                                             m_depth_image_view.unowned_copy(),
+                                                             image.m_image_view.unowned_copy()
+        });
+
+        image.m_framebuffer = framebuffer_factory.create(m_render_pass);
+    }
 }
 
 void Application::create_command_buffers() {
 
-    auto& command_pool = m_surface_context->get_command_pool();
+    auto& command_pool = m_command_pool;
 
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_command_buffers.push_back(command_pool.create_command_buffer());
@@ -314,7 +379,7 @@ void Application::create_command_buffers() {
 void Application::record_command_buffer(uint32_t frame_index, uint32_t swapchain_frame_index) {
 
     VK::CommandBuffer& command_buffer = m_command_buffers[frame_index];
-    VK::SwapchainEntry& swapchain_entry = m_swapchain_images->get_entries()[swapchain_frame_index];
+    VK::SwapchainEntry& swapchain_entry = m_swapchain_images[swapchain_frame_index];
 
     command_buffer.reset();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -325,7 +390,7 @@ void Application::record_command_buffer(uint32_t frame_index, uint32_t swapchain
     render_pass_begin_info.framebuffer = swapchain_entry.m_framebuffer.get_handle();
 
     render_pass_begin_info.renderArea.offset = {0, 0};
-    render_pass_begin_info.renderArea.extent = m_swapchain_images->get_extent();
+    render_pass_begin_info.renderArea.extent = m_swapchain_extent;
 
     VkClearValue clear_values[2] {};
     clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -355,12 +420,12 @@ void Application::create_sync_objects() {
     m_image_available_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
     m_render_finished_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
     m_in_flight_fences.reserve(MAX_FRAMES_IN_FLIGHT);
-    m_in_flight_images.resize(m_swapchain_images->get_image_count(), {nullptr, nullptr });
+    m_in_flight_images.resize(m_swapchain_images.size(), {nullptr, nullptr });
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        m_image_available_semaphores.push_back(VK::Semaphore::create(m_surface_context->get_device()));
-        m_render_finished_semaphores.push_back(VK::Semaphore::create(m_surface_context->get_device()));
-        m_in_flight_fences.push_back(VK::Fence::create(m_surface_context->get_device(), VK_FENCE_CREATE_SIGNALED_BIT));
+        m_image_available_semaphores.push_back(VK::Semaphore::create(&m_device));
+        m_render_finished_semaphores.push_back(VK::Semaphore::create(&m_device));
+        m_in_flight_fences.push_back(VK::Fence::create(&m_device, VK_FENCE_CREATE_SIGNALED_BIT));
     }
 }
 
@@ -369,7 +434,7 @@ void Application::draw_frame() {
     m_in_flight_fences[m_current_frame].wait_one();
 
     uint32_t image_index = 0;
-    auto result = m_swapchain_images->get_swapchain().acquire_next_image(&image_index, m_image_available_semaphores[m_current_frame]);
+    auto result = m_swapchain.acquire_next_image(&image_index, m_image_available_semaphores[m_current_frame]);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         m_framebuffer_resized = false;
@@ -390,7 +455,7 @@ void Application::draw_frame() {
 
     m_in_flight_fences[m_current_frame].reset_one();
 
-    auto& swapchain_entry = m_swapchain_images->get_entries()[image_index];
+    auto& swapchain_entry = m_swapchain_images[image_index];
     auto& command_buffer = m_command_buffers[m_current_frame];
 
     record_command_buffer(m_current_frame, image_index);
@@ -400,11 +465,11 @@ void Application::draw_frame() {
     VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
     command_buffer.submit(
-            m_surface_context->get_device_graphics_queue(),
+            m_device_graphics_queue,
             m_in_flight_fences[m_current_frame].get_handle(),
             signal_semaphores, wait_semaphores, wait_stages);
 
-    VkSwapchainKHR swap_chains[] = {m_swapchain_images->get_swapchain().get_handle() };
+    VkSwapchainKHR swap_chains[] = { m_swapchain.get_handle() };
 
     VkPresentInfoKHR present_info {};
     present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
@@ -415,7 +480,7 @@ void Application::draw_frame() {
     present_info.pImageIndices = &image_index;
     present_info.pResults = nullptr; // Optional
 
-    result = vkQueuePresentKHR(m_surface_context->get_device_graphics_queue(), &present_info);
+    result = vkQueuePresentKHR(m_device_graphics_queue, &present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebuffer_resized) {
         m_framebuffer_resized = false;
@@ -424,7 +489,7 @@ void Application::draw_frame() {
         throw std::runtime_error("failed to present swap chain image!");
     }
 
-    vkQueueWaitIdle(m_surface_context->get_device_present_queue());
+    vkQueueWaitIdle(m_device_present_queue);
 
     m_current_frame = (m_current_frame + 1) % MAX_FRAMES_IN_FLIGHT;
 }
@@ -444,7 +509,7 @@ void Application::cleanup_swap_chain() {
     m_graphics_pipeline.destroy();
     m_pipeline_layout.destroy();
     m_render_pass.destroy();
-    if(m_swapchain_images) m_swapchain_images->destroy();
+    m_swapchain_images.clear();
 }
 
 void Application::recreate_swap_chain() {
@@ -455,7 +520,7 @@ void Application::recreate_swap_chain() {
         glfwWaitEvents();
     }
 
-    m_surface_context->get_device()->wait_idle();
+    m_device.wait_idle();
 
     cleanup_swap_chain();
 
@@ -463,6 +528,7 @@ void Application::recreate_swap_chain() {
     create_color_resources();
     create_depth_resources();
     create_render_pass();
+    create_swapchain_images();
     create_graphics_pipeline();
     create_uniform_buffers();
     create_descriptor_pool();
@@ -505,16 +571,16 @@ void Application::create_mesh() {
 void Application::create_index_buffer() {
 
     auto index_buffer_size = m_index_buffer_storage.size() * sizeof(m_index_buffer_storage[0]);
-    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(m_surface_context->get_device(), m_index_buffer_storage);
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, m_index_buffer_storage);
 
     VK::BufferFactory index_buffer_factory {};
     index_buffer_factory.set_size(index_buffer_size);
     index_buffer_factory.set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT);
     index_buffer_factory.set_memory_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-    m_index_buffer = std::make_unique<VK::MemoryBuffer>(index_buffer_factory.create_memory_buffer(m_surface_context->get_device()));
+    m_index_buffer = std::make_unique<VK::MemoryBuffer>(index_buffer_factory.create_memory_buffer(&m_device));
 
-    auto command_buffer = m_surface_context->get_command_pool().create_command_buffer();
+    auto command_buffer = m_command_pool.create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_index_buffer->get_buffer());
@@ -522,21 +588,21 @@ void Application::create_index_buffer() {
     copy_command.write(&command_buffer);
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
 }
 
 void Application::create_vertex_buffer() {
 
     auto vertex_buffer_size = m_vertex_buffer_storage.size() * sizeof(m_vertex_buffer_storage[0]);
-    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(m_surface_context->get_device(), m_vertex_buffer_storage);
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, m_vertex_buffer_storage);
 
     VK::BufferFactory vertex_buffer_factory {};
     vertex_buffer_factory.set_memory_properties(VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     vertex_buffer_factory.set_usage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
     vertex_buffer_factory.set_size(vertex_buffer_size);
-    m_vertex_buffer = std::make_unique<VK::MemoryBuffer>(vertex_buffer_factory.create_memory_buffer(m_surface_context->get_device()));
+    m_vertex_buffer = std::make_unique<VK::MemoryBuffer>(vertex_buffer_factory.create_memory_buffer(&m_device));
 
-    auto command_buffer = m_surface_context->get_command_pool().create_command_buffer();
+    auto command_buffer = m_command_pool.create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_vertex_buffer->get_buffer());
@@ -544,7 +610,7 @@ void Application::create_vertex_buffer() {
     copy_command.write(&command_buffer);
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
 }
 
 void Application::create_uniform_buffers() {
@@ -558,7 +624,7 @@ void Application::create_uniform_buffers() {
         factory.set_memory_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         factory.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
         factory.set_size(buffer_size);
-        m_uniform_buffers.push_back(factory.create_memory_buffer(m_surface_context->get_device()));
+        m_uniform_buffers.push_back(factory.create_memory_buffer(&m_device));
     }
 }
 
@@ -599,7 +665,7 @@ void Application::update_uniform_buffer(uint32_t image_index) {
     ubo.model = glm::rotate(ubo.model, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05, 0.05, 0.05));
     ubo.view = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_direction, glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain_images->get_extent().width / (float) m_swapchain_images->get_extent().height, 0.01f, 100.0f);
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain_extent.width / (float) m_swapchain_extent.height, 0.01f, 100.0f);
 
     ubo.proj[1][1] *= -1;
 
@@ -618,7 +684,7 @@ void Application::create_descriptor_set_layout() {
     factory.bind_descriptor(0, ubo_layout_binding);
     factory.bind_descriptor(1, sampler_layout_binding);
 
-    m_descriptor_set_layout = factory.create(m_surface_context->get_device());
+    m_descriptor_set_layout = factory.create(&m_device);
 }
 
 void Application::create_descriptor_pool() {
@@ -627,7 +693,7 @@ void Application::create_descriptor_pool() {
     factory.add_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT);
     factory.set_max_sets(MAX_FRAMES_IN_FLIGHT);
 
-    m_descriptor_pool = factory.create(m_surface_context->get_device());
+    m_descriptor_pool = factory.create(&m_device);
 }
 
 void Application::create_descriptor_sets() {
@@ -662,7 +728,7 @@ void Application::create_texture_image() {
         std::swap(image[pix + 0], image[pix + 2]);
     }
 
-    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(m_surface_context->get_device(), image, image_size);
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, image, image_size);
 
     FreeImage_Unload(converted);
 
@@ -672,9 +738,9 @@ void Application::create_texture_image() {
     image_factory.set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
     image_factory.set_format(VK_FORMAT_R8G8B8A8_SRGB);
 
-    m_texture_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
+    m_texture_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
 
-    auto command_buffer = m_surface_context->get_command_pool().create_command_buffer();
+    auto command_buffer = m_command_pool.create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     VK::ImageMemoryBarrier layout_conversion_barrier { &m_texture_image->get_image() };
@@ -692,12 +758,12 @@ void Application::create_texture_image() {
     generate_mipmaps(&command_buffer, &m_texture_image->get_image(), image_factory.get_format(), { image_width, image_height }, image_factory.get_mip_levels());
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
 
     VK::ImageViewFactory image_view_factory;
     image_view_factory.set_format(image_factory.get_format());
     image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_texture_image_view = image_view_factory.create(m_surface_context->get_device(), m_texture_image->get_image());
+    m_texture_image_view = image_view_factory.create(&m_device, m_texture_image->get_image());
 }
 
 void Application::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels) {
@@ -754,7 +820,7 @@ void Application::create_texture_sampler() {
     sampler_factory.set_max_lod((float) m_mip_levels);
     sampler_factory.set_min_lod((float) 0.0f);
 
-    m_texture_sampler = sampler_factory.create(m_surface_context->get_device());
+    m_texture_sampler = sampler_factory.create(&m_device);
 }
 
 VkFormat Application::find_depth_format() {
@@ -770,18 +836,18 @@ void Application::create_depth_resources() {
 
     VK::ImageFactory image_factory;
     image_factory.set_samples(m_msaa_samples);
-    image_factory.set_extent({m_swapchain_images->get_extent().width, m_swapchain_images->get_extent().height, 1 });
+    image_factory.set_extent({m_swapchain_extent.width, m_swapchain_extent.height, 1 });
     image_factory.set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     image_factory.set_format(depth_format);
 
-    m_depth_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
+    m_depth_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
 
     VK::ImageViewFactory image_view_factory;
     image_view_factory.set_format(depth_format);
     image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_depth_image_view = image_view_factory.create(m_surface_context->get_device(), m_depth_image->get_image());
+    m_depth_image_view = image_view_factory.create(&m_device, m_depth_image->get_image());
 
-    auto command_buffer = m_surface_context->get_command_pool().create_command_buffer();
+    auto command_buffer = m_command_pool.create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
     VK::ImageMemoryBarrier layout_conversion_barrier { &m_depth_image->get_image() };
@@ -791,21 +857,21 @@ void Application::create_depth_resources() {
     layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
 
     command_buffer.end();
-    command_buffer.submit_and_wait(m_surface_context->get_device_graphics_queue(), nullptr);
+    command_buffer.submit_and_wait(m_device_graphics_queue, nullptr);
 }
 
 void Application::create_color_resources() {
-    VkFormat color_format = m_swapchain_images->get_image_format();
+    VkFormat color_format = m_swapchain_image_format;
 
     VK::ImageFactory image_factory;
-    image_factory.set_extent({m_swapchain_images->get_extent().width, m_swapchain_images->get_extent().height, 1});
+    image_factory.set_extent({m_swapchain_extent.width, m_swapchain_extent.height, 1});
     image_factory.set_samples(m_msaa_samples);
     image_factory.set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image_factory.set_format(color_format);
-    m_color_image = std::make_unique<VK::MemoryImage>(image_factory.create(m_surface_context->get_device()));
+    m_color_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
 
     VK::ImageViewFactory image_view_factory;
     image_view_factory.set_format(color_format);
     image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_color_image_view = image_view_factory.create(m_surface_context->get_device(), m_color_image->get_image());
+    m_color_image_view = image_view_factory.create(&m_device, m_color_image->get_image());
 }

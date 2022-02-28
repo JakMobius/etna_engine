@@ -9,7 +9,6 @@
 #include "vk-semaphore.hpp"
 #include "vk-shader.hpp"
 #include "vk-staging-buffer.hpp"
-#include "vk-surface-context.hpp"
 #include "vk-surface.hpp"
 #include "vk-viewport.hpp"
 #include "barriers.hpp"

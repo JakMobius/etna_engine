@@ -18,8 +18,6 @@ struct UniformBufferObject {
     alignas(16) glm::mat4 proj;
 };
 
-// TODO: Check if exceptions are used safely in this class
-
 class Application {
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
@@ -32,11 +30,22 @@ class Application {
     VK::Instance m_instance;
 
     std::unique_ptr<VK::PhysicalDevice> m_physical_device {};
-    std::unique_ptr<VK::SurfaceContext> m_surface_context {};
+    VK::Device m_device;
+    VK::CommandPool m_command_pool;
+
+    int m_graphics_queue_family = -1;
+    int m_present_queue_family = -1;
+
+    VkQueue m_device_graphics_queue = nullptr;
+    VkQueue m_device_present_queue = nullptr;
 
     VK::Surface m_surface {};
 
-    std::unique_ptr<VK::SwapchainImages> m_swapchain_images {};
+    VK::Swapchain m_swapchain;
+    std::vector<VK::SwapchainEntry> m_swapchain_images {};
+    VkExtent2D m_swapchain_extent {};
+    VkFormat m_swapchain_image_format;
+
     std::vector<VK::UnownedFence> m_in_flight_images {};
 
     std::vector<VK::Semaphore> m_image_available_semaphores {};
@@ -157,4 +166,6 @@ private:
     void create_color_resources();
 
     void create_surface();
+
+    void create_swapchain_images();
 };
