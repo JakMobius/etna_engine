@@ -7,7 +7,7 @@
 #include <chrono>
 #include <thread>
 #define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
+#include "../tiny_obj_loader.h"
 #include "app.hpp"
 
 void Application::create_instance() {
@@ -39,7 +39,8 @@ void Application::create_surface() {
     if (glfwCreateWindowSurface(m_instance.get_handle(), m_window, nullptr, &surface) != VK_SUCCESS) {
         throw std::runtime_error("failed to create window surface");
     }
-    m_surface = VK::Surface {&m_instance, surface };
+
+    m_surface = VK::Surface { &m_instance, surface };
 }
 
 std::vector<const char*> Application::get_required_extensions() const {
@@ -59,14 +60,13 @@ std::vector<const char*> Application::get_required_extensions() const {
 void Application::init_vulkan() {
     create_instance();
     create_logical_device();
-    create_swap_chain();
+    create_swapchain();
     create_mesh();
     create_index_buffer();
     create_vertex_buffer();
     create_color_resources();
     create_depth_resources();
     create_render_pass();
-    create_swapchain_images();
     create_descriptor_set_layout();
     create_graphics_pipeline();
     create_texture_image();
@@ -165,9 +165,10 @@ void Application::cleanup() {
 
     m_debug_callback_handler.stop_listening();
 
-    m_swapchain.destroy();
     m_physical_device = nullptr;
 
+    if(m_framebuffer_manager) m_framebuffer_manager = nullptr;
+    if(m_swapchain_manager) m_swapchain_manager->destroy();
     m_surface.destroy();
     m_instance.destroy();
 
@@ -227,38 +228,14 @@ void Application::create_logical_device() {
     );
 }
 
-void Application::create_swap_chain() {
+void Application::create_swapchain() {
+    m_framebuffer_manager = std::make_unique<Etna::BasicFramebufferManager>();
+    m_swapchain_manager = std::make_unique<Etna::SwapchainManager>(m_surface.unowned_copy(), &m_device);
+    m_swapchain_manager->set_framebuffer_manager(m_framebuffer_manager.get());
 
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_window, &width, &height);
-
-    VK::SwapChainSupportDetails swap_chain_support(m_physical_device.get(), m_surface.unowned_copy());
-
-    VkSurfaceFormatKHR surface_format = swap_chain_support.choose_best_format();
-    m_swapchain_extent = swap_chain_support.choose_best_swap_extent(width, height);
-    uint32_t image_count = swap_chain_support.get_optimal_chain_image_count();
-
-    m_swapchain_image_format = surface_format.format;
-
-    VK::SwapchainFactory factory;
-    factory.set_surface(m_surface);
-    factory.set_min_image_count(image_count);
-    factory.set_image_format(surface_format.format);
-    factory.set_image_color_space(surface_format.colorSpace);
-    factory.set_image_extent(m_swapchain_extent);
-    factory.set_image_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    factory.set_pre_transform(swap_chain_support.m_capabilities.currentTransform);
-    factory.set_composite_alpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
-    factory.set_clipped(VK_TRUE);
-
-    if (m_graphics_queue_family != m_present_queue_family) {
-        factory.set_image_sharing_mode(VK_SHARING_MODE_CONCURRENT);
-        factory.get_queue_family_indices().assign({(uint32_t)m_graphics_queue_family, (uint32_t)m_present_queue_family});
-    } else {
-        factory.set_image_sharing_mode(VK_SHARING_MODE_EXCLUSIVE);
-    }
-
-    m_swapchain = factory.create(&m_device);
+    m_swapchain_manager->create_swapchain(width, height);
 }
 
 void Application::create_graphics_pipeline() {
@@ -276,8 +253,8 @@ void Application::create_graphics_pipeline() {
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
-    pipeline_factory.viewport_state.add_viewport(VK::Viewport(m_swapchain_extent));
-    pipeline_factory.viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain_extent});
+    pipeline_factory.viewport_state.add_viewport(VK::Viewport(m_swapchain_manager->get_swapchain_extent()));
+    pipeline_factory.viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain_manager->get_swapchain_extent()});
 
     pipeline_factory.rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
     pipeline_factory.rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
@@ -300,7 +277,10 @@ void Application::create_graphics_pipeline() {
 
 void Application::create_render_pass() {
 
-    VK::Attachment color_attachment { m_swapchain_image_format };
+    m_framebuffer_manager->set_color_image_view(m_color_image_view.unowned_copy());
+    m_framebuffer_manager->set_depth_image_view(m_depth_image_view.unowned_copy());
+
+    VK::Attachment color_attachment { m_swapchain_manager->get_swapchain_image_format() };
     color_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
     color_attachment.set_samples(m_msaa_samples);
     color_attachment.set_final_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
@@ -310,14 +290,23 @@ void Application::create_render_pass() {
     depth_attachment.set_samples(m_msaa_samples);
     depth_attachment.set_final_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
-    VK::Attachment resolve_attachment { m_swapchain_image_format };
+    VK::Attachment resolve_attachment { m_swapchain_manager->get_swapchain_image_format() };
     resolve_attachment.set_samples(VK_SAMPLE_COUNT_1_BIT);
     resolve_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_DONT_CARE, VK_ATTACHMENT_STORE_OP_STORE);
     resolve_attachment.set_final_layout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
-    VkAttachmentReference color_attachment_ref { 0, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
-    VkAttachmentReference depth_attachment_ref { 1, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL };
-    VkAttachmentReference color_resolve_attachment_ref { 2, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL };
+    VkAttachmentReference color_attachment_ref {
+            m_framebuffer_manager->get_color_attachment_index(),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    };
+    VkAttachmentReference depth_attachment_ref {
+        m_framebuffer_manager->get_depth_attachment_index(),
+        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+    };
+    VkAttachmentReference color_resolve_attachment_ref {
+        m_framebuffer_manager->get_image_attachment_index(),
+        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+    };
 
     VkSubpassDescription subpass {};
     subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -341,45 +330,19 @@ void Application::create_render_pass() {
     render_pass_factory.get_subpass_descriptions().assign({ subpass });
     render_pass_factory.get_subpass_dependency_descriptions().assign({ dependency });
     m_render_pass = render_pass_factory.create(&m_device);
-}
-
-void Application::create_swapchain_images() {
-    auto swapchain_images = m_swapchain.get_swapchain_images();
-
-    for(auto& swapchain_image : swapchain_images) {
-        m_swapchain_images.emplace_back();
-        auto& image = m_swapchain_images.back();
-
-        VK::ImageViewFactory image_view_factory;
-        image_view_factory.set_format(m_swapchain_image_format);
-        image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-        image.m_image_view = image_view_factory.create(&m_device, swapchain_image);
-
-        VK::FramebufferFactory framebuffer_factory;
-        framebuffer_factory.set_size(m_swapchain_extent);
-        framebuffer_factory.get_attachments().assign({
-                                                             m_color_image_view.unowned_copy(),
-                                                             m_depth_image_view.unowned_copy(),
-                                                             image.m_image_view.unowned_copy()
-        });
-
-        image.m_framebuffer = framebuffer_factory.create(m_render_pass);
-    }
+    m_swapchain_manager->create_swapchain_images(m_render_pass);
 }
 
 void Application::create_command_buffers() {
-
-    auto& command_pool = m_command_pool;
-
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        m_command_buffers.push_back(command_pool.create_command_buffer());
+        m_command_buffers.push_back(m_command_pool.create_command_buffer());
     }
 }
 
 void Application::record_command_buffer(uint32_t frame_index, uint32_t swapchain_frame_index) {
 
-    VK::CommandBuffer& command_buffer = m_command_buffers[frame_index];
-    VK::SwapchainEntry& swapchain_entry = m_swapchain_images[swapchain_frame_index];
+    auto& command_buffer = m_command_buffers[frame_index];
+    auto& swapchain_entry = m_swapchain_manager->get_swapchain_images()[swapchain_frame_index];
 
     command_buffer.reset();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
@@ -390,7 +353,7 @@ void Application::record_command_buffer(uint32_t frame_index, uint32_t swapchain
     render_pass_begin_info.framebuffer = swapchain_entry.m_framebuffer.get_handle();
 
     render_pass_begin_info.renderArea.offset = {0, 0};
-    render_pass_begin_info.renderArea.extent = m_swapchain_extent;
+    render_pass_begin_info.renderArea.extent = m_swapchain_manager->get_swapchain_extent();
 
     VkClearValue clear_values[2] {};
     clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
@@ -420,7 +383,7 @@ void Application::create_sync_objects() {
     m_image_available_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
     m_render_finished_semaphores.reserve(MAX_FRAMES_IN_FLIGHT);
     m_in_flight_fences.reserve(MAX_FRAMES_IN_FLIGHT);
-    m_in_flight_images.resize(m_swapchain_images.size(), {nullptr, nullptr });
+    m_in_flight_images.resize(m_swapchain_manager->get_swapchain_images().size(), {nullptr, nullptr });
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         m_image_available_semaphores.push_back(VK::Semaphore::create(&m_device));
@@ -434,7 +397,7 @@ void Application::draw_frame() {
     m_in_flight_fences[m_current_frame].wait_one();
 
     uint32_t image_index = 0;
-    auto result = m_swapchain.acquire_next_image(&image_index, m_image_available_semaphores[m_current_frame]);
+    auto result = m_swapchain_manager->get_swapchain().acquire_next_image(&image_index, m_image_available_semaphores[m_current_frame]);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR) {
         m_framebuffer_resized = false;
@@ -455,7 +418,7 @@ void Application::draw_frame() {
 
     m_in_flight_fences[m_current_frame].reset_one();
 
-    auto& swapchain_entry = m_swapchain_images[image_index];
+    auto& swapchain_entry = m_swapchain_manager->get_swapchain_images()[image_index];
     auto& command_buffer = m_command_buffers[m_current_frame];
 
     record_command_buffer(m_current_frame, image_index);
@@ -463,7 +426,7 @@ void Application::draw_frame() {
     VkSemaphore signal_semaphores[]     = { m_render_finished_semaphores[m_current_frame].get_handle() };
     VkSemaphore wait_semaphores[]       = { m_image_available_semaphores[m_current_frame].get_handle() };
     VkPipelineStageFlags wait_stages[]  = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-    VkSwapchainKHR present_swapchains[] = { m_swapchain.get_handle() };
+    VkSwapchainKHR present_swapchains[] = { m_swapchain_manager->get_swapchain().get_handle() };
     uint32_t present_swapchain_images[] = { image_index };
 
     command_buffer.submit(
@@ -505,7 +468,7 @@ void Application::cleanup_swap_chain() {
     m_graphics_pipeline.destroy();
     m_pipeline_layout.destroy();
     m_render_pass.destroy();
-    m_swapchain_images.clear();
+    m_swapchain_manager->destroy_swapchain();
 }
 
 void Application::recreate_swap_chain() {
@@ -520,11 +483,10 @@ void Application::recreate_swap_chain() {
 
     cleanup_swap_chain();
 
-    create_swap_chain();
+    create_swapchain();
     create_color_resources();
     create_depth_resources();
     create_render_pass();
-    create_swapchain_images();
     create_graphics_pipeline();
     create_uniform_buffers();
     create_descriptor_pool();
@@ -661,7 +623,7 @@ void Application::update_uniform_buffer(uint32_t image_index) {
     ubo.model = glm::rotate(ubo.model, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
     ubo.model = glm::scale(ubo.model, glm::vec3(0.05, 0.05, 0.05));
     ubo.view = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_direction, glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain_extent.width / (float) m_swapchain_extent.height, 0.01f, 100.0f);
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain_manager->get_swapchain_extent().width / (float) m_swapchain_manager->get_swapchain_extent().height, 0.01f, 100.0f);
 
     ubo.proj[1][1] *= -1;
 
@@ -832,7 +794,7 @@ void Application::create_depth_resources() {
 
     VK::ImageFactory image_factory;
     image_factory.set_samples(m_msaa_samples);
-    image_factory.set_extent({m_swapchain_extent.width, m_swapchain_extent.height, 1 });
+    image_factory.set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 });
     image_factory.set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
     image_factory.set_format(depth_format);
 
@@ -857,10 +819,10 @@ void Application::create_depth_resources() {
 }
 
 void Application::create_color_resources() {
-    VkFormat color_format = m_swapchain_image_format;
+    VkFormat color_format = m_swapchain_manager->get_swapchain_image_format();
 
     VK::ImageFactory image_factory;
-    image_factory.set_extent({m_swapchain_extent.width, m_swapchain_extent.height, 1});
+    image_factory.set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1});
     image_factory.set_samples(m_msaa_samples);
     image_factory.set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
     image_factory.set_format(color_format);

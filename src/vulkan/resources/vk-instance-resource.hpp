@@ -56,7 +56,7 @@ public:
 
     ~InstanceResource() override = default;
 
-    UnownedInstanceResource<Handle, Base> unowned_copy() {
+    UnownedInstanceResource<Handle, Base> unowned_copy() const {
         return UnownedInstanceResource<Handle, Base> { this->m_instance, this->m_handle };
     }
 };

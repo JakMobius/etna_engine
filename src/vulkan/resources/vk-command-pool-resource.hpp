@@ -63,7 +63,7 @@ public:
 
     ~CommandPoolResource() override = default;
 
-    UnownedCommandPoolResource<Handle, Base> unowned_copy() {
+    UnownedCommandPoolResource<Handle, Base> unowned_copy() const {
         return UnownedCommandPoolResource<Handle, Base> { this->m_device, this->m_handle };
     }
 };

@@ -1,8 +1,7 @@
 
-#include <GLFW/glfw3.h>
-#include <vulkan/vulkan_core.h>
+
 #include <iostream>
-#include "app.hpp"
+#include "example/app.hpp"
 
 int main() {
     Application app;

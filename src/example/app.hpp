@@ -10,7 +10,9 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
-#include "vulkan/vulkan.hpp"
+#include "../vulkan/vulkan.hpp"
+#include "../etna/basic-framebuffer-manager.hpp"
+#include "../etna/swapchain-manager.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -40,11 +42,8 @@ class Application {
     VK::Queue m_device_present_queue {};
 
     VK::Surface m_surface {};
-
-    VK::Swapchain m_swapchain;
-    std::vector<VK::SwapchainEntry> m_swapchain_images {};
-    VkExtent2D m_swapchain_extent {};
-    VkFormat m_swapchain_image_format;
+    std::unique_ptr<Etna::SwapchainManager> m_swapchain_manager {};
+    std::unique_ptr<Etna::BasicFramebufferManager> m_framebuffer_manager = nullptr;
 
     std::vector<VK::UnownedFence> m_in_flight_images {};
 
@@ -111,9 +110,7 @@ public:
         cleanup();
     }
 
-    ~Application() {
-        cleanup();
-    }
+    ~Application() { cleanup(); }
 
 private:
 
@@ -122,7 +119,7 @@ private:
 
     void create_instance();
     void create_logical_device();
-    void create_swap_chain();
+    void create_swapchain();
     void create_render_pass();
     void create_descriptor_set_layout();
     void create_graphics_pipeline();
@@ -166,6 +163,4 @@ private:
     void create_color_resources();
 
     void create_surface();
-
-    void create_swapchain_images();
 };

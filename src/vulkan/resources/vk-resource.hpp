@@ -54,7 +54,7 @@ public:
 
     ~Resource() override = default;
 
-    UnownedResource<Handle, Base> unowned_copy() {
+    UnownedResource<Handle, Base> unowned_copy() const {
         return UnownedResource<Handle, Base> { this->m_device, this->m_handle };
     }
 };

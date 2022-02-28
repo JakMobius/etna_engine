@@ -15,7 +15,7 @@ public:
 
     std::vector<UnownedImage> get_swapchain_images();
 
-    VkResult acquire_next_image(uint32_t* image_index, const Semaphore& semaphore = {}, const Fence& fence = {}, uint64_t timeout = UINT64_MAX) {
+    VkResult acquire_next_image(uint32_t* image_index, const Semaphore& semaphore = {}, const Fence& fence = {}, uint64_t timeout = UINT64_MAX) const {
         return vkAcquireNextImageKHR(m_device->get_handle(), m_handle, timeout, semaphore.get_handle(), fence.get_handle(), image_index);
     }
 
