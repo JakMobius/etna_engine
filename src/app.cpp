@@ -607,24 +607,16 @@ void Application::update_uniform_buffer(uint32_t image_index) {
 }
 
 void Application::create_descriptor_set_layout() {
-    VkDescriptorSetLayoutBinding ubo_layout_binding {};
-    ubo_layout_binding.binding = 0;
-    ubo_layout_binding.descriptorCount = 1;
-    ubo_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    ubo_layout_binding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
-    ubo_layout_binding.pImmutableSamplers = nullptr;
-
-    VkDescriptorSetLayoutBinding sampler_layout_binding {};
-    sampler_layout_binding.binding = 1;
-    sampler_layout_binding.descriptorCount = 1;
-    sampler_layout_binding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    sampler_layout_binding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-    sampler_layout_binding.pImmutableSamplers = nullptr;
-
     VK::DescriptorSetLayoutFactory factory;
 
-    factory.add_binding(ubo_layout_binding);
-    factory.add_binding(sampler_layout_binding);
+    VK::DescriptorSetLayoutBinding ubo_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
+    ubo_layout_binding.set_stage_flags(VK_SHADER_STAGE_VERTEX_BIT);
+
+    VK::DescriptorSetLayoutBinding sampler_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
+    sampler_layout_binding.set_stage_flags(VK_SHADER_STAGE_FRAGMENT_BIT);
+
+    factory.bind_descriptor(0, ubo_layout_binding);
+    factory.bind_descriptor(1, sampler_layout_binding);
 
     m_descriptor_set_layout = factory.create(m_surface_context->get_device());
 }

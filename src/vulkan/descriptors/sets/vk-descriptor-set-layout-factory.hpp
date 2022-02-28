@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include <vector>
 #include "vk-descriptor-set-layout.hpp"
+#include "../vk-descriptor-set-layout-binding.hpp"
 
 namespace VK {
 
@@ -21,8 +22,10 @@ public:
         m_description.flags = flags;
     }
 
-    void add_binding(const VkDescriptorSetLayoutBinding& binding) {
-        m_bindings.push_back(binding);
+    void bind_descriptor(uint32_t binding, DescriptorSetLayoutBinding& descriptor) {
+        auto& description = descriptor.get_description();
+        description.binding = binding;
+        m_bindings.push_back(description);
     }
 
     DescriptorSetLayout create(VK::Device* device) {
