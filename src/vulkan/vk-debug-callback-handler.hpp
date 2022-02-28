@@ -42,39 +42,7 @@ public:
     bool listen(VkInstance instance);
     void stop_listening();
 
-    void dump_object(const VkDebugUtilsObjectNameInfoEXT* object) {
+    void dump_object(const VkDebugUtilsObjectNameInfoEXT* object);
 
-        std::cout << VK::ObjectTypeCode(object->objectType);
-
-        if(object->pObjectName == nullptr) {
-            std::cout << " ( unnamed )\n";
-        } else {
-            std::cout << " (" << object->pObjectName << ")\n";
-        }
-    }
-
-    bool on_callback(vk_callback_parameters* callback_parameters) {
-        if(callback_parameters->message_severity < m_min_severity) return false;
-
-        std::cout << "Vulkan ["
-                  << VK::SeverityCode(callback_parameters->message_severity) << "] ["
-                  << VK::MessageTypeCode(callback_parameters->message_type) << "]: "
-                  << callback_parameters->callback_data->pMessage << "\n";
-
-        if(callback_parameters->message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-            asm("nop");
-        }
-
-        if(callback_parameters->message_type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-            asm("nop");
-        }
-
-        for(int i = 0; i < callback_parameters->callback_data->objectCount; i++) {
-            std::cout << "\t- objects[" << i << "]: ";
-            dump_object(&callback_parameters->callback_data->pObjects[i]);
-            std::cout << "\n";
-        }
-
-        return false;
-    }
+    bool on_callback(vk_callback_parameters* callback_parameters);
 };

@@ -2,8 +2,6 @@
 
 #include <vulkan/vulkan_core.h>
 #include "../resources/vk-device-resource.hpp"
-#include "../vk-memory.hpp"
-#include "../command-buffer/vk-command-buffer.hpp"
 
 namespace VK {
 
@@ -20,11 +18,7 @@ public:
 
     ~Image() override { destroy(); }
 
-    void destroy() final {
-        if(!this->m_handle || !this->m_device) return;
-        vkDestroyImage(this->m_device->get_handle(), this->m_handle, nullptr);
-        this->m_handle = nullptr;
-    }
+    void destroy() final;
 };
 
 }

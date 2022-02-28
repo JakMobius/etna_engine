@@ -18,3 +18,9 @@ std::vector<VK::UnownedImage> VK::SwapchainBase::get_swapchain_images() {
 
     return result;
 }
+
+void VK::Swapchain::destroy() {
+    if(!this->m_handle || !this->m_device) return;
+    vkDestroySwapchainKHR(this->m_device->get_handle(), this->m_handle, nullptr);
+    this->m_handle = nullptr;
+}

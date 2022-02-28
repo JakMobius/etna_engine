@@ -31,3 +31,9 @@ std::vector<VkExtensionProperties> VK::InstanceBase::get_extensions() {
     vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
     return extensions;
 }
+
+void VK::Instance::destroy() {
+    if(!m_handle) return
+                vkDestroyInstance(m_handle, nullptr);
+    m_handle = nullptr;
+}

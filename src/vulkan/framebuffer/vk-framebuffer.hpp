@@ -19,11 +19,7 @@ public:
 
     ~Framebuffer() override { destroy(); }
 
-    void destroy() final {
-        if(!m_handle) return;
-        vkDestroyFramebuffer(m_device->get_handle(), m_handle, nullptr);
-        m_handle = nullptr;
-    }
+    void destroy() final;
 
 };
 

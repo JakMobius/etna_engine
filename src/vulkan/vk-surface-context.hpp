@@ -34,12 +34,7 @@ class SurfaceContext {
 public:
     SurfaceContext(PhysicalDevice* device, const VK::UnownedSurface& surface);
 
-    std::set<int> get_queue_families() {
-        return {
-            m_present_queue_family,
-            m_graphics_queue_family
-        };
-    }
+    std::set<int> get_queue_families();
 
     void create_logical_device(const std::vector<const char*>& extensions, const std::vector<const char*>& validation_layers);
 

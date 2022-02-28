@@ -1,14 +1,12 @@
 #pragma once
 
-#include "../command-buffer/vk-command-pool.hpp"
-#include "../command-buffer/vk-command-buffer.hpp"
-
 namespace VK {
 
+class CommandBuffer;
 class Command {
 public:
-
-    virtual void write(VK::CommandBuffer* command_buffer) = 0;
+    virtual ~Command() = default;
+    virtual void write(CommandBuffer* command_buffer) = 0;
 };
 
 }

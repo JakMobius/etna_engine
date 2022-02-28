@@ -18,11 +18,7 @@ public:
 
     ~ImageView() override { destroy(); }
 
-    void destroy() final {
-        if(!this->m_handle || !this->m_device) return;
-        vkDestroyImageView(this->m_device->get_handle(), this->m_handle, nullptr);
-        this->m_handle = nullptr;
-    }
+    void destroy() final;
 };
 
 }

@@ -7,7 +7,6 @@ class SurfaceBase: public InstanceResourceBase<VkSurfaceKHR> {
 public:
     using InstanceResourceBase::InstanceResourceBase;
     SurfaceBase& operator=(SurfaceBase&& move_assign) = default;
-
 };
 
 using UnownedSurface = UnownedInstanceResource<VkSurfaceKHR, SurfaceBase>;
@@ -22,10 +21,6 @@ public:
 
     ~Surface() override { destroy(); }
 
-    void destroy() final {
-        if(!this->m_handle) return;
-        vkDestroySurfaceKHR(this->m_instance->get_handle(), this->m_handle, nullptr);
-        this->m_handle = nullptr;
-    }
+    void destroy() final;
 };
 }

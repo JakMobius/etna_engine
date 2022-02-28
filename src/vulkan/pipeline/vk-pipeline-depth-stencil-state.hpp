@@ -8,19 +8,7 @@ class PipelineDepthStencilState {
     VkPipelineDepthStencilStateCreateInfo m_description {};
 
 public:
-    PipelineDepthStencilState() {
-        m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-
-        m_description.depthTestEnable = VK_FALSE;
-        m_description.depthWriteEnable = VK_FALSE;
-        m_description.depthCompareOp = VK_COMPARE_OP_ALWAYS;
-        m_description.depthBoundsTestEnable = VK_FALSE;
-        m_description.minDepthBounds = 0.0f;
-        m_description.maxDepthBounds = 1.0f;
-        m_description.stencilTestEnable = VK_FALSE;
-        m_description.front = {};
-        m_description.back = {};
-    }
+    PipelineDepthStencilState();
 
     void set_depth_test_enable(VkBool32 depth_test_enable) {
         m_description.depthTestEnable = depth_test_enable;

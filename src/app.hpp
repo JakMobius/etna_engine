@@ -11,7 +11,6 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
 #include "vulkan/vulkan.hpp"
-#include "vulkan/vk-surface.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;

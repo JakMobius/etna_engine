@@ -9,41 +9,7 @@ class SwapchainFactory {
     VkSwapchainCreateInfoKHR m_description {};
     std::vector<uint32_t> m_queue_family_indices {};
 public:
-    SwapchainFactory() {
-        m_description.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        m_description.surface = VK_NULL_HANDLE;
-        m_description.minImageCount = 0;
-        m_description.imageFormat = VK_FORMAT_UNDEFINED;
-        m_description.imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-        m_description.imageExtent = {0, 0};
-        m_description.imageArrayLayers = 1;
-        m_description.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-        m_description.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-        m_description.queueFamilyIndexCount = 0;
-        m_description.pQueueFamilyIndices = nullptr;
-        m_description.preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR;
-        m_description.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        m_description.clipped = VK_TRUE;
-        m_description.oldSwapchain = VK_NULL_HANDLE;
-    }
-
-    // VkSwapchainCreateFlagsKHR        flags;
-    // VkSurfaceKHR                     surface;
-    // uint32_t                         minImageCount;
-    // VkFormat                         imageFormat;
-    // VkColorSpaceKHR                  imageColorSpace;
-    // VkExtent2D                       imageExtent;
-    // uint32_t                         imageArrayLayers;
-    // VkImageUsageFlags                imageUsage;
-    // VkSharingMode                    imageSharingMode;
-    // uint32_t                         queueFamilyIndexCount;
-    // const uint32_t*                  pQueueFamilyIndices;
-    // VkSurfaceTransformFlagBitsKHR    preTransform;
-    // VkCompositeAlphaFlagBitsKHR      compositeAlpha;
-    // VkPresentModeKHR                 presentMode;
-    // VkBool32                         clipped;
-    // VkSwapchainKHR                   oldSwapchain;
-
+    SwapchainFactory();
 
     void set_flags(VkSwapchainCreateFlagsKHR flags) {
         m_description.flags = flags;
@@ -101,19 +67,7 @@ public:
         m_description.oldSwapchain = old_swapchain;
     }
 
-    Swapchain create(Device* device) {
-
-        m_description.queueFamilyIndexCount = m_queue_family_indices.size();
-        m_description.pQueueFamilyIndices = m_queue_family_indices.data();
-
-        VkSwapchainKHR handle = nullptr;
-
-        if (vkCreateSwapchainKHR(device->get_handle(), &m_description, nullptr, &handle) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create swap chain");
-        }
-
-        return { device, handle };
-    }
+    Swapchain create(Device* device);
 
     VkSwapchainCreateFlagsKHR     get_flags()                    const { return m_description.flags; }
     VkSurfaceKHR                  get_surface()                  const { return m_description.surface; }

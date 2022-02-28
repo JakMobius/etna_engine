@@ -4,12 +4,12 @@ namespace VK {
 
 class CommandPool;
 class CommandPoolBase;
-class CommandBuffer;
 
 }
 
 #include "../resources/vk-device-resource.hpp"
 #include "../device/vk-device.hpp"
+#include "../command-buffer/vk-command-buffer.hpp"
 
 namespace VK {
 

@@ -3,6 +3,7 @@
 //
 
 #include "vk-command-buffer.hpp"
+#include "vk-command-pool.hpp"
 
 void VK::CommandBufferBase::reset(VkCommandBufferResetFlags flags) {
     vkResetCommandBuffer(m_handle, flags);

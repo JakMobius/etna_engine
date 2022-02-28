@@ -2,7 +2,6 @@
 
 #include <vector>
 #include <vulkan/vulkan_core.h>
-#include "../device/vk-device.hpp"
 #include "vk-render-pass.hpp"
 
 namespace VK {
@@ -26,20 +25,7 @@ public:
     std::vector<VkSubpassDescription>& get_subpass_descriptions() { return m_subpass_descriptions; }
     std::vector<VkSubpassDependency>& get_subpass_dependency_descriptions() { return m_subpass_dependency_descriptions; }
 
-    RenderPass create(Device* device) {
-        m_description.attachmentCount = m_attachment_descriptions.size();
-        m_description.pAttachments = m_attachment_descriptions.data();
-        m_description.subpassCount = m_subpass_descriptions.size();
-        m_description.pSubpasses = m_subpass_descriptions.data();
-        m_description.dependencyCount = m_subpass_dependency_descriptions.size();
-        m_description.pDependencies = m_subpass_dependency_descriptions.data();
-
-        VkRenderPass render_pass = nullptr;
-        if (vkCreateRenderPass(device->get_handle(), &m_description, nullptr, &render_pass) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create render pass");
-        }
-        return { device, render_pass };
-    }
+    RenderPass create(Device* device);
 };
 
 }

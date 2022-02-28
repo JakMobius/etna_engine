@@ -8,10 +8,7 @@ class DescriptorSetLayoutBinding {
     VkDescriptorSetLayoutBinding m_description {};
 
 public:
-    DescriptorSetLayoutBinding(VkDescriptorType type) {
-        set_descriptor_type(type);
-        set_descriptor_count(1);
-    }
+    explicit DescriptorSetLayoutBinding(VkDescriptorType type);
 
     void set_descriptor_type(VkDescriptorType descriptor_type) { m_description.descriptorType = descriptor_type; };
     void set_descriptor_count(uint32_t descriptor_count) { m_description.descriptorCount = descriptor_count; };

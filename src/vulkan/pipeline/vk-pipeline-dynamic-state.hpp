@@ -9,9 +9,7 @@ class PipelineDynamicState {
     std::vector<VkDynamicState> m_dynamic_states {};
 
 public:
-    PipelineDynamicState() {
-
-    }
+    PipelineDynamicState() = default;
 
     void add_dynamic_state(VkDynamicState state) {
         m_dynamic_states.push_back(state);
@@ -21,13 +19,7 @@ public:
         return m_dynamic_states;
     }
 
-    VkPipelineDynamicStateCreateInfo compile() const {
-        VkPipelineDynamicStateCreateInfo result = {};
-        result.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-        result.dynamicStateCount = m_dynamic_states.size();
-        result.pDynamicStates = m_dynamic_states.data();
-        return result;
-    }
+    VkPipelineDynamicStateCreateInfo compile() const;
 };
 
 }

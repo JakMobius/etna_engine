@@ -10,14 +10,7 @@ public:
 
     explicit Viewport(VkExtent2D size): Viewport((float)size.width, (float)size.height) {}
 
-    explicit Viewport(float width, float height) {
-        m_viewport.x = 0.0f;
-        m_viewport.y = 0.0f;
-        m_viewport.width = width;
-        m_viewport.height = height;
-        m_viewport.minDepth = 0.0f;
-        m_viewport.maxDepth = 1.0f;
-    }
+    explicit Viewport(float width, float height);
 
     void set_position(float x, float y) {
         m_viewport.x = x;

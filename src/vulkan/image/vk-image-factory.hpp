@@ -85,35 +85,9 @@ public:
     VkMemoryPropertyFlags get_memory_properties() const { return m_memory_properties; }
     VkExtent3D get_extent()                       const { return m_extent; }
 
-    VkImage create_raw_image(Device* device) {
-        VkImageCreateInfo image_info {};
-        image_info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-        image_info.imageType = VK_IMAGE_TYPE_2D;
-        image_info.extent = m_extent;
-        image_info.mipLevels = m_mip_levels;
-        image_info.arrayLayers = m_array_layers;
-        image_info.format = m_format;
-        image_info.tiling = m_tiling;
-        image_info.initialLayout = m_initial_layout;
-        image_info.usage = m_usage;
-        image_info.samples = m_samples;
-        image_info.sharingMode = m_sharing_mode;
+    VkImage create_raw_image(Device* device);
 
-        VkImage handle = nullptr;
-
-        if (vkCreateImage(device->get_handle(), &image_info, nullptr, &handle) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create image!");
-        }
-
-        return handle;
-    }
-
-    MemoryImage create(Device* device) {
-        Image image {device, create_raw_image(device) };
-        MemoryImage memory_image {std::move(image) };
-        memory_image.create(m_memory_properties);
-        return memory_image;
-    }
+    MemoryImage create(Device* device);
 };
 
 }

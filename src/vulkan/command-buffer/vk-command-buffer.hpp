@@ -8,12 +8,9 @@ class CommandBuffer;
 }
 
 #include <span>
-#include "../resources.hpp"
-#include "../device/vk-device.hpp"
-#include "vk-command-pool.hpp"
-#include "vk-command-buffer.hpp"
-#include "../pipeline/vk-pipeline.hpp"
+#include "../resources/vk-command-pool-resource.hpp"
 #include "../buffer/vk-buffer.hpp"
+#include "../pipeline/vk-pipeline.hpp"
 
 namespace VK {
 

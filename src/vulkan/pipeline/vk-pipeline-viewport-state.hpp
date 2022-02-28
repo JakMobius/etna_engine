@@ -11,7 +11,7 @@ class PipelineViewportState {
     std::vector<VkRect2D> m_scissors {};
 
 public:
-    PipelineViewportState() {}
+    PipelineViewportState() = default;
 
     void add_viewport(const Viewport& viewport) {
         m_viewports.push_back(viewport.get_viewport());
@@ -28,15 +28,7 @@ public:
     const std::vector<VkViewport>& get_viewports() const { return m_viewports; }
     const std::vector<VkRect2D>& get_scissors() const { return m_scissors; }
 
-    VkPipelineViewportStateCreateInfo compile() const {
-        VkPipelineViewportStateCreateInfo viewport_state {};
-        viewport_state.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewport_state.viewportCount = get_viewports().size();
-        viewport_state.pViewports = get_viewports().data();
-        viewport_state.scissorCount = get_scissors().size();
-        viewport_state.pScissors = get_scissors().data();
-        return viewport_state;
-    }
+    VkPipelineViewportStateCreateInfo compile() const;
 };
 
 }

@@ -6,10 +6,12 @@
 #include <iostream>
 #include <set>
 #include "vk-physical-device.hpp"
+#include "codes/vk-physical-device-type-code.hpp"
+#include "codes/vk-version-code.hpp"
 
-const VK::QueueFamilyIndices* VK::PhysicalDevice::get_queue_family_indices() const {
+const VK::DeviceQueueFamilies* VK::PhysicalDevice::get_queue_family_indices() const {
     if(!m_queue_family_indices) {
-        m_queue_family_indices = std::make_unique<QueueFamilyIndices>(this);
+        m_queue_family_indices = std::make_unique<DeviceQueueFamilies>(this);
     }
     return m_queue_family_indices.get();
 }

@@ -45,3 +45,10 @@ void VK::SurfaceContext::create_logical_device(const std::vector<const char*>& e
     m_graphics_queue = m_logical_device.get_queue(m_graphics_queue_family, 0);
     m_present_queue = m_logical_device.get_queue(m_present_queue_family, 0);
 }
+
+std::set<int> VK::SurfaceContext::get_queue_families() {
+    return {
+            m_present_queue_family,
+            m_graphics_queue_family
+    };
+}

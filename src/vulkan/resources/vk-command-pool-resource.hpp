@@ -1,8 +1,11 @@
 #pragma once
 
+namespace VK {
+class CommandPoolBase;
+}
+
 #include <vulkan/vulkan_core.h>
 #include "../device/vk-device.hpp"
-#include "../command-buffer/vk-command-pool.hpp"
 #include "vk-device-resource.hpp"
 
 namespace VK {
