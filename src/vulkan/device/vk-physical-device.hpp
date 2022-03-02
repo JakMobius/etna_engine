@@ -6,6 +6,8 @@ class PhysicalDevice;
 
 #include <vulkan/vulkan_core.h>
 #include "../queue/vk-queue-family-indices.hpp"
+#include "../vk-surface.hpp"
+#include "../swapchain/vk-swapchain-capabilities.hpp"
 
 namespace VK {
 
@@ -33,6 +35,14 @@ public:
     const VkPhysicalDeviceProperties* get_physical_properties() const;
 
     const VkPhysicalDeviceFeatures* get_physical_features() const;
+
+    bool has_surface_present_modes(const VK::UnownedSurface& surface) const;
+    std::vector<VkPresentModeKHR> get_surface_present_modes(const VK::UnownedSurface& surface) const;
+    bool supports_surface_present_mode(const VK::UnownedSurface& surface, VkPresentModeKHR mode) const;
+    VK::SwapchainCapabilities get_surface_capabilities(const VK::UnownedSurface& surface) const;
+    bool has_supported_surface_formats(const VK::UnownedSurface& surface) const;
+    bool supports_surface_format(const VK::UnownedSurface& each, VkSurfaceFormatKHR format) const;
+    std::vector<VkSurfaceFormatKHR> get_supported_surface_formats(const VK::UnownedSurface& surface) const;
 
     const DeviceQueueFamilies* get_queue_family_indices() const;
 

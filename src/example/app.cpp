@@ -15,7 +15,7 @@ void Application::create_instance() {
 
     factory.set_app_name("ETNA example");
     factory.set_app_version({1, 0, 0});
-    factory.get_enabled_extension_names() = get_required_extensions();
+    factory.get_enabled_extension_names() = get_required_instance_extensions();
 
     if (m_enable_validation_layers) {
         factory.get_enabled_layer_names() = m_required_validation_layers;
@@ -24,10 +24,6 @@ void Application::create_instance() {
     m_instance = factory.create();
 
     create_surface();
-
-    if (m_enable_validation_layers && !check_validation_layer_support()) {
-        throw std::runtime_error("some requested validation layers are not available");
-    }
 
     if(m_enable_debug_messenger && !m_debug_callback_handler.listen(m_instance.get_handle())) {
         throw std::runtime_error("debug callback handler failed to initialize");
@@ -43,7 +39,7 @@ void Application::create_surface() {
     m_surface = VK::Surface { &m_instance, surface };
 }
 
-std::vector<const char*> Application::get_required_extensions() const {
+std::vector<const char*> Application::get_required_instance_extensions() const {
     uint32_t glfw_extension_count = 0;
     const char** glfw_extensions = nullptr;
 
@@ -105,40 +101,16 @@ bool Application::is_device_suitable(const VK::PhysicalDevice* device) {
     if(device->get_queue_family_indices()->find_family(VK_QUEUE_GRAPHICS_BIT) < 0) return false;
     if(device->get_queue_family_indices()->find_surface_present_family(m_surface) < 0) return false;
     if(!device->supports_extensions(m_device_extensions)) return false;
-    if(!VK::SwapChainSupportDetails(device, m_surface.unowned_copy()).is_complete()) return false;
+    if(!device->has_supported_surface_formats(m_surface.unowned_copy())) return false;
+    if(!device->has_surface_present_modes(m_surface.unowned_copy())) return false;
     if(!device->get_physical_features()->samplerAnisotropy) return false;
 
     return true;
 }
 
-bool Application::check_validation_layer_support() {
-    bool result = true;
-
-    auto available_layers = m_instance.get_validation_layers();
-
-    std::cout << "Supported validation layers:\n";
-
-    for(auto& layer : available_layers) {
-        std::cout << "\t" << layer.layerName << " ver. " << VK::VersionCode(layer.specVersion) << " impl. " << VK::VersionCode(layer.implementationVersion) << ": " << layer.description << "\n";
-    }
-
-    for (const char* required_layer : m_required_validation_layers) {
-        auto layer = std::find_if(available_layers.begin(), available_layers.end(), [required_layer](auto available_layer) -> bool {
-            return strcmp(required_layer, available_layer.layerName) == 0;
-        });
-
-        if(layer == available_layers.end()) {
-            result = false;
-            std::cout << "Warning: Validation layer '" << required_layer << "' is required but not available\n";
-        }
-    }
-
-    return result;
-}
-
 void Application::main_loop() {
     while (!glfwWindowShouldClose(m_window)) {
-        glfwWaitEventsTimeout(1.0 / 60.0);
+        glfwPollEvents();
 
         draw_frame();
     }
@@ -229,9 +201,9 @@ void Application::create_logical_device() {
 }
 
 void Application::create_swapchain() {
-    m_framebuffer_manager = std::make_unique<Etna::BasicFramebufferManager>();
+    m_framebuffer_manager = std::make_unique<Etna::BasicAttachmentManager>();
     m_swapchain_manager = std::make_unique<Etna::SwapchainManager>(m_surface.unowned_copy(), &m_device);
-    m_swapchain_manager->set_framebuffer_manager(m_framebuffer_manager.get());
+    m_swapchain_manager->set_attachment_manager(m_framebuffer_manager.get());
 
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_window, &width, &height);
@@ -281,13 +253,13 @@ void Application::create_render_pass() {
     m_framebuffer_manager->set_depth_image_view(m_depth_image_view.unowned_copy());
 
     VK::Attachment color_attachment { m_swapchain_manager->get_swapchain_image_format() };
-    color_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
     color_attachment.set_samples(m_msaa_samples);
+    color_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_STORE);
     color_attachment.set_final_layout(VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL);
 
     VK::Attachment depth_attachment { find_depth_format() };
-    depth_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
     depth_attachment.set_samples(m_msaa_samples);
+    depth_attachment.set_load_store_operations(VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE);
     depth_attachment.set_final_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
 
     VK::Attachment resolve_attachment { m_swapchain_manager->get_swapchain_image_format() };
@@ -296,7 +268,7 @@ void Application::create_render_pass() {
     resolve_attachment.set_final_layout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     VkAttachmentReference color_attachment_ref {
-            m_framebuffer_manager->get_color_attachment_index(),
+        m_framebuffer_manager->get_color_attachment_index(),
         VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
     VkAttachmentReference depth_attachment_ref {
@@ -526,6 +498,106 @@ void Application::create_mesh() {
     }
 }
 
+void Application::update_uniform_buffer(uint32_t image_index) {
+
+    float dt = 0.01;
+    float camera_speed = 0.4f;
+    float camera_turn_speed = 0.7f;
+
+    glm::vec3 camera_dir { m_camera_direction.x, 0, m_camera_direction.z };
+
+    float length = sqrt(camera_dir.x * camera_dir.x + camera_dir.y * camera_dir.y + camera_dir.z * camera_dir.z);
+
+    camera_dir /= length;
+
+    glm::vec3 camera_side { camera_dir.z, 0, -camera_dir.x };
+
+    if(glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) m_camera_pos += camera_dir * dt * camera_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) m_camera_pos -= camera_dir * dt * camera_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) m_camera_pos += camera_side * dt * camera_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) m_camera_pos -= camera_side * dt * camera_speed;
+
+    if(glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS) m_camera_pos.y += dt * camera_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) m_camera_pos.y -= dt * camera_speed;
+
+    if(glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS) m_pitch += dt * camera_turn_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS) m_pitch -= dt * camera_turn_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS) m_yaw -= dt * camera_turn_speed;
+    if(glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS) m_yaw += dt * camera_turn_speed;
+
+    glm::mat4x4 camera_transform { 1 };
+    camera_transform = glm::rotate(camera_transform, m_pitch, glm::vec3 {1, 0, 0});
+    camera_transform = glm::rotate(camera_transform, m_yaw, glm::vec3 {0, 1, 0});
+    glm::vec4 new_camera_dir = (glm::vec4 {0, 0, 1, 0} * camera_transform);
+    m_camera_direction = { new_camera_dir.x, new_camera_dir.y, new_camera_dir.z };
+
+    UniformBufferObject ubo {};
+    ubo.model = glm::mat4(1.0f);
+    ubo.model = glm::rotate(ubo.model, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
+    ubo.model = glm::scale(ubo.model, glm::vec3(0.05, 0.05, 0.05));
+    ubo.view = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_direction, glm::vec3(0.0f, 1.0f, 0.0f));
+    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain_manager->get_swapchain_extent().width / (float) m_swapchain_manager->get_swapchain_extent().height, 0.01f, 100.0f);
+
+    ubo.proj[1][1] *= -1;
+
+    m_uniform_buffers[image_index].get_memory().set_data(&ubo, sizeof(ubo));
+}
+
+void Application::create_texture_image() {
+    const char* path = "resources/models/viking_room.png";
+    FIBITMAP* bitmap = FreeImage_Load(FreeImage_GetFileType(path, 0), path);
+    FIBITMAP* converted = FreeImage_ConvertTo32Bits(bitmap);
+    FreeImage_Unload(bitmap);
+
+    auto* image = (unsigned char*) FreeImage_GetBits(converted);
+    auto image_width = (uint32_t)FreeImage_GetWidth(converted);
+    auto image_height = (uint32_t)FreeImage_GetHeight(converted);
+    auto image_size = image_width * image_height * 4;
+
+    m_mip_levels = (int) floor(log2(std::max(image_width, image_height))) + 1;
+
+    for (int pix = 0; pix < image_size; pix += 4){
+        std::swap(image[pix + 0], image[pix + 2]);
+    }
+
+    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, image, image_size);
+
+    FreeImage_Unload(converted);
+
+    VK::ImageFactory image_factory;
+    image_factory.set_extent({image_width, image_height, 1});
+    image_factory.set_mip_levels(m_mip_levels);
+    image_factory.set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_factory.set_format(VK_FORMAT_R8G8B8A8_SRGB);
+
+    m_texture_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
+
+    auto command_buffer = m_command_pool.create_command_buffer();
+    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+
+    VK::ImageMemoryBarrier layout_conversion_barrier { &m_texture_image->get_image() };
+    layout_conversion_barrier.set_layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    layout_conversion_barrier.set_mip_level_count(m_mip_levels);
+    layout_conversion_barrier.set_access_masks(0, VK_ACCESS_TRANSFER_WRITE_BIT);
+    layout_conversion_barrier.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
+    layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+
+    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), &m_texture_image->get_image());
+    copy_command.set_image_extent(image_factory.get_extent());
+    copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    copy_command.write(&command_buffer);
+
+    generate_mipmaps(&command_buffer, &m_texture_image->get_image(), image_factory.get_format(), { image_width, image_height }, image_factory.get_mip_levels());
+
+    command_buffer.end();
+    command_buffer.submit_and_wait(m_device_graphics_queue);
+
+    VK::ImageViewFactory image_view_factory;
+    image_view_factory.set_format(image_factory.get_format());
+    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    m_texture_image_view = image_view_factory.create(&m_device, m_texture_image->get_image());
+}
+
 void Application::create_index_buffer() {
 
     auto index_buffer_size = m_index_buffer_storage.size() * sizeof(m_index_buffer_storage[0]);
@@ -586,50 +658,6 @@ void Application::create_uniform_buffers() {
     }
 }
 
-void Application::update_uniform_buffer(uint32_t image_index) {
-
-    float dt = 0.01;
-    float camera_speed = 1.0f;
-
-    glm::vec3 camera_dir { m_camera_direction.x, 0, m_camera_direction.z };
-
-    float length = sqrt(camera_dir.x * camera_dir.x + camera_dir.y * camera_dir.y + camera_dir.z * camera_dir.z);
-
-    camera_dir /= length;
-
-    glm::vec3 camera_side { camera_dir.z, 0, -camera_dir.x };
-
-    if(glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) m_camera_pos += camera_dir * dt * camera_speed;
-    if(glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) m_camera_pos -= camera_dir * dt * camera_speed;
-    if(glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) m_camera_pos += camera_side * dt * camera_speed;
-    if(glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) m_camera_pos -= camera_side * dt * camera_speed;
-
-    if(glfwGetKey(m_window, GLFW_KEY_SPACE) == GLFW_PRESS) m_camera_pos.y += dt * camera_speed;
-    if(glfwGetKey(m_window, GLFW_KEY_LEFT_SHIFT) == GLFW_PRESS) m_camera_pos.y -= dt * camera_speed;
-
-    if(glfwGetKey(m_window, GLFW_KEY_UP) == GLFW_PRESS) m_pitch += dt;
-    if(glfwGetKey(m_window, GLFW_KEY_DOWN) == GLFW_PRESS) m_pitch -= dt;
-    if(glfwGetKey(m_window, GLFW_KEY_LEFT) == GLFW_PRESS) m_yaw -= dt;
-    if(glfwGetKey(m_window, GLFW_KEY_RIGHT) == GLFW_PRESS) m_yaw += dt;
-
-    glm::mat4x4 camera_transform { 1 };
-    camera_transform = glm::rotate(camera_transform, m_pitch, glm::vec3 {1, 0, 0});
-    camera_transform = glm::rotate(camera_transform, m_yaw, glm::vec3 {0, 1, 0});
-    glm::vec4 new_camera_dir = (glm::vec4 {0, 0, 1, 0} * camera_transform);
-    m_camera_direction = { new_camera_dir.x, new_camera_dir.y, new_camera_dir.z };
-
-    UniformBufferObject ubo {};
-    ubo.model = glm::mat4(1.0f);
-    ubo.model = glm::rotate(ubo.model, glm::radians(90.f), glm::vec3(0.0, 1.0, 0.0));
-    ubo.model = glm::scale(ubo.model, glm::vec3(0.05, 0.05, 0.05));
-    ubo.view = glm::lookAt(m_camera_pos, m_camera_pos + m_camera_direction, glm::vec3(0.0f, 1.0f, 0.0f));
-    ubo.proj = glm::perspective(glm::radians(45.0f), (float) m_swapchain_manager->get_swapchain_extent().width / (float) m_swapchain_manager->get_swapchain_extent().height, 0.01f, 100.0f);
-
-    ubo.proj[1][1] *= -1;
-
-    m_uniform_buffers[image_index].get_memory().set_data(&ubo, sizeof(ubo));
-}
-
 void Application::create_descriptor_set_layout() {
     VK::DescriptorSetLayoutFactory factory;
 
@@ -667,61 +695,6 @@ void Application::create_descriptor_sets() {
         m_descriptor_set_array->bind_descriptor(i, 0, uniform_buffer_descriptor);
         m_descriptor_set_array->bind_descriptor(i, 1, texture_sampler_descriptor);
     }
-}
-
-void Application::create_texture_image() {
-    const char* path = "resources/models/viking_room.png";
-    FIBITMAP* bitmap = FreeImage_Load(FreeImage_GetFileType(path, 0), path);
-    FIBITMAP* converted = FreeImage_ConvertTo32Bits(bitmap);
-    FreeImage_Unload(bitmap);
-
-    auto* image = (unsigned char*) FreeImage_GetBits(converted);
-    auto image_width = (uint32_t)FreeImage_GetWidth(converted);
-    auto image_height = (uint32_t)FreeImage_GetHeight(converted);
-    auto image_size = image_width * image_height * 4;
-
-    m_mip_levels = (int) floor(log2(std::max(image_width, image_height))) + 1;
-
-    for (int pix = 0; pix < image_size; pix += 4){
-        std::swap(image[pix + 0], image[pix + 2]);
-    }
-
-    auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, image, image_size);
-
-    FreeImage_Unload(converted);
-
-    VK::ImageFactory image_factory;
-    image_factory.set_extent({image_width, image_height, 1});
-    image_factory.set_mip_levels(m_mip_levels);
-    image_factory.set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    image_factory.set_format(VK_FORMAT_R8G8B8A8_SRGB);
-
-    m_texture_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
-
-    auto command_buffer = m_command_pool.create_command_buffer();
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-    VK::ImageMemoryBarrier layout_conversion_barrier { &m_texture_image->get_image() };
-    layout_conversion_barrier.set_layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    layout_conversion_barrier.set_mip_level_count(m_mip_levels);
-    layout_conversion_barrier.set_access_masks(0, VK_ACCESS_TRANSFER_WRITE_BIT);
-    layout_conversion_barrier.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
-    layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), &m_texture_image->get_image());
-    copy_command.set_image_extent(image_factory.get_extent());
-    copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copy_command.write(&command_buffer);
-
-    generate_mipmaps(&command_buffer, &m_texture_image->get_image(), image_factory.get_format(), { image_width, image_height }, image_factory.get_mip_levels());
-
-    command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue);
-
-    VK::ImageViewFactory image_view_factory;
-    image_view_factory.set_format(image_factory.get_format());
-    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_texture_image_view = image_view_factory.create(&m_device, m_texture_image->get_image());
 }
 
 void Application::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels) {

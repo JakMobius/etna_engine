@@ -4,9 +4,9 @@
 
 namespace Etna {
 
-class FramebufferManager {
+class AttachmentManager {
 public:
-    virtual ~FramebufferManager() = default;
+    virtual ~AttachmentManager() = default;
     virtual VK::Framebuffer create_framebuffer(const VK::ImageView& image_view, VkExtent2D size, const VK::RenderPass& render_pass) = 0;
 };
 

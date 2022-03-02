@@ -1,16 +1,16 @@
 #pragma once
 
-#include "framebuffer-manager.hpp"
+#include "attachment-manager.hpp"
 
 namespace Etna {
 
-class BasicFramebufferManager : public FramebufferManager {
+class BasicAttachmentManager : public AttachmentManager {
 
     VK::UnownedImageView m_color_image_view {};
     VK::UnownedImageView m_depth_image_view {};
 
 public:
-    BasicFramebufferManager() {}
+    BasicAttachmentManager() {}
 
     VK::Framebuffer create_framebuffer(const VK::ImageView& image_view, VkExtent2D size, const VK::RenderPass& render_pass) override {
         VK::FramebufferFactory framebuffer_factory;

@@ -5,7 +5,7 @@
 #include "vk-instance.hpp"
 #include "../device/vk-physical-device.hpp"
 
-std::vector<VkLayerProperties> VK::InstanceBase::get_validation_layers() {
+std::vector<VkLayerProperties> VK::InstanceBase::get_supported_validation_layers() {
     uint32_t layer_count = 0;
     vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
     std::vector<VkLayerProperties> available_layers(layer_count);

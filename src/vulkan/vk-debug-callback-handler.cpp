@@ -5,18 +5,17 @@
 #include <iostream>
 #include "vk-debug-callback-handler.hpp"
 
-VkBool32
-vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+VkBool32 VK::vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                   VkDebugUtilsMessageTypeFlagsEXT message_type,
                   const VkDebugUtilsMessengerCallbackDataEXT* callback_data,
                   void* p_user_data) {
 
-    vk_callback_parameters data {message_severity, message_type, callback_data };
-    return ((VkDebugCallbackHandler*) p_user_data)->on_callback(&data) ? VK_TRUE : VK_FALSE;
+    CallbackParameters data {message_severity, message_type, callback_data };
+    return ((DebugCallbackHandler*) p_user_data)->on_callback(&data) ? VK_TRUE : VK_FALSE;
 
 }
 
-VkResult VkDebugCallbackHandler::destroy_messenger() {
+VkResult VK::DebugCallbackHandler::destroy_messenger() {
     if(!m_handle) return VK_INCOMPLETE;
 
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_instance, VK_DESTROY_DEBUG_UTILS_MESSENGER_EXT_NAME);
@@ -30,7 +29,7 @@ VkResult VkDebugCallbackHandler::destroy_messenger() {
     }
 }
 
-VkResult VkDebugCallbackHandler::create_messenger(const VkDebugUtilsMessengerCreateInfoEXT* create_info) {
+VkResult VK::DebugCallbackHandler::create_messenger(const VkDebugUtilsMessengerCreateInfoEXT* create_info) {
     auto func = (PFN_vkCreateDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_instance, VK_CREATE_DEBUG_UTILS_MESSENGER_EXT_NAME);
 
     if (func != nullptr) {
@@ -40,7 +39,7 @@ VkResult VkDebugCallbackHandler::create_messenger(const VkDebugUtilsMessengerCre
     }
 }
 
-bool VkDebugCallbackHandler::listen(VkInstance instance) {
+bool VK::DebugCallbackHandler::listen(VkInstance instance) {
     if(!instance) return false;
     if(m_handle) return false;
 
@@ -78,7 +77,7 @@ bool VkDebugCallbackHandler::listen(VkInstance instance) {
     return true;
 }
 
-void VkDebugCallbackHandler::stop_listening() {
+void VK::DebugCallbackHandler::stop_listening() {
     auto result = destroy_messenger();
 
     if(result != VK_SUCCESS) {
@@ -86,7 +85,7 @@ void VkDebugCallbackHandler::stop_listening() {
     }
 }
 
-void VkDebugCallbackHandler::dump_object(const VkDebugUtilsObjectNameInfoEXT* object) {
+void VK::DebugCallbackHandler::dump_object(const VkDebugUtilsObjectNameInfoEXT* object) {
 
     std::cout << VK::ObjectTypeCode(object->objectType);
 
@@ -97,7 +96,7 @@ void VkDebugCallbackHandler::dump_object(const VkDebugUtilsObjectNameInfoEXT* ob
     }
 }
 
-bool VkDebugCallbackHandler::on_callback(vk_callback_parameters* callback_parameters) {
+bool VK::DebugCallbackHandler::on_callback(CallbackParameters* callback_parameters) {
     if(callback_parameters->message_severity < m_min_severity) return false;
 
     std::cout << "Vulkan ["
@@ -105,13 +104,13 @@ bool VkDebugCallbackHandler::on_callback(vk_callback_parameters* callback_parame
               << VK::MessageTypeCode(callback_parameters->message_type) << "]: "
               << callback_parameters->callback_data->pMessage << "\n";
 
-    if(callback_parameters->message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-        asm("nop");
-    }
-
-    if(callback_parameters->message_type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
-        asm("nop");
-    }
+//    if(callback_parameters->message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+//        asm("nop");
+//    }
+//
+//    if(callback_parameters->message_type == VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT) {
+//        asm("nop");
+//    }
 
     for(int i = 0; i < callback_parameters->callback_data->objectCount; i++) {
         std::cout << "\t- objects[" << i << "]: ";

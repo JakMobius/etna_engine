@@ -6,10 +6,9 @@
 #include "../vulkan/swapchain/vk-swapchain.hpp"
 #include "../vulkan/framebuffer/vk-framebuffer.hpp"
 #include "../vulkan/swapchain/vk-swapchain-factory.hpp"
-#include "../vulkan/swapchain/vk-swapchain-support-details.hpp"
 #include "../vulkan/image/view/vk-image-view-factory.hpp"
 #include "../vulkan/framebuffer/vk-framebuffer-factory.hpp"
-#include "framebuffer-manager.hpp"
+#include "attachment-manager.hpp"
 
 namespace Etna {
 
@@ -27,7 +26,7 @@ class SwapchainManager {
     VkExtent2D m_swapchain_extent {};
     VkFormat m_swapchain_image_format;
 
-    FramebufferManager* m_framebuffer_manager = nullptr;
+    AttachmentManager* m_attachment_manager = nullptr;
 
 protected:
 
@@ -40,15 +39,28 @@ protected:
         VK::ImageViewFactory image_view_factory;
         configure_swapchain_image_view(image_view_factory, swapchain_image);
         image.m_image_view = image_view_factory.create(m_device, swapchain_image);
-        image.m_framebuffer = m_framebuffer_manager->create_framebuffer(image.m_image_view, m_swapchain_extent, render_pass);
+        image.m_framebuffer = m_attachment_manager->create_framebuffer(image.m_image_view, m_swapchain_extent, render_pass);
     }
 
     virtual void configure_swapchain(VK::SwapchainFactory& factory, uint32_t width, uint32_t height) {
-        VK::SwapChainSupportDetails swap_chain_support(m_device->get_physical_device(), m_surface);
+        auto physical_device = m_device->get_physical_device();
 
-        VkSurfaceFormatKHR surface_format = swap_chain_support.choose_best_format();
-        m_swapchain_extent = swap_chain_support.choose_best_swap_extent(width, height);
-        uint32_t image_count = swap_chain_support.get_optimal_chain_image_count();
+        auto swapchain_capabilities = m_device->get_physical_device()->get_surface_capabilities(m_surface);
+
+        m_swapchain_extent = swapchain_capabilities.clamp_image_extent(width, height);
+        uint32_t image_count = swapchain_capabilities.get_optimal_chain_image_count();
+
+        // TODO: not quite optimal
+        VkSurfaceFormatKHR surface_format({ VK_FORMAT_B8G8R8A8_SRGB, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR });
+        if(!physical_device->supports_surface_format(m_surface, surface_format)) {
+            surface_format = physical_device->get_supported_surface_formats(m_surface)[0];
+        }
+
+        if(physical_device->supports_surface_present_mode(m_surface, VK_PRESENT_MODE_MAILBOX_KHR)) {
+            factory.set_present_mode(VK_PRESENT_MODE_MAILBOX_KHR);
+        } else {
+            factory.set_present_mode(VK_PRESENT_MODE_FIFO_KHR);
+        }
 
         factory.set_surface(m_surface);
         factory.set_min_image_count(image_count);
@@ -56,7 +68,7 @@ protected:
         factory.set_image_color_space(surface_format.colorSpace);
         factory.set_image_extent(m_swapchain_extent);
         factory.set_image_usage(VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-        factory.set_pre_transform(swap_chain_support.m_capabilities.currentTransform);
+        factory.set_pre_transform(swapchain_capabilities.get_current_transform());
         factory.set_composite_alpha(VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR);
         factory.set_clipped(VK_TRUE);
 
@@ -100,8 +112,8 @@ public:
         destroy_swapchain();
     }
 
-    void set_framebuffer_manager(FramebufferManager* framebuffer_manager) {
-        m_framebuffer_manager = framebuffer_manager;
+    void set_attachment_manager(AttachmentManager* framebuffer_manager) {
+        m_attachment_manager = framebuffer_manager;
     }
 
     VkExtent2D get_swapchain_extent() const { return m_swapchain_extent; }

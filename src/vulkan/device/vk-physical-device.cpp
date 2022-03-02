@@ -6,6 +6,7 @@
 #include <iostream>
 #include <set>
 #include "vk-physical-device.hpp"
+#include "../vk-surface.hpp"
 #include "../codes/vk-physical-device-type-code.hpp"
 #include "../codes/vk-version-code.hpp"
 
@@ -133,4 +134,52 @@ VkFormat VK::PhysicalDevice::find_supported_format(const std::vector<VkFormat> &
     }
 
     throw std::runtime_error("failed to find supported format");
+}
+
+bool VK::PhysicalDevice::has_surface_present_modes(const VK::UnownedSurface &surface) const {
+    uint32_t present_mode_count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_handle, surface.get_handle(), &present_mode_count, nullptr);
+    return present_mode_count > 0;
+}
+
+std::vector<VkPresentModeKHR> VK::PhysicalDevice::get_surface_present_modes(const VK::UnownedSurface &surface) const {
+    std::vector<VkPresentModeKHR> m_present_modes {};
+    uint32_t present_mode_count = 0;
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_handle, surface.get_handle(), &present_mode_count, nullptr);
+    m_present_modes.resize(present_mode_count);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(m_handle, surface.get_handle(), &present_mode_count, m_present_modes.data());
+    return m_present_modes;
+}
+
+VK::SwapchainCapabilities VK::PhysicalDevice::get_surface_capabilities(const VK::UnownedSurface &surface) const {
+    VK::SwapchainCapabilities result {};
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_handle, surface.get_handle(), &result.get_description());
+    return result;
+}
+
+bool VK::PhysicalDevice::has_supported_surface_formats(const VK::UnownedSurface &surface) const {
+    uint32_t format_count = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(m_handle, surface.get_handle(), &format_count, nullptr);
+    return format_count > 0;
+}
+
+std::vector<VkSurfaceFormatKHR> VK::PhysicalDevice::get_supported_surface_formats(const VK::UnownedSurface &surface) const {
+    std::vector<VkSurfaceFormatKHR> formats {};
+    uint32_t format_count = 0;
+    vkGetPhysicalDeviceSurfaceFormatsKHR(m_handle, surface.get_handle(), &format_count, nullptr);
+    formats.resize(format_count);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(m_handle, surface.get_handle(), &format_count, formats.data());
+    return formats;
+}
+
+bool VK::PhysicalDevice::supports_surface_format(const VK::UnownedSurface &surface, VkSurfaceFormatKHR format) const {
+    auto formats = get_supported_surface_formats(surface);
+    return std::find_if(formats.begin(), formats.end(), [format](VkSurfaceFormatKHR each) -> bool {
+        return each.format == format.format && each.colorSpace == format.colorSpace;
+    }) != formats.end();
+}
+
+bool VK::PhysicalDevice::supports_surface_present_mode(const VK::UnownedSurface &surface, VkPresentModeKHR mode) const {
+    auto modes = get_surface_present_modes(surface);
+    return std::find(modes.begin(), modes.end(), mode) != modes.end();
 }

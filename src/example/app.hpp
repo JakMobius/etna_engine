@@ -11,7 +11,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/matrix.hpp>
 #include "../vulkan/vulkan.hpp"
-#include "../etna/basic-framebuffer-manager.hpp"
+#include "../etna/basic-attachment-manager.hpp"
 #include "../etna/swapchain-manager.hpp"
 
 struct UniformBufferObject {
@@ -24,7 +24,7 @@ class Application {
 
     const int MAX_FRAMES_IN_FLIGHT = 2;
 
-    VkDebugCallbackHandler m_debug_callback_handler {};
+    VK::DebugCallbackHandler m_debug_callback_handler {};
     GLFWwindow* m_window = nullptr;
     const uint32_t m_window_width = 800;
     const uint32_t m_window_height = 600;
@@ -43,7 +43,7 @@ class Application {
 
     VK::Surface m_surface {};
     std::unique_ptr<Etna::SwapchainManager> m_swapchain_manager {};
-    std::unique_ptr<Etna::BasicFramebufferManager> m_framebuffer_manager = nullptr;
+    std::unique_ptr<Etna::BasicAttachmentManager> m_framebuffer_manager = nullptr;
 
     std::vector<VK::UnownedFence> m_in_flight_images {};
 
@@ -146,9 +146,7 @@ private:
 
     void record_command_buffer(uint32_t frame_index, uint32_t swapchain_frame_index);
 
-    std::vector<const char*> get_required_extensions() const;
-
-    bool check_validation_layer_support();
+    std::vector<const char*> get_required_instance_extensions() const;
 
     void main_loop();
 

@@ -15,7 +15,7 @@ public:
     using ResourceBase::ResourceBase;
     InstanceBase& operator=(InstanceBase&& move_assign) = default;
 
-    std::vector<VkLayerProperties> get_validation_layers();
+    std::vector<VkLayerProperties> get_supported_validation_layers();
 
     std::vector<PhysicalDevice> get_physical_devices();
 
