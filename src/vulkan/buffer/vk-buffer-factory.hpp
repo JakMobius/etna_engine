@@ -16,20 +16,24 @@ public:
         m_create_info.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
     }
 
-    void set_size(VkDeviceSize size) {
+    BufferFactory& set_size(VkDeviceSize size) {
         m_create_info.size = size;
+        return *this;
     }
 
-    void set_usage(VkBufferUsageFlags usage) {
+    BufferFactory& set_usage(VkBufferUsageFlags usage) {
         m_create_info.usage = usage;
+        return *this;
     }
 
-    void set_memory_properties(VkMemoryPropertyFlags properties) {
+    BufferFactory& set_memory_properties(VkMemoryPropertyFlags properties) {
         m_memory_properties = properties;
+        return *this;
     }
 
-    void set_flags(VkBufferCreateFlags flags) {
+    BufferFactory& set_flags(VkBufferCreateFlags flags) {
         m_create_info.flags = flags;
+        return *this;
     }
 
     std::vector<uint32_t>& get_queue_families() {

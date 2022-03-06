@@ -35,9 +35,20 @@ public:
         return ImageSubresourceLayers::existing(m_description.dstSubresource);
     }
 
-    void set_filter(VkFilter filter) { m_filter = filter; }
-    void set_source_layout(VkImageLayout source_layout) { m_source_layout = source_layout; }
-    void set_destination_layout(VkImageLayout destination_layout) { m_destination_layout = destination_layout; }
+    ImageBlitCommand& set_filter(VkFilter filter) {
+        m_filter = filter;
+        return *this;
+    }
+
+    ImageBlitCommand& set_source_layout(VkImageLayout source_layout) {
+        m_source_layout = source_layout;
+        return *this;
+    }
+
+    ImageBlitCommand& set_destination_layout(VkImageLayout destination_layout) {
+        m_destination_layout = destination_layout;
+        return *this;
+    }
 
     void write(const UnownedCommandBuffer& command_buffer) override;
 

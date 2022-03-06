@@ -33,20 +33,24 @@ public:
     uint32_t get_base_array_layer()      const { return m_description.baseArrayLayer; }
     VkImageAspectFlags get_aspect_mask() const { return m_description.aspectMask; }
 
-    void set_mip_level(uint32_t base_mip_level) {
+    ImageSubresourceLayers& set_mip_level(uint32_t base_mip_level) {
         m_description.mipLevel = base_mip_level;
+        return *this;
     }
 
-    void set_array_layers(uint32_t array_layers) {
+    ImageSubresourceLayers& set_array_layers(uint32_t array_layers) {
         m_description.layerCount = array_layers;
+        return *this;
     }
 
-    void set_base_array_layer(uint32_t base_array_layer) {
+    ImageSubresourceLayers& set_base_array_layer(uint32_t base_array_layer) {
         m_description.baseArrayLayer = base_array_layer;
+        return *this;
     }
 
-    void set_aspect_mask(VkImageAspectFlags mask) {
+    ImageSubresourceLayers& set_aspect_mask(VkImageAspectFlags mask) {
         m_description.aspectMask = mask;
+        return *this;
     }
 
     static ImageSubresourceLayers single_layer(uint32_t layer) {

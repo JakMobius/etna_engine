@@ -17,8 +17,9 @@ public:
         m_description.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     }
 
-    void set_flags(VkRenderPassCreateFlags flags) {
+    RenderPassFactory& set_flags(VkRenderPassCreateFlags flags) {
         m_description.flags = flags;
+        return *this;
     }
 
     std::vector<VkAttachmentDescription>& get_attachment_descriptions() { return m_attachment_descriptions; }

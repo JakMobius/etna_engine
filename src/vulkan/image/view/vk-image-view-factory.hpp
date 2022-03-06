@@ -15,10 +15,25 @@ public:
 
     ImageViewFactory();
 
-    void set_flags(VkImageViewCreateFlags flags) { m_description.flags = flags;}
-    void set_view_type(VkImageViewType type) { m_description.viewType = type; }
-    void set_format(VkFormat format) { m_description.format = format; }
-    void set_components(VkComponentMapping components) { m_description.components = components; }
+    ImageViewFactory& set_flags(VkImageViewCreateFlags flags) {
+        m_description.flags = flags;
+        return *this;
+    }
+
+    ImageViewFactory& set_view_type(VkImageViewType type) {
+        m_description.viewType = type;
+        return *this;
+    }
+
+    ImageViewFactory& set_format(VkFormat format) {
+        m_description.format = format;
+        return *this;
+    }
+
+    ImageViewFactory& set_components(VkComponentMapping components) {
+        m_description.components = components;
+        return *this;
+    }
 
     ImageView create(Device* device, const ImageBase& image) const;
 

@@ -16,20 +16,23 @@ class PipelineColorBlendState {
 public:
     PipelineColorBlendState() {}
 
-    void set_logic_op_enable(bool logic_op_enable) {
+    PipelineColorBlendState& set_logic_op_enable(bool logic_op_enable) {
         m_logic_op_enable = logic_op_enable;
+        return *this;
     }
 
-    void set_logic_op(VkLogicOp logic_op) {
+    PipelineColorBlendState& set_logic_op(VkLogicOp logic_op) {
         m_logic_op = logic_op;
+        return *this;
     }
 
     float(&get_blend_constants())[4] {
         return m_blend_constants;
     }
 
-    void add_color_attachment(PipelineColorAttachmentState& attachment) {
+    PipelineColorBlendState& add_color_attachment(PipelineColorAttachmentState& attachment) {
         m_attachments.push_back(attachment.get_description());
+        return *this;
     }
 
     VkPipelineColorBlendStateCreateInfo compile();

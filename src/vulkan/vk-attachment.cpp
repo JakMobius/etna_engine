@@ -15,12 +15,14 @@ VK::Attachment::Attachment(VkFormat format) {
     m_description.samples = VK_SAMPLE_COUNT_1_BIT;
 }
 
-void VK::Attachment::set_load_store_operations(VkAttachmentLoadOp load_op, VkAttachmentStoreOp store_op) {
+VK::Attachment& VK::Attachment::set_load_store_operations(VkAttachmentLoadOp load_op, VkAttachmentStoreOp store_op) {
     m_description.loadOp = load_op;
     m_description.storeOp = store_op;
+    return *this;
 }
 
-void VK::Attachment::set_stencil_load_store_operations(VkAttachmentLoadOp load_op, VkAttachmentStoreOp store_op) {
+VK::Attachment& VK::Attachment::set_stencil_load_store_operations(VkAttachmentLoadOp load_op, VkAttachmentStoreOp store_op) {
     m_description.stencilLoadOp = load_op;
     m_description.stencilStoreOp = store_op;
+    return *this;
 }

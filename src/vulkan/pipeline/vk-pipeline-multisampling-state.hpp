@@ -10,23 +10,34 @@ class PipelineMultisamplingState {
 public:
     PipelineMultisamplingState();
 
-    void set_sample_shading_enable(VkBool32 sample_shading_enable) {
+    PipelineMultisamplingState& set_sample_shading_enable(VkBool32 sample_shading_enable) {
         m_description.sampleShadingEnable = sample_shading_enable;
+        return *this;
     }
-    void set_min_sample_shading(float min_sample_shading) {
+
+    PipelineMultisamplingState& set_min_sample_shading(float min_sample_shading) {
         m_description.minSampleShading = min_sample_shading;
+        return *this;
     }
-    void set_rasterization_samples(VkSampleCountFlagBits rasterization_samples) {
+
+    PipelineMultisamplingState& set_rasterization_samples(VkSampleCountFlagBits rasterization_samples) {
         m_description.rasterizationSamples = rasterization_samples;
+        return *this;
     }
-    void set_sample_mask(const VkSampleMask* sample_mask) {
+
+    PipelineMultisamplingState& set_sample_mask(const VkSampleMask* sample_mask) {
         m_description.pSampleMask = sample_mask;
+        return *this;
     }
-    void set_alpha_to_coverage_enable(VkBool32 alpha_to_coverage_enable) {
+
+    PipelineMultisamplingState& set_alpha_to_coverage_enable(VkBool32 alpha_to_coverage_enable) {
         m_description.alphaToCoverageEnable = alpha_to_coverage_enable;
+        return *this;
     }
-    void set_alpha_to_one_enable(VkBool32 alpha_to_one_enable) {
+
+    PipelineMultisamplingState& set_alpha_to_one_enable(VkBool32 alpha_to_one_enable) {
         m_description.alphaToOneEnable = alpha_to_one_enable;
+        return *this;
     }
 
     VkPipelineMultisampleStateCreateInfo& get_description() {

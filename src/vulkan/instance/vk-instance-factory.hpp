@@ -16,28 +16,34 @@ class InstanceFactory {
 public:
     InstanceFactory();
 
-    void set_app_api_version(VersionCode version) {
+    InstanceFactory& set_app_api_version(VersionCode version) {
         m_application_info.applicationVersion = version.get_code();
+        return *this;
     }
 
-    void set_app_name(const char* app_name) {
+    InstanceFactory& set_app_name(const char* app_name) {
         m_application_info.pApplicationName = app_name;
+        return *this;
     }
 
-    void set_app_version(VersionCode version) {
+    InstanceFactory& set_app_version(VersionCode version) {
         m_application_info.applicationVersion = version.get_code();
+        return *this;
     }
 
-    void set_app_engine_name(const char* name) {
+    InstanceFactory& set_app_engine_name(const char* name) {
         m_application_info.pEngineName = name;
+        return *this;
     }
 
-    void set_app_engine_version(VersionCode version) {
+    InstanceFactory& set_app_engine_version(VersionCode version) {
         m_application_info.engineVersion = version.get_code();
+        return *this;
     }
 
-    void set_create_flags(VkInstanceCreateFlags flags) {
+    InstanceFactory& set_create_flags(VkInstanceCreateFlags flags) {
         m_description.flags = flags;
+        return *this;
     }
 
     Instance create();

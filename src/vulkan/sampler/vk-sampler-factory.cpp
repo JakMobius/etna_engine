@@ -23,14 +23,16 @@ VK::SamplerFactory::SamplerFactory() {
     m_description.minLod = 0;
 }
 
-void VK::SamplerFactory::set_address_modes_uvw(VkSamplerAddressMode address_mode_u, VkSamplerAddressMode address_mode_v,
+VK::SamplerFactory& VK::SamplerFactory::set_address_modes_uvw(VkSamplerAddressMode address_mode_u, VkSamplerAddressMode address_mode_v,
                                                VkSamplerAddressMode address_mode_w) {
     m_description.addressModeU = address_mode_u;
     m_description.addressModeV = address_mode_v;
     m_description.addressModeV = address_mode_w;
+    return *this;
 }
 
-void VK::SamplerFactory::set_address_modes_uv(VkSamplerAddressMode address_mode_u, VkSamplerAddressMode address_mode_v) {
+VK::SamplerFactory& VK::SamplerFactory::set_address_modes_uv(VkSamplerAddressMode address_mode_u, VkSamplerAddressMode address_mode_v) {
     m_description.addressModeU = address_mode_u;
     m_description.addressModeV = address_mode_v;
+    return *this;
 }

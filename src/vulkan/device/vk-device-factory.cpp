@@ -28,7 +28,7 @@ VK::Device VK::DeviceFactory::create(VK::PhysicalDevice* physical_device) {
     return { device, physical_device };
 }
 
-void VK::DeviceFactory::add_queue(VkDeviceQueueCreateFlags flags, uint32_t family, std::span<float> priorities) {
+VK::DeviceFactory& VK::DeviceFactory::add_queue(VkDeviceQueueCreateFlags flags, uint32_t family, std::span<float> priorities) {
     m_queues_to_create.emplace_back();
     VkDeviceQueueCreateInfo& queue_create_info = m_queues_to_create.back();
     queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
@@ -36,4 +36,5 @@ void VK::DeviceFactory::add_queue(VkDeviceQueueCreateFlags flags, uint32_t famil
     queue_create_info.flags = flags;
     queue_create_info.queueCount = priorities.size();
     queue_create_info.pQueuePriorities = priorities.data();
+    return *this;
 }

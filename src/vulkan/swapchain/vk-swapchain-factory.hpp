@@ -11,60 +11,74 @@ class SwapchainFactory {
 public:
     SwapchainFactory();
 
-    void set_flags(VkSwapchainCreateFlagsKHR flags) {
+    SwapchainFactory& set_flags(VkSwapchainCreateFlagsKHR flags) {
         m_description.flags = flags;
+        return *this;
     }
 
-    void set_surface(const VK::SurfaceBase& surface) {
+    SwapchainFactory& set_surface(const VK::SurfaceBase& surface) {
         m_description.surface = surface.get_handle();
+        return *this;
     }
 
-    void set_min_image_count(uint32_t min_image_count) {
+    SwapchainFactory& set_min_image_count(uint32_t min_image_count) {
         m_description.minImageCount = min_image_count;
+        return *this;
     }
 
-    void set_image_format(VkFormat image_format) {
+    SwapchainFactory& set_image_format(VkFormat image_format) {
         m_description.imageFormat = image_format;
+        return *this;
     }
 
-    void set_image_color_space(VkColorSpaceKHR image_color_space) {
+    SwapchainFactory& set_image_color_space(VkColorSpaceKHR image_color_space) {
         m_description.imageColorSpace = image_color_space;
+        return *this;
     }
 
-    void set_image_extent(VkExtent2D image_extent) {
+    SwapchainFactory& set_image_extent(VkExtent2D image_extent) {
         m_description.imageExtent = image_extent;
+        return *this;
     }
 
-    void set_image_array_layers(uint32_t image_array_layers) {
+    SwapchainFactory& set_image_array_layers(uint32_t image_array_layers) {
         m_description.imageArrayLayers = image_array_layers;
+        return *this;
     }
 
-    void set_image_usage(VkImageUsageFlags image_usage) {
+    SwapchainFactory& set_image_usage(VkImageUsageFlags image_usage) {
         m_description.imageUsage = image_usage;
+        return *this;
     }
 
-    void set_image_sharing_mode(VkSharingMode image_sharing_mode) {
+    SwapchainFactory& set_image_sharing_mode(VkSharingMode image_sharing_mode) {
         m_description.imageSharingMode = image_sharing_mode;
+        return *this;
     }
 
-    void set_pre_transform(VkSurfaceTransformFlagBitsKHR pre_transform) {
+    SwapchainFactory& set_pre_transform(VkSurfaceTransformFlagBitsKHR pre_transform) {
         m_description.preTransform = pre_transform;
+        return *this;
     }
 
-    void set_composite_alpha(VkCompositeAlphaFlagBitsKHR composite_alpha) {
+    SwapchainFactory& set_composite_alpha(VkCompositeAlphaFlagBitsKHR composite_alpha) {
         m_description.compositeAlpha = composite_alpha;
+        return *this;
     }
 
-    void set_present_mode(VkPresentModeKHR present_mode) {
+    SwapchainFactory& set_present_mode(VkPresentModeKHR present_mode) {
         m_description.presentMode = present_mode;
+        return *this;
     }
 
-    void set_clipped(VkBool32 clipped) {
+    SwapchainFactory& set_clipped(VkBool32 clipped) {
         m_description.clipped = clipped;
+        return *this;
     }
 
-    void set_old_swapchain(VkSwapchainKHR old_swapchain) {
+    SwapchainFactory& set_old_swapchain(VkSwapchainKHR old_swapchain) {
         m_description.oldSwapchain = old_swapchain;
+        return *this;
     }
 
     Swapchain create(Device* device);

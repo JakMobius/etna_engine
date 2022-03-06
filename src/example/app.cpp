@@ -15,12 +15,11 @@
 #include "../etna/command-queue/commands/command-buffer-to-image-transfer.hpp"
 
 void Application::create_instance() {
-    VK::InstanceFactory factory;
-
+    VK::InstanceFactory factory {};
     factory.set_app_name("ETNA example");
-    factory.set_app_version({1, 0, 0});
-    factory.get_enabled_extension_names() = get_required_instance_extensions();
+    factory.set_app_version({1, 0, 0});;
 
+    factory.get_enabled_extension_names() = get_required_instance_extensions();
     if (m_enable_validation_layers) {
         factory.get_enabled_layer_names() = m_required_validation_layers;
     }
@@ -223,29 +222,29 @@ void Application::create_graphics_pipeline() {
     auto vertex_shader = VK::ShaderModule::from_file(&m_device, "resources/shaders/vert.spv");
     auto fragment_shader = VK::ShaderModule::from_file(&m_device, "resources/shaders/frag.spv");
 
-    pipeline_factory.shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
-    pipeline_factory.shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
+    pipeline_factory.m_shader_stages.add_shader(vertex_shader, VK_SHADER_STAGE_VERTEX_BIT);
+    pipeline_factory.m_shader_stages.add_shader(fragment_shader, VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    auto vertex_array_binding = pipeline_factory.input_vertex_state.create_binding(0, 8 * sizeof(float));
+    auto vertex_array_binding = pipeline_factory.m_input_vertex_state.create_binding(0, 8 * sizeof(float));
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 0, sizeof(float) * 0);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32B32_SFLOAT, 1, sizeof(float) * 3);
     vertex_array_binding.add_attribute(VK_FORMAT_R32G32_SFLOAT, 2, sizeof(float) * 6);
 
-    pipeline_factory.viewport_state.add_viewport(VK::Viewport(m_swapchain_manager->get_swapchain_extent()));
-    pipeline_factory.viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain_manager->get_swapchain_extent()});
+    pipeline_factory.m_viewport_state.add_viewport(VK::Viewport(m_swapchain_manager->get_swapchain_extent()));
+    pipeline_factory.m_viewport_state.add_scissor(VkRect2D {{0, 0}, m_swapchain_manager->get_swapchain_extent()});
 
-    pipeline_factory.rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
-    pipeline_factory.rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
+    pipeline_factory.m_rasterization_state.set_cull_mode(VK_CULL_MODE_BACK_BIT);
+    pipeline_factory.m_rasterization_state.set_front_face(VK_FRONT_FACE_COUNTER_CLOCKWISE);
 
-    pipeline_factory.multisampling_state.set_rasterization_samples(m_msaa_samples);
+    pipeline_factory.m_multisampling_state.set_rasterization_samples(m_msaa_samples);
 
     VK::PipelineColorAttachmentState pipeline_color_attachment_states {};
 
-    pipeline_factory.color_blend_state_create_info.add_color_attachment(pipeline_color_attachment_states);
+    pipeline_factory.m_color_blend_state_create_info.add_color_attachment(pipeline_color_attachment_states);
 
-    pipeline_factory.depth_stencil_states.set_depth_test_enable(true);
-    pipeline_factory.depth_stencil_states.set_depth_write_enable(true);
-    pipeline_factory.depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
+    pipeline_factory.m_depth_stencil_states.set_depth_test_enable(true);
+    pipeline_factory.m_depth_stencil_states.set_depth_write_enable(true);
+    pipeline_factory.m_depth_stencil_states.set_depth_compare_op(VK_COMPARE_OP_LESS);
 
     VkDescriptorSetLayout descriptors[] { m_descriptor_set_layout.get_handle() };
 
@@ -566,12 +565,12 @@ void Application::create_texture_image() {
 
     FreeImage_Unload(converted);
 
-    auto image_factory = Etna::ImageFactory()
-            .set_extent({image_width, image_height, 1})
-            .set_mip_levels(m_mip_levels)
-            .set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT)
-            .set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
-            .set_format(VK_FORMAT_R8G8B8A8_SRGB);
+    Etna::ImageFactory image_factory {};
+    image_factory.set_extent({image_width, image_height, 1});
+    image_factory.set_mip_levels(m_mip_levels);
+    image_factory.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
+    image_factory.set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+    image_factory.set_format(VK_FORMAT_R8G8B8A8_SRGB);
 
     m_texture_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 
@@ -611,9 +610,9 @@ void Application::create_index_buffer() {
     auto command_buffer = m_command_pool.create_command_buffer();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_index_buffer->get_buffer());
-    copy_command.set_size(index_buffer_size);
-    copy_command.write(command_buffer);
+    VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_index_buffer->get_buffer())
+        .set_size(index_buffer_size)
+        .write(command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_device_graphics_queue);
@@ -632,9 +631,9 @@ void Application::create_vertex_buffer() {
     auto command_buffer = m_command_pool.create_command_buffer();
     command_buffer.begin();
 
-    auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_vertex_buffer->get_buffer());
-    copy_command.set_size(vertex_buffer_size);
-    copy_command.write(command_buffer);
+    VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_vertex_buffer->get_buffer())
+        .set_size(vertex_buffer_size)
+        .write(command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_device_graphics_queue);
@@ -660,21 +659,19 @@ void Application::create_descriptor_set_layout() {
     VK::DescriptorSetLayoutBinding sampler_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     sampler_layout_binding.set_stage_flags(VK_SHADER_STAGE_FRAGMENT_BIT);
 
-    VK::DescriptorSetLayoutFactory factory;
-    factory.bind_descriptor(0, ubo_layout_binding);
-    factory.bind_descriptor(1, sampler_layout_binding);
-
-    m_descriptor_set_layout = factory.create(&m_device);
+    m_descriptor_set_layout = VK::DescriptorSetLayoutFactory()
+        .bind_descriptor(0, ubo_layout_binding)
+        .bind_descriptor(1, sampler_layout_binding)
+        .create(&m_device);
 }
 
 void Application::create_descriptor_pool() {
-    VK::DescriptorPoolFactory factory;
-    factory.add_pool_size(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT);
-    factory.add_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT);
-    factory.set_flags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
-    factory.set_max_sets(MAX_FRAMES_IN_FLIGHT);
-
-    m_descriptor_pool = factory.create(&m_device);
+    m_descriptor_pool = VK::DescriptorPoolFactory()
+        .add_pool_size(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT)
+        .add_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT)
+        .set_flags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT)
+        .set_max_sets(MAX_FRAMES_IN_FLIGHT)
+        .create(&m_device);
 }
 
 void Application::create_descriptor_sets() {
@@ -693,16 +690,15 @@ void Application::create_descriptor_sets() {
 }
 
 void Application::create_texture_sampler() {
-    VK::SamplerFactory sampler_factory {};
-    sampler_factory.set_mag_filter(VK_FILTER_LINEAR);
-    sampler_factory.set_min_filter(VK_FILTER_LINEAR);
-    sampler_factory.set_address_modes_uvw(VK_SAMPLER_ADDRESS_MODE_REPEAT);
-    sampler_factory.set_anisotropy_enable(VK_TRUE);
-    sampler_factory.set_max_anisotropy(m_physical_device->get_physical_properties()->limits.maxSamplerAnisotropy);
-    sampler_factory.set_max_lod((float) m_mip_levels);
-    sampler_factory.set_min_lod((float) 0.0f);
-
-    m_texture_sampler = sampler_factory.create(&m_device);
+    m_texture_sampler = VK::SamplerFactory()
+        .set_mag_filter(VK_FILTER_LINEAR)
+        .set_min_filter(VK_FILTER_LINEAR)
+        .set_address_modes_uvw(VK_SAMPLER_ADDRESS_MODE_REPEAT)
+        .set_anisotropy_enable(VK_TRUE)
+        .set_max_anisotropy(m_physical_device->get_physical_properties()->limits.maxSamplerAnisotropy)
+        .set_max_lod((float) m_mip_levels)
+        .set_min_lod((float) 0.0f)
+        .create(&m_device);
 }
 
 VkFormat Application::find_depth_format() {
@@ -716,12 +712,12 @@ VkFormat Application::find_depth_format() {
 void Application::create_depth_resources() {
     VkFormat depth_format = find_depth_format();
 
-    auto image_factory = Etna::ImageFactory()
-        .set_samples(m_msaa_samples)
-        .set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 })
-        .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
-        .set_format(depth_format)
-        .set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT);
+    Etna::ImageFactory image_factory {};
+    image_factory.set_samples(m_msaa_samples);
+    image_factory.set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 });
+    image_factory.set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
+    image_factory.set_format(depth_format);
+    image_factory.set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT);
 
     m_depth_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 
@@ -740,12 +736,12 @@ void Application::create_depth_resources() {
 }
 
 void Application::create_color_resources() {
-    auto image_factory = Etna::ImageFactory()
-            .set_samples(m_msaa_samples)
-            .set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 })
-            .set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
-            .set_format(m_swapchain_manager->get_swapchain_image_format())
-            .set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
+    Etna::ImageFactory image_factory {};
+    image_factory.set_samples(m_msaa_samples);
+    image_factory.set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 });
+    image_factory.set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
+    image_factory.set_format(m_swapchain_manager->get_swapchain_image_format());
+    image_factory.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
 
     m_color_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 }

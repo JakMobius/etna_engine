@@ -17,11 +17,12 @@ class DescriptorSetLayoutFactory {
 public:
     DescriptorSetLayoutFactory();
 
-    void set_flags(VkDescriptorSetLayoutCreateFlags flags) {
+    DescriptorSetLayoutFactory& set_flags(VkDescriptorSetLayoutCreateFlags flags) {
         m_description.flags = flags;
+        return *this;
     }
 
-    void bind_descriptor(uint32_t binding, DescriptorSetLayoutBinding& descriptor);
+    DescriptorSetLayoutFactory& bind_descriptor(uint32_t binding, DescriptorSetLayoutBinding& descriptor);
 
     DescriptorSetLayout create(VK::Device* device);
 };

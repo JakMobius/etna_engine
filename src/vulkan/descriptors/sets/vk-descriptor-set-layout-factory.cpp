@@ -9,10 +9,11 @@ VK::DescriptorSetLayoutFactory::DescriptorSetLayoutFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
 }
 
-void VK::DescriptorSetLayoutFactory::bind_descriptor(uint32_t binding, VK::DescriptorSetLayoutBinding &descriptor) {
+VK::DescriptorSetLayoutFactory& VK::DescriptorSetLayoutFactory::bind_descriptor(uint32_t binding, VK::DescriptorSetLayoutBinding &descriptor) {
     auto& description = descriptor.get_description();
     description.binding = binding;
     m_bindings.push_back(description);
+    return *this;
 }
 
 VK::DescriptorSetLayout VK::DescriptorSetLayoutFactory::create(VK::Device* device) {

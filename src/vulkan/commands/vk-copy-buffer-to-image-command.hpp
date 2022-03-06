@@ -35,16 +35,19 @@ public:
         return VK::ImageSubresourceLayers::existing(m_region.imageSubresource);
     }
 
-    void set_image_extent(VkExtent3D extent) {
+    CopyBufferToImageCommand& set_image_extent(VkExtent3D extent) {
         m_region.imageExtent = extent;
+        return *this;
     }
 
-    void set_destination_image_layout(VkImageLayout layout) {
+    CopyBufferToImageCommand& set_destination_image_layout(VkImageLayout layout) {
         m_dst_image_layout = layout;
+        return *this;
     }
 
-    void set_image_subresource_layers(const VK::ImageSubresourceLayers& layers) {
+    CopyBufferToImageCommand& set_image_subresource_layers(const VK::ImageSubresourceLayers& layers) {
         m_region.imageSubresource = layers.get_description();
+        return *this;
     }
 
     void write(const VK::UnownedCommandBuffer& command_buffer) override;

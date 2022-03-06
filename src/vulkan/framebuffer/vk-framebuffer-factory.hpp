@@ -13,13 +13,15 @@ class FramebufferFactory {
 public:
     FramebufferFactory();
 
-    void set_size(const VkExtent2D& size) {
+    FramebufferFactory& set_size(const VkExtent2D& size) {
         m_description.width = size.width;
         m_description.height = size.height;
+        return *this;
     }
 
-    void set_layers(uint32_t layers) {
+    FramebufferFactory& set_layers(uint32_t layers) {
         m_description.layers = layers;
+        return *this;
     }
 
     Framebuffer create(const RenderPass& render_pass);

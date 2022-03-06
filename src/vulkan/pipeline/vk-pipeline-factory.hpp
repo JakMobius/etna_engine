@@ -17,15 +17,15 @@ namespace VK {
 
 class PipelineFactory {
 public:
-    PipelineShaderStage shader_stages {};
-    PipelineInputVertexState input_vertex_state {};
-    PipelineViewportState viewport_state {};
-    PipelineInputAssemblyStates input_assembly {};
-    PipelineRasterizationState rasterization_state {};
-    PipelineMultisamplingState multisampling_state {};
-    PipelineDynamicState dynamic_states {};
-    PipelineColorBlendState color_blend_state_create_info {};
-    PipelineDepthStencilState depth_stencil_states {};
+    PipelineShaderStage m_shader_stages {};
+    PipelineInputVertexState m_input_vertex_state {};
+    PipelineViewportState m_viewport_state {};
+    PipelineInputAssemblyStates m_input_assembly {};
+    PipelineRasterizationState m_rasterization_state {};
+    PipelineMultisamplingState m_multisampling_state {};
+    PipelineDynamicState m_dynamic_states {};
+    PipelineColorBlendState m_color_blend_state_create_info {};
+    PipelineDepthStencilState m_depth_stencil_states {};
 
     Pipeline create(const PipelineLayout& pipeline_layout, const RenderPass& render_pass);
 };

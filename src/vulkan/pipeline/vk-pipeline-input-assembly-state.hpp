@@ -9,12 +9,14 @@ class PipelineInputAssemblyStates {
 public:
     PipelineInputAssemblyStates();
 
-    void set_topology(VkPrimitiveTopology topology) {
+    PipelineInputAssemblyStates& set_topology(VkPrimitiveTopology topology) {
         m_description.topology = topology;
+        return *this;
     }
 
-    void set_primitive_restart_enable(bool primitive_restart_enable) {
+    PipelineInputAssemblyStates& set_primitive_restart_enable(bool primitive_restart_enable) {
         m_description.primitiveRestartEnable = primitive_restart_enable;
+        return *this;
     }
 
     VkPipelineInputAssemblyStateCreateInfo& get_description() { return m_description; }

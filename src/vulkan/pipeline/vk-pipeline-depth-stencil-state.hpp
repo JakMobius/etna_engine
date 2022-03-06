@@ -10,32 +10,50 @@ class PipelineDepthStencilState {
 public:
     PipelineDepthStencilState();
 
-    void set_depth_test_enable(VkBool32 depth_test_enable) {
+
+    PipelineDepthStencilState& set_depth_test_enable(VkBool32 depth_test_enable) {
         m_description.depthTestEnable = depth_test_enable;
+        return *this;
     }
-    void set_depth_write_enable(VkBool32 depth_write_enable) {
+
+    PipelineDepthStencilState& set_depth_write_enable(VkBool32 depth_write_enable) {
         m_description.depthWriteEnable = depth_write_enable;
+        return *this;
     }
-    void set_depth_compare_op(VkCompareOp depth_compare_op) {
+
+    PipelineDepthStencilState& set_depth_compare_op(VkCompareOp depth_compare_op) {
         m_description.depthCompareOp = depth_compare_op;
+        return *this;
     }
-    void set_depth_bounds_test_enable(VkBool32 depth_bounds_test_enable) {
+
+    PipelineDepthStencilState& set_depth_bounds_test_enable(VkBool32 depth_bounds_test_enable) {
         m_description.depthBoundsTestEnable = depth_bounds_test_enable;
+        return *this;
     }
-    void set_min_depth_bounds(float min_depth_bounds) {
+
+    PipelineDepthStencilState& set_min_depth_bounds(float min_depth_bounds) {
         m_description.minDepthBounds = min_depth_bounds;
+        return *this;
     }
-    void set_max_depth_bounds(float max_depth_bounds) {
+
+    PipelineDepthStencilState& set_max_depth_bounds(float max_depth_bounds) {
         m_description.maxDepthBounds = max_depth_bounds;
+        return *this;
     }
-    void set_stencil_test_enable(VkBool32 stencil_test_enable) {
+
+    PipelineDepthStencilState& set_stencil_test_enable(VkBool32 stencil_test_enable) {
         m_description.stencilTestEnable = stencil_test_enable;
+        return *this;
     }
-    void set_front(VkStencilOpState front) {
+
+    PipelineDepthStencilState& set_front(VkStencilOpState front) {
         m_description.front = front;
+        return *this;
     }
-    void set_back(VkStencilOpState back) {
+
+    PipelineDepthStencilState& set_back(VkStencilOpState back) {
         m_description.back = back;
+        return *this;
     }
 
     VkPipelineDepthStencilStateCreateInfo& get_description() { return m_description; }

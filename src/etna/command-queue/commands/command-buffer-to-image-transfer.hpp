@@ -21,7 +21,11 @@ public:
 
     VK::ImageSubresourceLayers& get_image_subresource_layers() { return m_command.get_image_subresource_layers(); }
     const VK::ImageSubresourceLayers& get_image_subresource_layers() const { return m_command.get_image_subresource_layers(); }
-    void set_image_subresource_layers(const VK::ImageSubresourceLayers& layers) { m_command.set_image_subresource_layers(layers); }
+
+    CommandBufferToImageTransfer &set_image_subresource_layers(const VK::ImageSubresourceLayers &layers) {
+        m_command.set_image_subresource_layers(layers);
+        return *this;
+    }
 
     void perform(Etna::CommandQueue* buffer) {
         m_command.set_destination_image_layout(m_target->get_state().m_layout);

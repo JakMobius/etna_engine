@@ -16,14 +16,16 @@ public:
     ImageSubresourceRange& get_subresource_range() { return ImageSubresourceRange::existing(m_description.subresourceRange); }
     const ImageSubresourceRange& get_subresource_range() const { return ImageSubresourceRange::existing(m_description.subresourceRange); }
 
-    void set_layouts(VkImageLayout src_layout, VkImageLayout dst_layout) {
+    ImageMemoryBarrier& set_layouts(VkImageLayout src_layout, VkImageLayout dst_layout) {
         m_description.oldLayout = src_layout;
         m_description.newLayout = dst_layout;
+        return *this;
     }
 
-    void set_access_masks(VkAccessFlags src_masks, VkAccessFlags dst_masks) {
+    ImageMemoryBarrier& set_access_masks(VkAccessFlags src_masks, VkAccessFlags dst_masks) {
         m_description.srcAccessMask = src_masks;
         m_description.dstAccessMask = dst_masks;
+        return *this;
     }
 
     VkImageMemoryBarrier& get_description() {

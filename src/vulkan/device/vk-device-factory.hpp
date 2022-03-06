@@ -16,13 +16,14 @@ class DeviceFactory {
 public:
     DeviceFactory();
 
-    void set_flags(VkDeviceCreateFlags flags) {
+    DeviceFactory& set_flags(VkDeviceCreateFlags flags) {
         m_description.flags = flags;
+        return *this;
     }
 
     Device create(PhysicalDevice* physical_device);
 
-    void add_queue(VkDeviceQueueCreateFlags flags, uint32_t family, std::span<float> priorities);
+    DeviceFactory& add_queue(VkDeviceQueueCreateFlags flags, uint32_t family, std::span<float> priorities);
 
     std::vector<VkDeviceQueueCreateInfo>& get_queues_to_create() { return m_queues_to_create; }
     std::vector<const char*>& get_enabled_extensions() { return m_enabled_extensions; }

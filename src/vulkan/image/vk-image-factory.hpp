@@ -14,52 +14,64 @@ class ImageFactory {
 public:
     ImageFactory();
 
-    void set_flags(VkImageCreateFlags flags) {
+    ImageFactory& set_flags(VkImageCreateFlags flags) {
         m_description.flags = flags;
+        return *this;
     }
 
-    void set_format(VkFormat format) {
+    ImageFactory& set_format(VkFormat format) {
         m_description.format = format;
+        return *this;
     }
 
-    void set_mip_levels(uint32_t mip_levels) {
+    ImageFactory& set_mip_levels(uint32_t mip_levels) {
         m_description.mipLevels = mip_levels;
+        return *this;
     }
 
-    void set_array_layers(uint32_t array_layers) {
+    ImageFactory& set_array_layers(uint32_t array_layers) {
         m_description.arrayLayers = array_layers;
+        return *this;
     }
 
-    void set_samples(VkSampleCountFlagBits samples) {
+    ImageFactory& set_samples(VkSampleCountFlagBits samples) {
         m_description.samples = samples;
+        return *this;
     }
 
-    void set_tiling(VkImageTiling tiling) {
+    ImageFactory& set_tiling(VkImageTiling tiling) {
         m_description.tiling = tiling;
+        return *this;
     }
 
-    void set_usage(VkBufferUsageFlags usage) {
+    ImageFactory& set_usage(VkBufferUsageFlags usage) {
         m_description.usage = usage;
+        return *this;
     }
 
-    void set_initial_layout(VkImageLayout initial_layout) {
+    ImageFactory& set_initial_layout(VkImageLayout initial_layout) {
         m_description.initialLayout = initial_layout;
+        return *this;
     }
 
-    void set_sharing_mode(VkSharingMode sharing_mode) {
+    ImageFactory& set_sharing_mode(VkSharingMode sharing_mode) {
         m_description.sharingMode = sharing_mode;
+        return *this;
     }
 
-    void set_memory_properties(VkMemoryPropertyFlags memory_properties) {
+    ImageFactory& set_memory_properties(VkMemoryPropertyFlags memory_properties) {
         m_memory_properties = memory_properties;
+        return *this;
     }
 
-    void set_image_type(VkImageType image_type) {
+    ImageFactory& set_image_type(VkImageType image_type) {
         m_description.imageType = image_type;
+        return *this;
     }
 
-    void set_extent(VkExtent3D extent) {
+    ImageFactory& set_extent(VkExtent3D extent) {
         m_description.extent = extent;
+        return *this;
     }
 
     VkImageType get_image_type()                  const { return m_description.imageType; }
