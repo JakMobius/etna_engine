@@ -22,9 +22,9 @@ VK::ImageMemoryBarrier::ImageMemoryBarrier(const VK::UnownedImage& image) {
     m_description.dstAccessMask = VK_ACCESS_FLAG_BITS_MAX_ENUM;
 }
 
-void VK::ImageMemoryBarrier::write(VK::CommandBuffer* command_buffer, VkPipelineStageFlags src_mask,
+void VK::ImageMemoryBarrier::write(const UnownedCommandBuffer& command_buffer, VkPipelineStageFlags src_mask,
                                    VkPipelineStageFlags dst_mask) {
-    vkCmdPipelineBarrier(command_buffer->get_handle(),
+    vkCmdPipelineBarrier(command_buffer.get_handle(),
                          src_mask, dst_mask, 0,
                          0, nullptr,
                          0, nullptr,

@@ -30,7 +30,7 @@ public:
         return *this;
     }
 
-    CommandImageLayoutConvert& set_subresource_range(VK::ImageSubresourceRange& subresource_range) {
+    CommandImageLayoutConvert& set_subresource_range(const VK::ImageSubresourceRange& subresource_range) {
         m_subresource_range = subresource_range;
         return *this;
     }
@@ -45,9 +45,9 @@ public:
         return *this;
     }
 
-    void perform(VK::CommandBuffer* command_buffer) {
+    void perform(Etna::CommandQueue* command_queue) {
 
-        VkAccessFlags src_access = m_image->get_state().m_access_masks;
+        VkAccessFlags src_access = m_image->get_state().m_access_mask;
         VkImageLayout src_layout = m_image->get_state().m_layout;
 
         VkAccessFlags target_access = m_target_access_mask;
@@ -56,13 +56,13 @@ public:
         if(target_access == INT_MAX) target_access = src_access;
         if(target_layout == INT_MAX) target_layout = src_layout;
 
-        VK::ImageMemoryBarrier layout_conversion_barrier { m_image->get_etna_image()->get_image().unowned_copy() };
+        VK::ImageMemoryBarrier layout_conversion_barrier { m_image->get_etna_image()->get_image() };
         layout_conversion_barrier.set_layouts(src_layout, target_layout);
         layout_conversion_barrier.set_access_masks(src_access, target_access);
         layout_conversion_barrier.get_subresource_range() = m_subresource_range;
-        layout_conversion_barrier.write(command_buffer, m_source_pipeline_stage, m_target_pipeline_stage);
+        layout_conversion_barrier.write(command_queue->get_command_buffer(), m_source_pipeline_stage, m_target_pipeline_stage);
 
-        m_image->get_state().m_access_masks = target_access;
+        m_image->get_state().m_access_mask = target_access;
         m_image->get_state().m_layout = target_layout;
     }
 

@@ -21,7 +21,7 @@ public:
         if(m_color_image_view) attachments.push_back(m_color_image_view);
         if(m_depth_image_view) attachments.push_back(m_depth_image_view);
 
-        attachments.push_back(image_view.unowned_copy());
+        attachments.push_back(image_view);
 
         return framebuffer_factory.create(render_pass);
     }

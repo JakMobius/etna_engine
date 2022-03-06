@@ -13,7 +13,8 @@ class ImageMemoryBarrier {
 public:
     explicit ImageMemoryBarrier(const UnownedImage& image);
 
-    ImageSubresourceRange get_subresource_range() { return ImageSubresourceRange::existing(m_description.subresourceRange); }
+    ImageSubresourceRange& get_subresource_range() { return ImageSubresourceRange::existing(m_description.subresourceRange); }
+    const ImageSubresourceRange& get_subresource_range() const { return ImageSubresourceRange::existing(m_description.subresourceRange); }
 
     void set_layouts(VkImageLayout src_layout, VkImageLayout dst_layout) {
         m_description.oldLayout = src_layout;
@@ -29,7 +30,7 @@ public:
         return m_description;
     }
 
-    void write(CommandBuffer* command_buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask);
+    void write(const UnownedCommandBuffer& command_buffer, VkPipelineStageFlags src_mask, VkPipelineStageFlags dst_mask);
 };
 
 }

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../vulkan/image/vk-image.hpp"
+#include "../vulkan/image/vk-image-subresource-range.hpp"
 #include "../vulkan/image/vk-memory-image.hpp"
 #include "../vulkan/image/view/vk-image-view.hpp"
 
@@ -10,7 +11,7 @@ class ImageFactory;
 
 struct ImmediateImageState {
     VkImageLayout m_layout {};
-    VkAccessFlags m_access_masks {};
+    VkAccessFlags m_access_mask {};
 };
 
 class Image {
@@ -21,6 +22,7 @@ class Image {
     VkImageTiling m_tiling {};
     VkImageAspectFlags m_aspect_mask {};
     uint32_t m_mip_levels {};
+    uint32_t m_array_layers {};
 
 public:
 
@@ -40,6 +42,13 @@ public:
     VkImageTiling get_tiling()                       const { return m_tiling; }
     uint32_t get_mip_levels()                        const { return m_mip_levels; }
     VkImageAspectFlags get_aspect_mask()             const { return m_aspect_mask; }
+
+    VK::ImageSubresourceRange get_maximum_subresource_range() const {
+        return VK::ImageSubresourceRange()
+            .set_aspect_mask(m_aspect_mask)
+            .set_mip_levels(m_mip_levels)
+            .set_array_layers(m_array_layers);
+    }
 
     void destroy() {
         m_image.destroy();

@@ -5,11 +5,11 @@
 #include "vk-command-pool.hpp"
 #include "vk-command-buffer.hpp"
 
-VK::CommandBuffer VK::CommandPoolBase::create_command_buffer() {
+VK::CommandBuffer VK::CommandPoolBase::create_command_buffer(VkCommandBufferLevel level) {
     VkCommandBufferAllocateInfo alloc_info {};
     alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     alloc_info.commandPool = m_handle;
-    alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    alloc_info.level = level;
     alloc_info.commandBufferCount = 1;
 
     // TODO: this method can only create a single command buffer.

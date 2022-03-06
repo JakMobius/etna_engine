@@ -7,20 +7,13 @@
 #include "../command-buffer/vk-command-buffer.hpp"
 
 VK::ImageBlitCommand::ImageBlitCommand(const VK::UnownedImage& source, const VK::UnownedImage& destination) : m_source(source), m_destination(destination) {
-    m_description.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_description.srcSubresource.mipLevel = 0;
-    m_description.srcSubresource.baseArrayLayer = 0;
-    m_description.srcSubresource.layerCount = 1;
-
-    m_description.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_description.dstSubresource.mipLevel = 0;
-    m_description.dstSubresource.baseArrayLayer = 0;
-    m_description.dstSubresource.layerCount = 1;
+    get_source_subresource_layers() = ImageSubresourceLayers();
+    get_destination_subresource_layers() = ImageSubresourceLayers();
 }
 
-void VK::ImageBlitCommand::write(VK::CommandBuffer* command_buffer) {
+void VK::ImageBlitCommand::write(const UnownedCommandBuffer& command_buffer) {
 
-    vkCmdBlitImage(command_buffer->get_handle(),
+    vkCmdBlitImage(command_buffer.get_handle(),
                    m_source.get_handle(), m_source_layout,
                    m_destination.get_handle(), m_destination_layout,
                    1, &m_description,

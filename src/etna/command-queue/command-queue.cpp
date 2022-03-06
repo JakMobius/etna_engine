@@ -5,6 +5,6 @@
 #include "command-queue.hpp"
 #include "command-image.hpp"
 
-Etna::CommandImage Etna::CommandQueue::get_image(Etna::Image* image, const Etna::ImmediateImageState &state) {
+Etna::CommandImage Etna::CommandQueue::provide_image_state(Etna::Image* image, const Etna::ImmediateImageState &state) {
     return {this, image, state};
 }

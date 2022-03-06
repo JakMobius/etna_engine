@@ -20,7 +20,7 @@ public:
 
     ~CommandPoolBase() override = default;
 
-    CommandBuffer create_command_buffer();
+    CommandBuffer create_command_buffer(VkCommandBufferLevel level = VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 };
 
 using UnownedCommandPool = UnownedDeviceResource<VkCommandPool, CommandPoolBase>;

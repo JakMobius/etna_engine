@@ -26,7 +26,7 @@ public:
     VkDeviceSize get_dst_offset() const { return m_dst_offset; }
     VkDeviceSize get_size() const { return m_size; }
 
-    void write(VK::CommandBuffer* command_buffer) override;
+    void write(const UnownedCommandBuffer& command_buffer) override;
 
 
 };

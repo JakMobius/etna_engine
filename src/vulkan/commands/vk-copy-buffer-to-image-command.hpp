@@ -47,7 +47,7 @@ public:
         m_region.imageSubresource = layers.get_description();
     }
 
-    void write(VK::CommandBuffer *command_buffer) override;
+    void write(const VK::UnownedCommandBuffer& command_buffer) override;
 
 };
 

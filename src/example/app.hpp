@@ -14,6 +14,7 @@
 #include "../etna/basic-attachment-manager.hpp"
 #include "../etna/swapchain-manager.hpp"
 #include "../etna/image.hpp"
+#include "../etna/command-queue/command-queue-pool.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -35,6 +36,7 @@ class Application {
     std::unique_ptr<VK::PhysicalDevice> m_physical_device {};
     VK::Device m_device;
     VK::CommandPool m_command_pool;
+    std::unique_ptr<Etna::CommandQueuePool> m_graphics_command_queue_pool;
 
     int m_graphics_queue_family = -1;
     int m_present_queue_family = -1;

@@ -15,7 +15,7 @@ class CommandBufferToImageTransfer {
 public:
     CommandBufferToImageTransfer(const VK::UnownedBuffer &source, CommandImage* target):
             m_target(target),
-            m_command(source, target->get_etna_image()->get_image().unowned_copy()) {
+            m_command(source, target->get_etna_image()->get_image()) {
         m_command.set_image_extent(target->get_etna_image()->get_extent());
     }
 
@@ -23,9 +23,9 @@ public:
     const VK::ImageSubresourceLayers& get_image_subresource_layers() const { return m_command.get_image_subresource_layers(); }
     void set_image_subresource_layers(const VK::ImageSubresourceLayers& layers) { m_command.set_image_subresource_layers(layers); }
 
-    void perform(VK::CommandBuffer* buffer) {
-        m_command.set_destination_image_layout(m_command.get_destination_image_layout());
-        m_command.write(buffer);
+    void perform(Etna::CommandQueue* buffer) {
+        m_command.set_destination_image_layout(m_target->get_state().m_layout);
+        m_command.write(buffer->get_command_buffer());
     }
 };
 

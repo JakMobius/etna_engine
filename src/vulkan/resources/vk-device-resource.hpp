@@ -57,6 +57,17 @@ public:
 
     ~DeviceResource() override = default;
 
+    operator UnownedDeviceResource<Handle, Base>&() { return as_unowned(); }
+    operator const UnownedDeviceResource<Handle, Base>&() const { return as_unowned(); }
+
+    const UnownedDeviceResource<Handle, Base>& as_unowned() const {
+        return *((UnownedDeviceResource<Handle, Base>*) this);
+    }
+
+    UnownedDeviceResource<Handle, Base>& as_unowned() {
+        return *((UnownedDeviceResource<Handle, Base>*) this);
+    }
+
     UnownedDeviceResource<Handle, Base> unowned_copy() const {
         return UnownedDeviceResource<Handle, Base> { this->m_device, this->m_handle };
     }

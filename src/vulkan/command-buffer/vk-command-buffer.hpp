@@ -22,7 +22,7 @@ public:
 
     void reset(VkCommandBufferResetFlags flags = 0);
 
-    void begin(VkCommandBufferUsageFlags flags);
+    void begin(VkCommandBufferUsageFlags flags = 0);
 
     void end();
 
@@ -63,7 +63,7 @@ public:
     ~CommandBufferBase() override = default;
 };
 
-using UnownedCommandBuffer = CommandPoolResource<VkCommandBuffer, CommandBufferBase>;
+using UnownedCommandBuffer = UnownedCommandPoolResource<VkCommandBuffer, CommandBufferBase>;
 
 class CommandBuffer: public CommandPoolResource<VkCommandBuffer, CommandBufferBase> {
 public:

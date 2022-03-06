@@ -56,8 +56,19 @@ public:
 
     ~InstanceResource() override = default;
 
+    operator UnownedInstanceResource<Handle, Base>&() { return as_unowned(); }
+    operator const UnownedInstanceResource<Handle, Base>&() const { return as_unowned(); }
+
+    const UnownedInstanceResource<Handle, Base>& as_unowned() const {
+        return *((UnownedInstanceResource<Handle, Base>*) this);
+    }
+
+    UnownedInstanceResource<Handle, Base>& as_unowned() {
+        return *((UnownedInstanceResource<Handle, Base>*) this);
+    }
+
     UnownedInstanceResource<Handle, Base> unowned_copy() const {
-        return UnownedInstanceResource<Handle, Base> { this->m_instance, this->m_handle };
+        return UnownedInstanceResource<Handle, Base> { this->m_device, this->m_handle };
     }
 };
 

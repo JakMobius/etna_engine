@@ -14,9 +14,9 @@ VK::CopyBufferToImageCommand::CopyBufferToImageCommand(const VK::UnownedBuffer& 
     m_region.imageExtent = { 0, 0, 1 };
 }
 
-void VK::CopyBufferToImageCommand::write(VK::CommandBuffer* command_buffer) {
+void VK::CopyBufferToImageCommand::write(const VK::UnownedCommandBuffer& command_buffer) {
     vkCmdCopyBufferToImage(
-            command_buffer->get_handle(),
+            command_buffer.get_handle(),
             m_buffer.get_handle(),
             m_image.get_handle(),
             m_dst_image_layout,

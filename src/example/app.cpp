@@ -105,8 +105,8 @@ bool Application::is_device_suitable(const VK::PhysicalDevice* device) {
     if(device->get_queue_family_indices()->find_family(VK_QUEUE_GRAPHICS_BIT) < 0) return false;
     if(device->get_queue_family_indices()->find_surface_present_family(m_surface) < 0) return false;
     if(!device->supports_extensions(m_device_extensions)) return false;
-    if(!device->has_supported_surface_formats(m_surface.unowned_copy())) return false;
-    if(!device->has_surface_present_modes(m_surface.unowned_copy())) return false;
+    if(!device->has_supported_surface_formats(m_surface)) return false;
+    if(!device->has_surface_present_modes(m_surface)) return false;
     if(!device->get_physical_features()->samplerAnisotropy) return false;
 
     return true;
@@ -202,11 +202,13 @@ void Application::create_logical_device() {
         m_graphics_queue_family,
         VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT
     );
+
+    m_graphics_command_queue_pool = std::make_unique<Etna::CommandQueuePool>(m_command_pool, m_device_graphics_queue);
 }
 
 void Application::create_swapchain() {
     m_attachment_manager = std::make_unique<Etna::BasicAttachmentManager>();
-    m_swapchain_manager = std::make_unique<Etna::SwapchainManager>(m_surface.unowned_copy(), &m_device);
+    m_swapchain_manager = std::make_unique<Etna::SwapchainManager>(m_surface, &m_device);
     m_swapchain_manager->set_attachment_manager(m_attachment_manager.get());
 
     int width = 0, height = 0;
@@ -253,8 +255,8 @@ void Application::create_graphics_pipeline() {
 
 void Application::create_render_pass() {
 
-    m_attachment_manager->set_color_image_view(m_color_image->get_view().unowned_copy());
-    m_attachment_manager->set_depth_image_view(m_depth_image->get_view().unowned_copy());
+    m_attachment_manager->set_color_image_view(m_color_image->get_view());
+    m_attachment_manager->set_depth_image_view(m_depth_image->get_view());
 
     VK::Attachment color_attachment { m_swapchain_manager->get_swapchain_image_format() };
     color_attachment.set_samples(m_msaa_samples);
@@ -388,7 +390,7 @@ void Application::draw_frame() {
         m_in_flight_images[image_index].wait_one();
     }
     // Mark the image as now being in use by this frame
-    m_in_flight_images[image_index] = m_in_flight_fences[m_current_frame].unowned_copy();
+    m_in_flight_images[image_index] = m_in_flight_fences[m_current_frame];
 
     update_uniform_buffer(m_current_frame);
 
@@ -415,7 +417,7 @@ void Application::draw_frame() {
     queue_present_info.set_swapchains(present_swapchains);
     queue_present_info.set_images(present_swapchain_images);
 
-    result = m_device_graphics_queue.present(queue_present_info);
+    result = m_device_present_queue.present(queue_present_info);
 
     if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_framebuffer_resized) {
         m_framebuffer_resized = false;
@@ -571,39 +573,31 @@ void Application::create_texture_image() {
             .set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
             .set_format(VK_FORMAT_R8G8B8A8_SRGB);
 
-    auto range = VK::ImageSubresourceRange()
-            .set_mip_levels(m_mip_levels)
-            .set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
-
     m_texture_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 
-    auto command_buffer = m_command_pool.create_command_buffer();
-    auto command_queue = Etna::CommandQueue(&command_buffer);
-    auto command_image = command_queue.get_image(m_texture_image.get(), image_factory.get_initial_image_state());
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    auto command_queue = m_graphics_command_queue_pool->begin_command_queue();
+    auto texture_image_state = command_queue.provide_image_state(m_texture_image.get(), image_factory.get_initial_image_state());
 
-    Etna::CommandImageLayoutConvert(&command_image)
-            .set_subresource_range(range)
+    Etna::CommandImageLayoutConvert(&texture_image_state)
+            .set_subresource_range(m_texture_image->get_maximum_subresource_range())
             .set_source_pipeline_stage(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT)
             .set_target_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
             .set_target_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
             .set_target_access_mask(VK_ACCESS_TRANSFER_WRITE_BIT)
-            .perform(&command_buffer);
+            .perform(&command_queue);
 
-    Etna::CommandBufferToImageTransfer(staging_buffer.get_buffer().unowned_copy(), &command_image)
-            .perform(&command_buffer);
+    Etna::CommandBufferToImageTransfer(staging_buffer.get_buffer(), &texture_image_state)
+            .perform(&command_queue);
 
-    Etna::CommandGenerateMipmaps(&command_image)
+    Etna::CommandGenerateMipmaps(&texture_image_state)
             .set_source_pipeline_stage(VK_ACCESS_TRANSFER_WRITE_BIT)
             .set_target_pipeline_stage(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
             .perform(&command_queue);
 
-    command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue);
+    command_queue.end().run_sync();
 }
 
 void Application::create_index_buffer() {
-
     auto index_buffer_size = m_index_buffer_storage.size() * sizeof(m_index_buffer_storage[0]);
     auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, m_index_buffer_storage);
 
@@ -619,14 +613,13 @@ void Application::create_index_buffer() {
 
     auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_index_buffer->get_buffer());
     copy_command.set_size(index_buffer_size);
-    copy_command.write(&command_buffer);
+    copy_command.write(command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_device_graphics_queue);
 }
 
 void Application::create_vertex_buffer() {
-
     auto vertex_buffer_size = m_vertex_buffer_storage.size() * sizeof(m_vertex_buffer_storage[0]);
     auto staging_buffer = VK::StagingBufferFactory().create_staging_buffer(&m_device, m_vertex_buffer_storage);
 
@@ -637,19 +630,17 @@ void Application::create_vertex_buffer() {
     m_vertex_buffer = std::make_unique<VK::MemoryBuffer>(vertex_buffer_factory.create_memory_buffer(&m_device));
 
     auto command_buffer = m_command_pool.create_command_buffer();
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+    command_buffer.begin();
 
     auto copy_command = VK::CopyBufferCommand(&staging_buffer.get_buffer(), &m_vertex_buffer->get_buffer());
     copy_command.set_size(vertex_buffer_size);
-    copy_command.write(&command_buffer);
+    copy_command.write(command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_device_graphics_queue);
 }
 
 void Application::create_uniform_buffers() {
-    VkDeviceSize buffer_size = sizeof(UniformBufferObject);
-
     m_uniform_buffers.reserve(MAX_FRAMES_IN_FLIGHT);
 
     VK::BufferFactory factory {};
@@ -657,7 +648,7 @@ void Application::create_uniform_buffers() {
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
         factory.set_memory_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
         factory.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        factory.set_size(buffer_size);
+        factory.set_size(sizeof(UniformBufferObject));
         m_uniform_buffers.push_back(factory.create_memory_buffer(&m_device));
     }
 }
@@ -687,7 +678,7 @@ void Application::create_descriptor_pool() {
 }
 
 void Application::create_descriptor_sets() {
-    m_descriptor_set_array = std::make_unique<VK::DescriptorSetArray>(m_descriptor_pool.unowned_copy());
+    m_descriptor_set_array = std::make_unique<VK::DescriptorSetArray>(m_descriptor_pool);
     m_descriptor_set_array->get_layouts().resize(MAX_FRAMES_IN_FLIGHT, m_descriptor_set_layout.get_handle());
     m_descriptor_set_array->create();
 
@@ -734,22 +725,18 @@ void Application::create_depth_resources() {
 
     m_depth_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 
-    auto command_buffer = m_command_pool.create_command_buffer();
-    auto command_queue = Etna::CommandQueue(&command_buffer);
-    auto command_image = command_queue.get_image(m_depth_image.get(), image_factory.get_initial_image_state());
+    auto command_queue = m_graphics_command_queue_pool->begin_command_queue();
+    auto depth_image_state = command_queue.provide_image_state(m_depth_image.get(), image_factory.get_initial_image_state());
 
-    command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-
-    Etna::CommandImageLayoutConvert(&command_image)
+    Etna::CommandImageLayoutConvert(&depth_image_state)
+        .set_subresource_range(m_depth_image->get_maximum_subresource_range())
         .set_target_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         .set_target_access_mask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
-        .set_subresource_range(VK::ImageSubresourceRange().set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT))
         .set_source_pipeline_stage(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT)
         .set_target_pipeline_stage(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
-        .perform(&command_buffer);
+        .perform(&command_queue);
 
-    command_buffer.end();
-    command_buffer.submit_and_wait(m_device_graphics_queue);
+    command_queue.end().run_sync();
 }
 
 void Application::create_color_resources() {

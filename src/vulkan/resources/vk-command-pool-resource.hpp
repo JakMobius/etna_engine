@@ -38,7 +38,7 @@ public:
 template<typename Handle, typename Base = CommandPoolResourceBase<Handle>>
 class UnownedCommandPoolResource : public Base {
 public:
-    UnownedCommandPoolResource(VK::Device* device, Handle handle): Base(device, handle) {}
+    UnownedCommandPoolResource(VK::Device* device, CommandPoolBase* command_pool, Handle handle): Base(device, command_pool, handle) {}
     UnownedCommandPoolResource(): Base(nullptr, nullptr) {}
     UnownedCommandPoolResource(UnownedCommandPoolResource&& move) noexcept: Base(move.m_device, move.m_command_pool, move.m_handle) { move.m_handle = nullptr; }
     UnownedCommandPoolResource(const UnownedCommandPoolResource& copy): Base(copy.m_device, copy.m_command_pool, copy.m_handle) {};
@@ -63,8 +63,19 @@ public:
 
     ~CommandPoolResource() override = default;
 
+    operator UnownedCommandPoolResource<Handle, Base>&() { return as_unowned(); }
+    operator const UnownedCommandPoolResource<Handle, Base>&() const { return as_unowned(); }
+
+    const UnownedCommandPoolResource<Handle, Base>& as_unowned() const {
+        return *((UnownedCommandPoolResource<Handle, Base>*) this);
+    }
+
+    UnownedCommandPoolResource<Handle, Base>& as_unowned() {
+        return *((UnownedCommandPoolResource<Handle, Base>*) this);
+    }
+
     UnownedCommandPoolResource<Handle, Base> unowned_copy() const {
-        return UnownedCommandPoolResource<Handle, Base> { this->m_device, this->m_handle };
+        return UnownedCommandPoolResource<Handle, Base> { this->m_device, this->m_command_pool, this->m_handle };
     }
 };
 

@@ -3,6 +3,7 @@
 #include <vulkan/vulkan_core.h>
 #include "vk-command.hpp"
 #include "../image/vk-image.hpp"
+#include "../image/vk-image-subresource-layers.hpp"
 
 namespace VK {
 
@@ -18,27 +19,27 @@ class ImageBlitCommand : public Command {
 public:
     ImageBlitCommand(const UnownedImage& source, const UnownedImage& destination);
 
-    void set_aspect_mask(VkImageAspectFlags aspect_mask) {
-        m_description.srcSubresource.aspectMask = aspect_mask;
-        m_description.dstSubresource.aspectMask = aspect_mask;
+    ImageSubresourceLayers& get_source_subresource_layers() {
+        return ImageSubresourceLayers::existing(m_description.srcSubresource);
     }
 
-    void set_layer_count(int layout_count) {
-        m_description.srcSubresource.layerCount = 1;
-        m_description.dstSubresource.layerCount = 1;
+    ImageSubresourceLayers& get_destination_subresource_layers() {
+        return ImageSubresourceLayers::existing(m_description.dstSubresource);
     }
 
-    void set_src_layer(int layer) { m_description.srcSubresource.baseArrayLayer = layer; }
-    void set_dst_layer(int layer) { m_description.dstSubresource.baseArrayLayer = layer; }
+    const ImageSubresourceLayers& get_source_subresource_layers() const {
+        return ImageSubresourceLayers::existing(m_description.srcSubresource);
+    }
 
-    void set_source_mip_level(uint32_t level) { m_description.srcSubresource.mipLevel = level; }
-    void set_destination_mip_level(uint32_t level) { m_description.dstSubresource.mipLevel = level; }
+    const ImageSubresourceLayers& get_destination_subresource_layers() const {
+        return ImageSubresourceLayers::existing(m_description.dstSubresource);
+    }
 
     void set_filter(VkFilter filter) { m_filter = filter; }
     void set_source_layout(VkImageLayout source_layout) { m_source_layout = source_layout; }
     void set_destination_layout(VkImageLayout destination_layout) { m_destination_layout = destination_layout; }
 
-    void write(VK::CommandBuffer* command_buffer) override;
+    void write(const UnownedCommandBuffer& command_buffer) override;
 
     VkOffset3D* get_src_offsets() { return m_description.srcOffsets; }
     VkOffset3D* get_dst_offsets() { return m_description.dstOffsets; }
