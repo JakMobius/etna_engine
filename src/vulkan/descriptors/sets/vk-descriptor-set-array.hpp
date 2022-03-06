@@ -21,6 +21,12 @@ public:
     void bind_descriptor(int descriptor_set_index, uint32_t binding, Descriptor& descriptor);
 
     void create();
+
+    void free_sets() {
+        if(m_descriptor_sets.empty() || m_descriptor_pool.is_null()) return;
+        vkFreeDescriptorSets(m_descriptor_pool.get_device()->get_handle(), m_descriptor_pool.get_handle(), m_descriptor_sets.size(), m_descriptor_sets.data());
+        m_descriptor_sets.clear();
+    }
 };
 
 }

@@ -8,56 +8,46 @@ namespace VK {
 
 class ImageFactory {
 
-    VkExtent3D m_extent = {0, 0, 0};
-    VkImageCreateFlags m_flags = 0;
-    VkFormat m_format = VK_FORMAT_MAX_ENUM;
-    uint32_t m_mip_levels = 1;
-    uint32_t m_array_layers = 1;
-    VkSampleCountFlagBits m_samples = VK_SAMPLE_COUNT_1_BIT;
-    VkImageTiling m_tiling = VK_IMAGE_TILING_OPTIMAL;
-    VkImageUsageFlags m_usage = 0;
-    VkImageLayout m_initial_layout = VK_IMAGE_LAYOUT_UNDEFINED;
-    VkSharingMode m_sharing_mode = VK_SHARING_MODE_EXCLUSIVE;
-    VkImageType m_image_type = VK_IMAGE_TYPE_2D;
+    VkImageCreateInfo m_description {};
     VkMemoryPropertyFlags m_memory_properties = VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT;
 
 public:
-    ImageFactory() = default;
+    ImageFactory();
 
     void set_flags(VkImageCreateFlags flags) {
-        m_flags = flags;
+        m_description.flags = flags;
     }
 
     void set_format(VkFormat format) {
-        m_format = format;
+        m_description.format = format;
     }
 
     void set_mip_levels(uint32_t mip_levels) {
-        m_mip_levels = mip_levels;
+        m_description.mipLevels = mip_levels;
     }
 
     void set_array_layers(uint32_t array_layers) {
-        m_array_layers = array_layers;
+        m_description.arrayLayers = array_layers;
     }
 
     void set_samples(VkSampleCountFlagBits samples) {
-        m_samples = samples;
+        m_description.samples = samples;
     }
 
     void set_tiling(VkImageTiling tiling) {
-        m_tiling = tiling;
+        m_description.tiling = tiling;
     }
 
     void set_usage(VkBufferUsageFlags usage) {
-        m_usage = usage;
+        m_description.usage = usage;
     }
 
     void set_initial_layout(VkImageLayout initial_layout) {
-        m_initial_layout = initial_layout;
+        m_description.initialLayout = initial_layout;
     }
 
     void set_sharing_mode(VkSharingMode sharing_mode) {
-        m_sharing_mode = sharing_mode;
+        m_description.sharingMode = sharing_mode;
     }
 
     void set_memory_properties(VkMemoryPropertyFlags memory_properties) {
@@ -65,29 +55,29 @@ public:
     }
 
     void set_image_type(VkImageType image_type) {
-        m_image_type = image_type;
+        m_description.imageType = image_type;
     }
 
     void set_extent(VkExtent3D extent) {
-        m_extent = extent;
+        m_description.extent = extent;
     }
 
-    VkImageType get_image_type()                  const { return m_image_type; }
-    VkImageCreateFlags get_flags()                const { return m_flags; }
-    VkFormat get_format()                         const { return m_format; }
-    uint32_t get_mip_levels()                     const { return m_mip_levels; }
-    uint32_t get_array_layers()                   const { return m_array_layers; }
-    VkSampleCountFlagBits get_samples()           const { return m_samples; }
-    VkImageTiling get_tiling()                    const { return m_tiling; }
-    VkBufferUsageFlags get_usage()                const { return m_flags; }
-    VkImageLayout get_initial_layout()            const { return m_initial_layout; }
-    VkSharingMode get_sharing_mode()              const { return m_sharing_mode; }
+    VkImageType get_image_type()                  const { return m_description.imageType; }
+    VkImageCreateFlags get_flags()                const { return m_description.flags; }
+    VkFormat get_format()                         const { return m_description.format; }
+    uint32_t get_mip_levels()                     const { return m_description.mipLevels; }
+    uint32_t get_array_layers()                   const { return m_description.arrayLayers; }
+    VkSampleCountFlagBits get_samples()           const { return m_description.samples; }
+    VkImageTiling get_tiling()                    const { return m_description.tiling; }
+    VkBufferUsageFlags get_usage()                const { return m_description.flags; }
+    VkImageLayout get_initial_layout()            const { return m_description.initialLayout; }
+    VkSharingMode get_sharing_mode()              const { return m_description.sharingMode; }
     VkMemoryPropertyFlags get_memory_properties() const { return m_memory_properties; }
-    VkExtent3D get_extent()                       const { return m_extent; }
+    VkExtent3D get_extent()                       const { return m_description.extent; }
 
-    VkImage create_raw_image(Device* device);
+    VkImage create_raw_image(Device* device) const;
 
-    MemoryImage create(Device* device);
+    MemoryImage create(Device* device) const;
 };
 
 }

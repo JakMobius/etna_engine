@@ -9,14 +9,14 @@ namespace VK {
 class ImageBlitCommand : public Command {
 
     VkImageBlit m_description {};
-    Image* m_source = nullptr;
-    Image* m_destination = nullptr;
+    UnownedImage m_source {};
+    UnownedImage m_destination {};
     VkFilter m_filter = VK_FILTER_LINEAR;
     VkImageLayout m_source_layout = VK_IMAGE_LAYOUT_UNDEFINED;
     VkImageLayout m_destination_layout = VK_IMAGE_LAYOUT_UNDEFINED;
 
 public:
-    ImageBlitCommand(Image* source, Image* destination);
+    ImageBlitCommand(const UnownedImage& source, const UnownedImage& destination);
 
     void set_aspect_mask(VkImageAspectFlags aspect_mask) {
         m_description.srcSubresource.aspectMask = aspect_mask;
@@ -40,8 +40,8 @@ public:
 
     void write(VK::CommandBuffer* command_buffer) override;
 
-
-    void setup_mip_offsets(int32_t mip_width, int32_t mip_height);
+    VkOffset3D* get_src_offsets() { return m_description.srcOffsets; }
+    VkOffset3D* get_dst_offsets() { return m_description.dstOffsets; }
 };
 
 }

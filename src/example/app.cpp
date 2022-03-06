@@ -9,6 +9,10 @@
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "../tiny_obj_loader.h"
 #include "app.hpp"
+#include "../etna/image-factory.hpp"
+#include "../etna/command-queue/commands/command-generate-mipmaps.hpp"
+#include "../etna/command-queue/commands/command-image-layout-convert.hpp"
+#include "../etna/command-queue/commands/command-buffer-to-image-transfer.hpp"
 
 void Application::create_instance() {
     VK::InstanceFactory factory;
@@ -122,11 +126,11 @@ void Application::cleanup() {
 
     cleanup_swap_chain();
 
+    m_descriptor_pool.destroy();
     m_image_available_semaphores.clear();
     m_render_finished_semaphores.clear();
     m_in_flight_fences.clear();
 
-    m_texture_image_view.destroy();
     if(m_texture_sampler) m_texture_sampler.destroy();
     if(m_texture_image) m_texture_image->destroy();
 
@@ -139,7 +143,7 @@ void Application::cleanup() {
 
     m_physical_device = nullptr;
 
-    if(m_framebuffer_manager) m_framebuffer_manager = nullptr;
+    if(m_attachment_manager) m_attachment_manager = nullptr;
     if(m_swapchain_manager) m_swapchain_manager->destroy();
     m_surface.destroy();
     m_instance.destroy();
@@ -201,9 +205,9 @@ void Application::create_logical_device() {
 }
 
 void Application::create_swapchain() {
-    m_framebuffer_manager = std::make_unique<Etna::BasicAttachmentManager>();
+    m_attachment_manager = std::make_unique<Etna::BasicAttachmentManager>();
     m_swapchain_manager = std::make_unique<Etna::SwapchainManager>(m_surface.unowned_copy(), &m_device);
-    m_swapchain_manager->set_attachment_manager(m_framebuffer_manager.get());
+    m_swapchain_manager->set_attachment_manager(m_attachment_manager.get());
 
     int width = 0, height = 0;
     glfwGetFramebufferSize(m_window, &width, &height);
@@ -249,8 +253,8 @@ void Application::create_graphics_pipeline() {
 
 void Application::create_render_pass() {
 
-    m_framebuffer_manager->set_color_image_view(m_color_image_view.unowned_copy());
-    m_framebuffer_manager->set_depth_image_view(m_depth_image_view.unowned_copy());
+    m_attachment_manager->set_color_image_view(m_color_image->get_view().unowned_copy());
+    m_attachment_manager->set_depth_image_view(m_depth_image->get_view().unowned_copy());
 
     VK::Attachment color_attachment { m_swapchain_manager->get_swapchain_image_format() };
     color_attachment.set_samples(m_msaa_samples);
@@ -268,16 +272,16 @@ void Application::create_render_pass() {
     resolve_attachment.set_final_layout(VK_IMAGE_LAYOUT_PRESENT_SRC_KHR);
 
     VkAttachmentReference color_attachment_ref {
-        m_framebuffer_manager->get_color_attachment_index(),
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            m_attachment_manager->get_color_attachment_index(),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
     VkAttachmentReference depth_attachment_ref {
-        m_framebuffer_manager->get_depth_attachment_index(),
-        VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
+            m_attachment_manager->get_depth_attachment_index(),
+            VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL
     };
     VkAttachmentReference color_resolve_attachment_ref {
-        m_framebuffer_manager->get_image_attachment_index(),
-        VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
+            m_attachment_manager->get_image_attachment_index(),
+            VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL
     };
 
     VkSubpassDescription subpass {};
@@ -426,9 +430,7 @@ void Application::draw_frame() {
 }
 
 void Application::cleanup_swap_chain() {
-
-    m_color_image_view.destroy();
-    m_depth_image_view.destroy();
+    if(m_descriptor_set_array) m_descriptor_set_array->free_sets();
 
     if(m_color_image) m_color_image->destroy();
     if(m_depth_image) m_depth_image->destroy();
@@ -436,7 +438,6 @@ void Application::cleanup_swap_chain() {
     m_command_buffers.clear();
     m_uniform_buffers.clear();
 
-    m_descriptor_pool.destroy();
     m_graphics_pipeline.destroy();
     m_pipeline_layout.destroy();
     m_render_pass.destroy();
@@ -461,7 +462,6 @@ void Application::recreate_swap_chain() {
     create_render_pass();
     create_graphics_pipeline();
     create_uniform_buffers();
-    create_descriptor_pool();
     create_descriptor_sets();
     create_command_buffers();
 }
@@ -564,38 +564,42 @@ void Application::create_texture_image() {
 
     FreeImage_Unload(converted);
 
-    VK::ImageFactory image_factory;
-    image_factory.set_extent({image_width, image_height, 1});
-    image_factory.set_mip_levels(m_mip_levels);
-    image_factory.set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-    image_factory.set_format(VK_FORMAT_R8G8B8A8_SRGB);
+    auto image_factory = Etna::ImageFactory()
+            .set_extent({image_width, image_height, 1})
+            .set_mip_levels(m_mip_levels)
+            .set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT)
+            .set_usage(VK_IMAGE_USAGE_TRANSFER_SRC_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT)
+            .set_format(VK_FORMAT_R8G8B8A8_SRGB);
 
-    m_texture_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
+    auto range = VK::ImageSubresourceRange()
+            .set_mip_levels(m_mip_levels)
+            .set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
+
+    m_texture_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 
     auto command_buffer = m_command_pool.create_command_buffer();
+    auto command_queue = Etna::CommandQueue(&command_buffer);
+    auto command_image = command_queue.get_image(m_texture_image.get(), image_factory.get_initial_image_state());
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VK::ImageMemoryBarrier layout_conversion_barrier { &m_texture_image->get_image() };
-    layout_conversion_barrier.set_layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    layout_conversion_barrier.set_mip_level_count(m_mip_levels);
-    layout_conversion_barrier.set_access_masks(0, VK_ACCESS_TRANSFER_WRITE_BIT);
-    layout_conversion_barrier.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
-    layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+    Etna::CommandImageLayoutConvert(&command_image)
+            .set_subresource_range(range)
+            .set_source_pipeline_stage(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT)
+            .set_target_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
+            .set_target_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL)
+            .set_target_access_mask(VK_ACCESS_TRANSFER_WRITE_BIT)
+            .perform(&command_buffer);
 
-    auto copy_command = VK::CopyBufferToImageCommand(&staging_buffer.get_buffer(), &m_texture_image->get_image());
-    copy_command.set_image_extent(image_factory.get_extent());
-    copy_command.set_destination_image_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-    copy_command.write(&command_buffer);
+    Etna::CommandBufferToImageTransfer(staging_buffer.get_buffer().unowned_copy(), &command_image)
+            .perform(&command_buffer);
 
-    generate_mipmaps(&command_buffer, &m_texture_image->get_image(), image_factory.get_format(), { image_width, image_height }, image_factory.get_mip_levels());
+    Etna::CommandGenerateMipmaps(&command_image)
+            .set_source_pipeline_stage(VK_ACCESS_TRANSFER_WRITE_BIT)
+            .set_target_pipeline_stage(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+            .perform(&command_queue);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_device_graphics_queue);
-
-    VK::ImageViewFactory image_view_factory;
-    image_view_factory.set_format(image_factory.get_format());
-    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_texture_image_view = image_view_factory.create(&m_device, m_texture_image->get_image());
 }
 
 void Application::create_index_buffer() {
@@ -659,14 +663,13 @@ void Application::create_uniform_buffers() {
 }
 
 void Application::create_descriptor_set_layout() {
-    VK::DescriptorSetLayoutFactory factory;
-
     VK::DescriptorSetLayoutBinding ubo_layout_binding(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER);
     ubo_layout_binding.set_stage_flags(VK_SHADER_STAGE_VERTEX_BIT);
 
     VK::DescriptorSetLayoutBinding sampler_layout_binding(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER);
     sampler_layout_binding.set_stage_flags(VK_SHADER_STAGE_FRAGMENT_BIT);
 
+    VK::DescriptorSetLayoutFactory factory;
     factory.bind_descriptor(0, ubo_layout_binding);
     factory.bind_descriptor(1, sampler_layout_binding);
 
@@ -677,6 +680,7 @@ void Application::create_descriptor_pool() {
     VK::DescriptorPoolFactory factory;
     factory.add_pool_size(VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, MAX_FRAMES_IN_FLIGHT);
     factory.add_pool_size(VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, MAX_FRAMES_IN_FLIGHT);
+    factory.set_flags(VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT);
     factory.set_max_sets(MAX_FRAMES_IN_FLIGHT);
 
     m_descriptor_pool = factory.create(&m_device);
@@ -690,55 +694,11 @@ void Application::create_descriptor_sets() {
     for (int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
 
         VK::BufferDescriptor uniform_buffer_descriptor(m_uniform_buffers[i].get_buffer(), 0, sizeof(UniformBufferObject));
-        VK::SamplerDescriptor texture_sampler_descriptor(m_texture_sampler, m_texture_image_view);
+        VK::SamplerDescriptor texture_sampler_descriptor(m_texture_sampler, m_texture_image->get_view());
 
         m_descriptor_set_array->bind_descriptor(i, 0, uniform_buffer_descriptor);
         m_descriptor_set_array->bind_descriptor(i, 1, texture_sampler_descriptor);
     }
-}
-
-void Application::generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels) {
-
-    VkFormatProperties format_properties {};
-    m_physical_device->get_format_properties(&format_properties, format);
-
-    if (!(format_properties.optimalTilingFeatures & VK_FORMAT_FEATURE_SAMPLED_IMAGE_FILTER_LINEAR_BIT)) {
-        throw std::runtime_error("texture image format does not support linear blitting");
-    }
-
-    auto mip_width = (int32_t) extent.width;
-    auto mip_height = (int32_t) extent.height;
-
-    VK::ImageMemoryBarrier barrier { image };
-    barrier.set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
-
-    for (uint32_t i = 1; i < mip_levels; i++) {
-
-        barrier.set_mip_level_base(i - 1);
-        barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        barrier.set_access_masks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT);
-        barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
-
-        VK::ImageBlitCommand blit_command(image, image);
-        blit_command.set_source_layout(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-        blit_command.set_destination_layout(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-        blit_command.set_source_mip_level(i - 1);
-        blit_command.set_destination_mip_level(i);
-        blit_command.setup_mip_offsets(mip_width, mip_height);
-        blit_command.write(command_buffer);
-
-        barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-        barrier.set_access_masks(VK_ACCESS_TRANSFER_READ_BIT, VK_ACCESS_SHADER_READ_BIT);
-        barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
-
-        if (mip_width > 1) mip_width /= 2;
-        if (mip_height > 1) mip_height /= 2;
-    }
-
-    barrier.set_mip_level_base(mip_levels - 1);
-    barrier.set_layouts(VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-    barrier.set_access_masks(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT);
-    barrier.write(command_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT);
 }
 
 void Application::create_texture_sampler() {
@@ -765,44 +725,40 @@ VkFormat Application::find_depth_format() {
 void Application::create_depth_resources() {
     VkFormat depth_format = find_depth_format();
 
-    VK::ImageFactory image_factory;
-    image_factory.set_samples(m_msaa_samples);
-    image_factory.set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 });
-    image_factory.set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT);
-    image_factory.set_format(depth_format);
+    auto image_factory = Etna::ImageFactory()
+        .set_samples(m_msaa_samples)
+        .set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 })
+        .set_usage(VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT)
+        .set_format(depth_format)
+        .set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT);
 
-    m_depth_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
-
-    VK::ImageViewFactory image_view_factory;
-    image_view_factory.set_format(depth_format);
-    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
-    m_depth_image_view = image_view_factory.create(&m_device, m_depth_image->get_image());
+    m_depth_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 
     auto command_buffer = m_command_pool.create_command_buffer();
+    auto command_queue = Etna::CommandQueue(&command_buffer);
+    auto command_image = command_queue.get_image(m_depth_image.get(), image_factory.get_initial_image_state());
+
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VK::ImageMemoryBarrier layout_conversion_barrier { &m_depth_image->get_image() };
-    layout_conversion_barrier.set_layouts(VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
-    layout_conversion_barrier.set_access_masks(0, VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT);
-    layout_conversion_barrier.set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT);
-    layout_conversion_barrier.write(&command_buffer, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT);
+    Etna::CommandImageLayoutConvert(&command_image)
+        .set_target_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        .set_target_access_mask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)
+        .set_subresource_range(VK::ImageSubresourceRange().set_aspect_mask(VK_IMAGE_ASPECT_DEPTH_BIT))
+        .set_source_pipeline_stage(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT)
+        .set_target_pipeline_stage(VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT)
+        .perform(&command_buffer);
 
     command_buffer.end();
     command_buffer.submit_and_wait(m_device_graphics_queue);
 }
 
 void Application::create_color_resources() {
-    VkFormat color_format = m_swapchain_manager->get_swapchain_image_format();
+    auto image_factory = Etna::ImageFactory()
+            .set_samples(m_msaa_samples)
+            .set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1 })
+            .set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT)
+            .set_format(m_swapchain_manager->get_swapchain_image_format())
+            .set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
 
-    VK::ImageFactory image_factory;
-    image_factory.set_extent({m_swapchain_manager->get_swapchain_extent().width, m_swapchain_manager->get_swapchain_extent().height, 1});
-    image_factory.set_samples(m_msaa_samples);
-    image_factory.set_usage(VK_IMAGE_USAGE_TRANSIENT_ATTACHMENT_BIT | VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT);
-    image_factory.set_format(color_format);
-    m_color_image = std::make_unique<VK::MemoryImage>(image_factory.create(&m_device));
-
-    VK::ImageViewFactory image_view_factory;
-    image_view_factory.set_format(color_format);
-    image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-    m_color_image_view = image_view_factory.create(&m_device, m_color_image->get_image());
+    m_color_image = std::make_unique<Etna::Image>(image_factory, &m_device);
 }

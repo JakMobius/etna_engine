@@ -4,9 +4,9 @@
 
 #include "vk-image-memory-barrier.hpp"
 
-VK::ImageMemoryBarrier::ImageMemoryBarrier(VK::Image* image) {
+VK::ImageMemoryBarrier::ImageMemoryBarrier(const VK::UnownedImage& image) {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
-    m_description.image = image->get_handle();
+    m_description.image = image.get_handle();
 
     m_description.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
     m_description.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;

@@ -32,7 +32,7 @@ protected:
 
     virtual void configure_swapchain_image_view(VK::ImageViewFactory& image_view_factory, VK::UnownedImage& swapchain_image) {
         image_view_factory.set_format(m_swapchain_image_format);
-        image_view_factory.get_subresource_range().aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+        image_view_factory.get_subresource_range().set_aspect_mask(VK_IMAGE_ASPECT_COLOR_BIT);
     }
 
     void configure_swapchain_image(SwapchainImage& image, VK::UnownedImage& swapchain_image, const VK::RenderPass& render_pass) {

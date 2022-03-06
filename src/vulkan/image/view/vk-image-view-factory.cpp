@@ -6,7 +6,7 @@
 
 VK::ImageViewFactory::ImageViewFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    m_description.format = VK_FORMAT_MAX_ENUM;
+    m_description.format = VK_FORMAT_UNDEFINED;
     m_description.subresourceRange.levelCount = 1;
     m_description.subresourceRange.layerCount = 1;
     m_description.subresourceRange.aspectMask = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
@@ -22,7 +22,7 @@ VK::ImageViewFactory::ImageViewFactory() {
     };
 }
 
-VK::ImageView VK::ImageViewFactory::create(VK::Device* device, const VK::ImageBase &image) {
+VK::ImageView VK::ImageViewFactory::create(VK::Device* device, const VK::ImageBase &image) const {
     m_description.image = image.get_handle();
 
     VkImageView handle = nullptr;

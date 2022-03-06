@@ -54,6 +54,8 @@ public:
     void flush();
     void flush(uint32_t offset, uint32_t size);
 
+    bool is_null() { return m_handle == nullptr; }
+
     void set_data(void* data, size_t size, size_t offset = 0);
 };
 

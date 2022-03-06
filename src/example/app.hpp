@@ -13,6 +13,7 @@
 #include "../vulkan/vulkan.hpp"
 #include "../etna/basic-attachment-manager.hpp"
 #include "../etna/swapchain-manager.hpp"
+#include "../etna/image.hpp"
 
 struct UniformBufferObject {
     alignas(16) glm::mat4 model;
@@ -43,7 +44,7 @@ class Application {
 
     VK::Surface m_surface {};
     std::unique_ptr<Etna::SwapchainManager> m_swapchain_manager {};
-    std::unique_ptr<Etna::BasicAttachmentManager> m_framebuffer_manager = nullptr;
+    std::unique_ptr<Etna::BasicAttachmentManager> m_attachment_manager = nullptr;
 
     std::vector<VK::UnownedFence> m_in_flight_images {};
 
@@ -68,18 +69,14 @@ class Application {
     VK::DescriptorPool m_descriptor_pool {};
     std::unique_ptr<VK::DescriptorSetArray> m_descriptor_set_array {};
 
-    std::unique_ptr<VK::MemoryImage> m_texture_image {};
-    VK::ImageView m_texture_image_view {};
+    std::unique_ptr<Etna::Image> m_texture_image {};
     VK::Sampler m_texture_sampler {};
     int m_mip_levels = 0;
 
     VkSampleCountFlagBits m_msaa_samples = VK_SAMPLE_COUNT_1_BIT;
 
-    std::unique_ptr<VK::MemoryImage> m_color_image;
-    VK::ImageView m_color_image_view;
-
-    std::unique_ptr<VK::MemoryImage> m_depth_image {};
-    VK::ImageView m_depth_image_view {};
+    std::unique_ptr<Etna::Image> m_color_image {};
+    std::unique_ptr<Etna::Image> m_depth_image {};
 
     uint32_t m_current_frame = 0;
 
@@ -153,8 +150,6 @@ private:
     void cleanup();
 
     bool is_device_suitable(const VK::PhysicalDevice* physical_device);
-
-    void generate_mipmaps(VK::CommandBuffer* command_buffer, VK::Image* image, VkFormat format, VkExtent2D extent, int mip_levels);
 
     VkFormat find_depth_format();
 
