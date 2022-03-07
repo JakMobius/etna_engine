@@ -12,6 +12,7 @@ class CommandBuffer;
 #include "../buffer/vk-buffer.hpp"
 #include "../pipeline/vk-pipeline.hpp"
 #include "../vk-fence.hpp"
+#include "../render-pass/vk-render-pass-begin-info.hpp"
 
 namespace VK {
 
@@ -56,6 +57,7 @@ public:
 
     void bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline);
 
+    void begin_render_pass(const RenderPassBeginInfo& begin, VkSubpassContents contents)
     void begin_render_pass(const VkRenderPassBeginInfo* begin, VkSubpassContents contents);
 
     void end_render_pass();

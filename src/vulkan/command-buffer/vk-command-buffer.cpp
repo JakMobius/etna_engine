@@ -5,6 +5,7 @@
 #include "vk-command-buffer.hpp"
 #include "vk-command-pool.hpp"
 #include "../queue/vk-queue.hpp"
+#include "../render-pass/vk-render-pass-begin-info.hpp"
 
 void VK::CommandBufferBase::reset(VkCommandBufferResetFlags flags) {
     vkResetCommandBuffer(m_handle, flags);
@@ -98,6 +99,10 @@ void VK::CommandBufferBase::bind_pipeline(VkPipelineBindPoint bind_point, const 
 
 void VK::CommandBufferBase::bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline) {
     vkCmdBindPipeline(m_handle, bind_point, pipeline);
+}
+
+void VK::CommandBufferBase::begin_render_pass(const RenderPassBeginInfo& begin, VkSubpassContents contents) {
+    begin_render_pass(&begin.get_description(), contents);
 }
 
 void VK::CommandBufferBase::begin_render_pass(const VkRenderPassBeginInfo* begin, VkSubpassContents contents) {

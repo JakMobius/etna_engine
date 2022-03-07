@@ -324,22 +324,16 @@ void Application::record_command_buffer(uint32_t frame_index, uint32_t swapchain
     command_buffer.reset();
     command_buffer.begin(VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-    VkRenderPassBeginInfo render_pass_begin_info {};
-    render_pass_begin_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-    render_pass_begin_info.renderPass = m_render_pass.get_handle();
-    render_pass_begin_info.framebuffer = swapchain_entry.m_framebuffer.get_handle();
-
-    render_pass_begin_info.renderArea.offset = {0, 0};
-    render_pass_begin_info.renderArea.extent = m_swapchain_manager->get_swapchain_extent();
-
     VkClearValue clear_values[2] {};
     clear_values[0].color = {{0.0f, 0.0f, 0.0f, 1.0f}};
     clear_values[1].depthStencil = {1.0f, 0};
 
-    render_pass_begin_info.clearValueCount = 2;
-    render_pass_begin_info.pClearValues = clear_values;
+    VK::RenderPassBeginInfo render_pass_begin_info(m_render_pass);
+    render_pass_begin_info.set_framebuffer(swapchain_entry.m_framebuffer);
+    render_pass_begin_info.get_render_area().extent = m_swapchain_manager->get_swapchain_extent();
+    render_pass_begin_info.set_clear_values(clear_values);
 
-    command_buffer.begin_render_pass(&render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
+    command_buffer.begin_render_pass(render_pass_begin_info, VK_SUBPASS_CONTENTS_INLINE);
     command_buffer.bind_pipeline(VK_PIPELINE_BIND_POINT_GRAPHICS, m_graphics_pipeline);
 
     VkDescriptorSet descriptors[] = {m_descriptor_set_array->get_descriptor_sets()[frame_index] };
@@ -597,6 +591,7 @@ void Application::create_texture_image() {
     Etna::CommandGenerateMipmaps(&texture_image_state)
             .set_source_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
             .set_target_pipeline_stage(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
+            .set_target_image_state({ VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_ACCESS_SHADER_READ_BIT })
             .perform(&command_queue);
 
     command_queue.end().run_sync();

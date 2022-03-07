@@ -12,10 +12,10 @@ class CommandGenerateMipmaps {
     CommandImage* m_target = nullptr;
 
     VkPipelineStageFlags m_source_pipeline_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-    VkPipelineStageFlags m_target_pipeline_stage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+    VkPipelineStageFlags m_target_pipeline_stage = VK_PIPELINE_STAGE_TRANSFER_BIT;
     ImmediateImageState m_target_image_state = {
-            VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL,
-            VK_ACCESS_SHADER_READ_BIT
+            VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+            VK_ACCESS_MEMORY_WRITE_BIT
     };
     VkImageAspectFlags m_aspect_flags = VK_IMAGE_ASPECT_COLOR_BIT;
 
