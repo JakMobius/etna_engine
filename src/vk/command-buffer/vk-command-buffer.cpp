@@ -102,7 +102,7 @@ void VK::CommandBufferBase::bind_pipeline(VkPipelineBindPoint bind_point, VkPipe
 }
 
 void VK::CommandBufferBase::begin_render_pass(const RenderPassBeginInfo& begin, VkSubpassContents contents) {
-    begin_render_pass(&begin.get_description(), contents);
+    begin_render_pass(&(begin.get_description()), contents);
 }
 
 void VK::CommandBufferBase::begin_render_pass(const VkRenderPassBeginInfo* begin, VkSubpassContents contents) {

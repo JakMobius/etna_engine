@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../../vulkan/command-buffer/vk-command-pool.hpp"
-#include "../../vulkan/queue/vk-queue.hpp"
+#include "../vk/command-buffer/vk-command-pool.hpp"
+#include "../vk/queue/vk-queue.hpp"
 #include "command-queue.hpp"
 
 namespace Etna {

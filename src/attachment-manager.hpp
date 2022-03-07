@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../vulkan/framebuffer.hpp"
+#include "vk/framebuffer.hpp"
 
 namespace Etna {
 

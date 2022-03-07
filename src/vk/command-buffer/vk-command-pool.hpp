@@ -9,7 +9,7 @@ class CommandPoolBase;
 
 #include "../resources/vk-device-resource.hpp"
 #include "../device/vk-device.hpp"
-#include "../command-buffer/vk-command-buffer.hpp"
+#include "vk-command-buffer.hpp"
 
 namespace VK {
 

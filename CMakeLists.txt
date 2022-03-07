@@ -1,17 +1,26 @@
 cmake_minimum_required(VERSION 3.10)
-project(etna_engine)
-
-set(CMAKE_MODULE_PATH ${CMAKE_SOURCE_DIR}/cmake ${CMAKE_MODULE_PATH})
+project(Etna VERSION 0.0.1 DESCRIPTION "Vulkan wrappers for modern C++")
 
 find_package(Vulkan REQUIRED)
-find_package(GLFW REQUIRED)
-find_package(glm REQUIRED)
-find_package(FreeImage REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_FLAGS "-O0 -fsanitize=address")
 
-file(GLOB_RECURSE files "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.hpp")
-add_executable(etna_engine ${files})
-include_directories(${GLFW_INCLUDE_DIR} ${Vulkan_INCLUDE_DIR} ${FREEIMAGE_INCLUDE_DIRS})
-target_link_libraries(etna_engine ${GLFW_LIBRARY} Vulkan::Vulkan ${GLM_LIBRARIES} ${FREEIMAGE_LIBRARIES})
+file(GLOB_RECURSE sources "${CMAKE_SOURCE_DIR}/src/*.cpp")
+add_library(Etna ${sources})
+include_directories(${Vulkan_INCLUDE_DIR})
+set_target_properties(Etna PROPERTIES VERSION ${PROJECT_VERSION})
+
+file(GLOB_RECURSE public_headers "${CMAKE_SOURCE_DIR}/src/*.hpp")
+set_target_properties(Etna PROPERTIES PUBLIC_HEADER "${public_headers}")
+#target_include_directories(Etna PRIVATE .)
+
+include(GNUInstallDirs)
+install(TARGETS Etna
+        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR})
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/src/"
+        DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/Etna"
+        FILES_MATCHING PATTERN "*.hpp"
+        )
+configure_file(Etna.pc.in Etna.pc @ONLY)
+install(FILES ${CMAKE_BINARY_DIR}/Etna.pc DESTINATION ${CMAKE_INSTALL_DATAROOTDIR}/pkgconfig)

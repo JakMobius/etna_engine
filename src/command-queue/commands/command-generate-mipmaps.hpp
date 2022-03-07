@@ -1,8 +1,8 @@
 #pragma once
 
 #include "../../image.hpp"
-#include "../../../vulkan/commands/vk-image-blit-command.hpp"
-#include "../../../vulkan/barriers/vk-image-memory-barrier.hpp"
+#include "../../vk/commands/vk-image-blit-command.hpp"
+#include "../../vk/barriers/vk-image-memory-barrier.hpp"
 #include "../command-queue.hpp"
 #include "../command-image.hpp"
 

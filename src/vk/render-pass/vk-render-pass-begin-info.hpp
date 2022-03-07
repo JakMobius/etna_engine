@@ -35,6 +35,7 @@ public:
     const VkRect2D& get_render_area() const { return m_description.renderArea; }
 
     VkRenderPassBeginInfo& get_description() { return m_description; }
+    const VkRenderPassBeginInfo& get_description() const { return m_description; }
 };
 
 }

@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../vulkan/image/vk-image.hpp"
-#include "../vulkan/image/vk-image-subresource-range.hpp"
-#include "../vulkan/image/vk-memory-image.hpp"
-#include "../vulkan/image/view/vk-image-view.hpp"
+#include "vk/image/vk-image.hpp"
+#include "vk/image/vk-image-subresource-range.hpp"
+#include "vk/image/vk-memory-image.hpp"
+#include "vk/image/view/vk-image-view.hpp"
 
 namespace Etna {
 

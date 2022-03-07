@@ -1,8 +1,8 @@
 #pragma once
 
-#include "../../../vulkan/commands/vk-copy-buffer-to-image-command.hpp"
+#include "../../vk/commands/vk-copy-buffer-to-image-command.hpp"
 #include "../../image.hpp"
-#include "../../../vulkan/buffer/vk-buffer.hpp"
+#include "../../vk/buffer/vk-buffer.hpp"
 #include "../command-image.hpp"
 
 namespace Etna {

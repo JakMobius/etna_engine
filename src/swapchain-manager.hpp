@@ -2,12 +2,12 @@
 
 #include <set>
 #include <vulkan/vulkan_core.h>
-#include "../vulkan/vk-surface.hpp"
-#include "../vulkan/swapchain/vk-swapchain.hpp"
-#include "../vulkan/framebuffer/vk-framebuffer.hpp"
-#include "../vulkan/swapchain/vk-swapchain-factory.hpp"
-#include "../vulkan/image/view/vk-image-view-factory.hpp"
-#include "../vulkan/framebuffer/vk-framebuffer-factory.hpp"
+#include "vk/vk-surface.hpp"
+#include "vk/swapchain/vk-swapchain.hpp"
+#include "vk/framebuffer/vk-framebuffer.hpp"
+#include "vk/swapchain/vk-swapchain-factory.hpp"
+#include "vk/image/view/vk-image-view-factory.hpp"
+#include "vk/framebuffer/vk-framebuffer-factory.hpp"
 #include "attachment-manager.hpp"
 
 namespace Etna {

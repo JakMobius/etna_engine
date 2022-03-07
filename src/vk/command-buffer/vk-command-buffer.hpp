@@ -57,7 +57,7 @@ public:
 
     void bind_pipeline(VkPipelineBindPoint bind_point, VkPipeline pipeline);
 
-    void begin_render_pass(const RenderPassBeginInfo& begin, VkSubpassContents contents)
+    void begin_render_pass(const RenderPassBeginInfo& begin, VkSubpassContents contents);
     void begin_render_pass(const VkRenderPassBeginInfo* begin, VkSubpassContents contents);
 
     void end_render_pass();

@@ -2,7 +2,7 @@
 
 #include "../render-pass/vk-render-pass.hpp"
 #include "../image/view/vk-image-view.hpp"
-#include "../framebuffer/vk-framebuffer.hpp"
+#include "vk-framebuffer.hpp"
 
 namespace VK {
 
