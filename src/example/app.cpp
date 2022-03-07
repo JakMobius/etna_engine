@@ -11,7 +11,7 @@
 #include "app.hpp"
 #include "../etna/image-factory.hpp"
 #include "../etna/command-queue/commands/command-generate-mipmaps.hpp"
-#include "../etna/command-queue/commands/command-image-layout-convert.hpp"
+#include "../etna/command-queue/commands/command-image-barrier.hpp"
 #include "../etna/command-queue/commands/command-buffer-to-image-transfer.hpp"
 
 void Application::create_instance() {
@@ -577,7 +577,7 @@ void Application::create_texture_image() {
     auto command_queue = m_graphics_command_queue_pool->begin_command_queue();
     auto texture_image_state = command_queue.provide_image_state(m_texture_image.get(), image_factory.get_initial_image_state());
 
-    Etna::CommandImageLayoutConvert(&texture_image_state)
+    Etna::CommandImageBarrier(&texture_image_state)
             .set_subresource_range(m_texture_image->get_maximum_subresource_range())
             .set_source_pipeline_stage(VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT)
             .set_target_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
@@ -588,8 +588,14 @@ void Application::create_texture_image() {
     Etna::CommandBufferToImageTransfer(staging_buffer.get_buffer(), &texture_image_state)
             .perform(&command_queue);
 
+    Etna::CommandImageBarrier(&texture_image_state)
+        .set_subresource_range(m_texture_image->get_maximum_subresource_range())
+        .set_source_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
+        .set_target_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
+        .perform(&command_queue);
+
     Etna::CommandGenerateMipmaps(&texture_image_state)
-            .set_source_pipeline_stage(VK_ACCESS_TRANSFER_WRITE_BIT)
+            .set_source_pipeline_stage(VK_PIPELINE_STAGE_TRANSFER_BIT)
             .set_target_pipeline_stage(VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT)
             .perform(&command_queue);
 
@@ -643,11 +649,11 @@ void Application::create_uniform_buffers() {
     m_uniform_buffers.reserve(MAX_FRAMES_IN_FLIGHT);
 
     VK::BufferFactory factory {};
+    factory.set_memory_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
+    factory.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+    factory.set_size(sizeof(UniformBufferObject));
 
     for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-        factory.set_memory_properties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT);
-        factory.set_usage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-        factory.set_size(sizeof(UniformBufferObject));
         m_uniform_buffers.push_back(factory.create_memory_buffer(&m_device));
     }
 }
@@ -724,7 +730,7 @@ void Application::create_depth_resources() {
     auto command_queue = m_graphics_command_queue_pool->begin_command_queue();
     auto depth_image_state = command_queue.provide_image_state(m_depth_image.get(), image_factory.get_initial_image_state());
 
-    Etna::CommandImageLayoutConvert(&depth_image_state)
+    Etna::CommandImageBarrier(&depth_image_state)
         .set_subresource_range(m_depth_image->get_maximum_subresource_range())
         .set_target_layout(VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
         .set_target_access_mask(VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT)

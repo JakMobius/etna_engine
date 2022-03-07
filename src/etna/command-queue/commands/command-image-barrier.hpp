@@ -6,41 +6,47 @@
 
 namespace Etna {
 
-class CommandImageLayoutConvert {
+class CommandImageBarrier {
 
-    VkPipelineStageFlags m_source_pipeline_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-    VkPipelineStageFlags m_target_pipeline_stage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+    VkPipelineStageFlags m_source_pipeline_stage = 0;
+    VkPipelineStageFlags m_target_pipeline_stage = 0;
     VkAccessFlags m_target_access_mask = INT_MAX;
     VkImageLayout m_target_layout = (VkImageLayout)INT_MAX;
     VK::ImageSubresourceRange m_subresource_range {};
     CommandImage* m_image;
 
 public:
-    explicit CommandImageLayoutConvert(CommandImage* image): m_image(image) {
+    explicit CommandImageBarrier(CommandImage* image): m_image(image) {
 
     }
 
-    CommandImageLayoutConvert& set_target_layout(VkImageLayout target_layout) {
+    CommandImageBarrier& set_target_state(const ImmediateImageState& target_state) {
+        set_target_layout(target_state.m_layout);
+        set_target_access_mask(target_state.m_access_mask);
+        return *this;
+    }
+
+    CommandImageBarrier& set_target_layout(VkImageLayout target_layout) {
         m_target_layout = target_layout;
         return *this;
     }
 
-    CommandImageLayoutConvert& set_target_access_mask(VkAccessFlags target_access) {
+    CommandImageBarrier& set_target_access_mask(VkAccessFlags target_access) {
         m_target_access_mask = target_access;
         return *this;
     }
 
-    CommandImageLayoutConvert& set_subresource_range(const VK::ImageSubresourceRange& subresource_range) {
+    CommandImageBarrier& set_subresource_range(const VK::ImageSubresourceRange& subresource_range) {
         m_subresource_range = subresource_range;
         return *this;
     }
 
-    CommandImageLayoutConvert& set_source_pipeline_stage(VkPipelineStageFlags source_pipeline_stage) {
+    CommandImageBarrier& set_source_pipeline_stage(VkPipelineStageFlags source_pipeline_stage) {
         m_source_pipeline_stage = source_pipeline_stage;
         return *this;
     }
 
-    CommandImageLayoutConvert& set_target_pipeline_stage(VkPipelineStageFlags target_pipeline_stage) {
+    CommandImageBarrier& set_target_pipeline_stage(VkPipelineStageFlags target_pipeline_stage) {
         m_target_pipeline_stage = target_pipeline_stage;
         return *this;
     }
