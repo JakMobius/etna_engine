@@ -2,7 +2,7 @@
 // Created by Артем on 12.02.2022.
 //
 
-#include "vk-memory.hpp"
+#include <etna/vk/vk-memory.hpp>
 
 void VK::Memory::flush() {
     flush(0, m_size);

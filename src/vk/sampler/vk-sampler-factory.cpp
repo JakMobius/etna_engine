@@ -2,7 +2,7 @@
 // Created by Артем on 23.02.2022.
 //
 
-#include "vk-sampler-factory.hpp"
+#include <etna/vk/sampler/vk-sampler-factory.hpp>
 
 VK::SamplerFactory::SamplerFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

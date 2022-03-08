@@ -2,9 +2,9 @@
 // Created by Артем on 16.02.2022.
 //
 
-#include "vk-copy-buffer-command.hpp"
-#include "../buffer/vk-buffer.hpp"
-#include "../command-buffer/vk-command-buffer.hpp"
+#include <etna/vk/commands/vk-copy-buffer-command.hpp>
+#include <etna/vk/buffer/vk-buffer.hpp>
+#include <etna/vk/command-buffer/vk-command-buffer.hpp>
 
 void VK::CopyBufferCommand::write(const UnownedCommandBuffer& command_buffer) {
 

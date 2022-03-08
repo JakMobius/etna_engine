@@ -2,7 +2,7 @@
 // Created by Артем on 09.02.2022.
 //
 
-#include "vk-message-type-code.hpp"
+#include <etna/vk/codes/vk-message-type-code.hpp>
 
 const char* VK::MessageTypeCode::name(VkDebugUtilsMessageTypeFlagsEXT code) {
     switch(code) {

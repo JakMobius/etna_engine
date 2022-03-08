@@ -2,7 +2,7 @@
 // Created by Артем on 09.02.2022.
 //
 
-#include "vk-queue-family-indices.hpp"
+#include <etna/vk/queue/vk-queue-family-indices.hpp>
 
 VK::DeviceQueueFamilies::DeviceQueueFamilies(const VK::PhysicalDevice* physical_device) : m_physical_device(physical_device) {
     uint32_t family_count = 0;

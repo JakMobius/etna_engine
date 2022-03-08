@@ -2,10 +2,10 @@
 // Created by Артем on 16.02.2022.
 //
 
-#include "vk-copy-buffer-to-image-command.hpp"
-#include "../buffer/vk-buffer.hpp"
-#include "../image/vk-image.hpp"
-#include "../command-buffer/vk-command-buffer.hpp"
+#include <etna/vk/commands/vk-copy-buffer-to-image-command.hpp>
+#include <etna/vk/buffer/vk-buffer.hpp>
+#include <etna/vk/image/vk-image.hpp>
+#include <etna/vk/command-buffer/vk-command-buffer.hpp>
 
 VK::CopyBufferToImageCommand::CopyBufferToImageCommand(const VK::UnownedBuffer& buffer, const VK::UnownedImage& image) : m_buffer(buffer), m_image(image) {
 

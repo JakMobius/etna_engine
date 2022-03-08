@@ -2,10 +2,10 @@
 // Created by Артем on 13.02.2022.
 //
 
-#include "vk-command-buffer.hpp"
-#include "vk-command-pool.hpp"
-#include "../queue/vk-queue.hpp"
-#include "../render-pass/vk-render-pass-begin-info.hpp"
+#include <etna/vk/command-buffer/vk-command-buffer.hpp>
+#include <etna/vk/command-buffer/vk-command-pool.hpp>
+#include <etna/vk/queue/vk-queue.hpp>
+#include <etna/vk/render-pass/vk-render-pass-begin-info.hpp>
 
 void VK::CommandBufferBase::reset(VkCommandBufferResetFlags flags) {
     vkResetCommandBuffer(m_handle, flags);

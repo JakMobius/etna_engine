@@ -2,7 +2,7 @@
 // Created by Артем on 26.02.2022.
 //
 
-#include "vk-sampler-descriptor.hpp"
+#include <etna/vk/descriptors/vk-sampler-descriptor.hpp>
 
 VK::SamplerDescriptor::SamplerDescriptor(const VK::Sampler &sampler, const VK::ImageView &image_view) {
     m_description.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;

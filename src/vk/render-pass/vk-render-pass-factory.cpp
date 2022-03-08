@@ -2,7 +2,7 @@
 // Created by Артем on 26.02.2022.
 //
 
-#include "vk-render-pass-factory.hpp"
+#include <etna/vk/render-pass/vk-render-pass-factory.hpp>
 
 VK::RenderPass VK::RenderPassFactory::create(VK::Device* device) {
     m_description.attachmentCount = m_attachment_descriptions.size();

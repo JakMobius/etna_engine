@@ -2,8 +2,8 @@
 // Created by Артем on 02.03.2022.
 //
 
-#include "image.hpp"
-#include "image-factory.hpp"
+#include <etna/image.hpp>
+#include <etna/image-factory.hpp>
 
 Etna::Image::Image(const Etna::ImageFactory &factory, VK::Device* device) {
     auto& image_factory = factory.get_image_factory();

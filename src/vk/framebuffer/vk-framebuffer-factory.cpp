@@ -2,7 +2,7 @@
 // Created by Артем on 27.02.2022.
 //
 
-#include "vk-framebuffer-factory.hpp"
+#include <etna/vk/framebuffer/vk-framebuffer-factory.hpp>
 
 VK::FramebufferFactory::FramebufferFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;

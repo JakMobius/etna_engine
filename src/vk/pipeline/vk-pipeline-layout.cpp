@@ -2,7 +2,7 @@
 // Created by Артем on 21.02.2022.
 //
 
-#include "vk-pipeline-layout.hpp"
+#include <etna/vk/pipeline/vk-pipeline-layout.hpp>
 
 VK::PipelineLayout
 VK::PipelineLayout::create(VK::Device* device, std::span<VkDescriptorSetLayout> descriptor_set_layouts,

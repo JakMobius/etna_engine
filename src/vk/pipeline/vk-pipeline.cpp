@@ -2,7 +2,7 @@
 // Created by Артем on 21.02.2022.
 //
 
-#include "vk-pipeline.hpp"
+#include <etna/vk/pipeline/vk-pipeline.hpp>
 
 void VK::Pipeline::destroy() {
     if(!this->m_handle || !this->m_device) return;

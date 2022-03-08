@@ -2,7 +2,7 @@
 // Created by Артем on 26.02.2022.
 //
 
-#include "vk-buffer-descriptor.hpp"
+#include <etna/vk/descriptors/vk-buffer-descriptor.hpp>
 
 VK::BufferDescriptor::BufferDescriptor(const VK::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size) : Descriptor() {
     m_description.dstArrayElement = 0;

@@ -3,7 +3,7 @@
 //
 
 #include <iostream>
-#include "vk-debug-callback-handler.hpp"
+#include <etna/vk/vk-debug-callback-handler.hpp>
 
 VkBool32 VK::vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                   VkDebugUtilsMessageTypeFlagsEXT message_type,

@@ -2,7 +2,7 @@
 // Created by Артем on 09.02.2022.
 //
 
-#include "vk-severity-code.hpp"
+#include <etna/vk/codes/vk-severity-code.hpp>
 
 
 const char* VK::SeverityCode::name(VkDebugUtilsMessageSeverityFlagBitsEXT code) {

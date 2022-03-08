@@ -2,7 +2,7 @@
 // Created by Артем on 23.02.2022.
 //
 
-#include "vk-image-memory-barrier.hpp"
+#include <etna/vk/barriers/vk-image-memory-barrier.hpp>
 
 VK::ImageMemoryBarrier::ImageMemoryBarrier(const VK::UnownedImage& image) {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;

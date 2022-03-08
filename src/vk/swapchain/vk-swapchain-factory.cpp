@@ -2,7 +2,7 @@
 // Created by Артем on 27.02.2022.
 //
 
-#include "vk-swapchain-factory.hpp"
+#include <etna/vk/swapchain/vk-swapchain-factory.hpp>
 
 VK::SwapchainFactory::SwapchainFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;

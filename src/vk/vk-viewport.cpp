@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-viewport.hpp"
+#include <etna/vk/vk-viewport.hpp>
 
 VK::Viewport::Viewport(float width, float height) {
     m_viewport.x = 0.0f;

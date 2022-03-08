@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-depth-stencil-state.hpp"
+#include <etna/vk/pipeline/vk-pipeline-depth-stencil-state.hpp>
 
 VK::PipelineDepthStencilState::PipelineDepthStencilState() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

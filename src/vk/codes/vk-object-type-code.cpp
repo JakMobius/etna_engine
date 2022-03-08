@@ -2,7 +2,7 @@
 // Created by Артем on 09.02.2022.
 //
 
-#include "vk-object-type-code.hpp"
+#include <etna/vk/codes/vk-object-type-code.hpp>
 
 const char* VK::ObjectTypeCode::name(VkObjectType object_type) {
     switch(object_type) {

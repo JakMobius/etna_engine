@@ -2,8 +2,8 @@
 // Created by Артем on 12.02.2022.
 //
 
-#include "vk-device.hpp"
-#include "../queue/vk-queue.hpp"
+#include <etna/vk/device/vk-device.hpp>
+#include <etna/vk/queue/vk-queue.hpp>
 
 VK::Device &VK::Device::operator=(VK::Device &&move_assign) noexcept {
     if(this == &move_assign) return *this;

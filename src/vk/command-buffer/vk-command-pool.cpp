@@ -2,8 +2,8 @@
 // Created by Артем on 13.02.2022.
 //
 
-#include "vk-command-pool.hpp"
-#include "vk-command-buffer.hpp"
+#include <etna/vk/command-buffer/vk-command-pool.hpp>
+#include <etna/vk/command-buffer/vk-command-buffer.hpp>
 
 VK::CommandBuffer VK::CommandPoolBase::create_command_buffer(VkCommandBufferLevel level) {
     VkCommandBufferAllocateInfo alloc_info {};

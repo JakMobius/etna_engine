@@ -2,7 +2,7 @@
 // Created by Артем on 22.02.2022.
 //
 
-#include "vk-attachment.hpp"
+#include <etna/vk/vk-attachment.hpp>
 
 VK::Attachment::Attachment(VkFormat format) {
     m_description.format = format;

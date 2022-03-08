@@ -2,7 +2,7 @@
 // Created by Артем on 27.02.2022.
 //
 
-#include "vk-swapchain.hpp"
+#include <etna/vk/swapchain/vk-swapchain.hpp>
 
 std::vector<VK::UnownedImage> VK::SwapchainBase::get_swapchain_images() {
     uint32_t image_count = 0;

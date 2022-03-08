@@ -2,7 +2,7 @@
 // Created by Артем on 25.02.2022.
 //
 
-#include "vk-image-factory.hpp"
+#include <etna/vk/image/vk-image-factory.hpp>
 
 VK::ImageFactory::ImageFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

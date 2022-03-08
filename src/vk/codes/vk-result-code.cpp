@@ -2,7 +2,7 @@
 // Created by Артем on 09.02.2022.
 //
 
-#include "vk-result-code.hpp"
+#include <etna/vk/codes/vk-result-code.hpp>
 
 const char* VK::ResultCode::name(VkResult result) {
     switch(result) {

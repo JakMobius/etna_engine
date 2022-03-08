@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-viewport-state.hpp"
+#include <etna/vk/pipeline/vk-pipeline-viewport-state.hpp>
 
 VkPipelineViewportStateCreateInfo VK::PipelineViewportState::compile() const {
     VkPipelineViewportStateCreateInfo viewport_state {};

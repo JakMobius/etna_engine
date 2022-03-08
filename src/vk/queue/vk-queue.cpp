@@ -2,9 +2,9 @@
 // Created by Артем on 28.02.2022.
 //
 
-#include "vk-queue.hpp"
-#include "vk-queue-present-info.hpp"
-#include "../vk-fence.hpp"
+#include <etna/vk/queue/vk-queue.hpp>
+#include <etna/vk/queue/vk-queue-present-info.hpp>
+#include <etna/vk/vk-fence.hpp>
 
 VkResult VK::QueueBase::wait_idle() {
     return vkQueueWaitIdle(m_handle);

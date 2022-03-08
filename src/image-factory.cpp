@@ -2,7 +2,7 @@
 // Created by Артем on 02.03.2022.
 //
 
-#include "image-factory.hpp"
+#include <etna/image-factory.hpp>
 
 Etna::ImageFactory& Etna::ImageFactory::set_image_type(Etna::ImageType image_type) {
     switch(image_type) {

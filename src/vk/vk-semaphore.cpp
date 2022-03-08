@@ -2,7 +2,7 @@
 // Created by Артем on 25.02.2022.
 //
 
-#include "vk-semaphore.hpp"
+#include <etna/vk/vk-semaphore.hpp>
 
 VK::Semaphore VK::Semaphore::create(VK::Device* device, VkSemaphoreCreateFlags flags) {
     VkSemaphoreCreateInfo semaphore_info {};

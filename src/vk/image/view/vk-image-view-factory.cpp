@@ -2,7 +2,7 @@
 // Created by Артем on 27.02.2022.
 //
 
-#include "vk-image-view-factory.hpp"
+#include <etna/vk/image/view/vk-image-view-factory.hpp>
 
 VK::ImageViewFactory::ImageViewFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;

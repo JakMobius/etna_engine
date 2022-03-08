@@ -2,7 +2,7 @@
 // Created by Артем on 27.02.2022.
 //
 
-#include "vk-descriptor-set-layout.hpp"
+#include <etna/vk/descriptors/sets/vk-descriptor-set-layout.hpp>
 
 void VK::DescriptorSetLayout::destroy() {
     if(!this->m_handle || !this->m_device) return;

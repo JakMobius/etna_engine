@@ -2,7 +2,7 @@
 // Created by Артем on 21.02.2022.
 //
 
-#include "vk-pipeline-factory.hpp"
+#include <etna/vk/pipeline/vk-pipeline-factory.hpp>
 
 VK::Pipeline VK::PipelineFactory::create(const VK::PipelineLayout &pipeline_layout, const VK::RenderPass &render_pass) {
     auto vk_vertex_input_info = m_input_vertex_state.compile();

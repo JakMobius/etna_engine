@@ -2,7 +2,7 @@
 // Created by Артем on 26.02.2022.
 //
 
-#include "vk-descriptor-pool-factory.hpp"
+#include <etna/vk/descriptors/pool/vk-descriptor-pool-factory.hpp>
 
 
 VK::DescriptorPool VK::DescriptorPoolFactory::create(VK::Device* device) {

@@ -2,7 +2,7 @@
 // Created by Артем on 23.02.2022.
 //
 
-#include "vk-sampler.hpp"
+#include <etna/vk/sampler/vk-sampler.hpp>
 
 void VK::Sampler::destroy() {
     if(!m_handle) return;

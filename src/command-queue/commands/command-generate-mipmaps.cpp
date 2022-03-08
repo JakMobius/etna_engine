@@ -2,4 +2,4 @@
 // Created by Артем on 02.03.2022.
 //
 
-#include "command-generate-mipmaps.hpp"
+#include "etna/command-queue/commands/command-generate-mipmaps.hpp"

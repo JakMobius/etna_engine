@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-shader-stage.hpp"
+#include <etna/vk/pipeline/vk-pipeline-shader-stage.hpp>
 
 void VK::PipelineShaderStage::add_shader(VK::ShaderModule &shader, VkShaderStageFlagBits stage) {
     m_shader_stages.emplace_back();

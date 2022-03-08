@@ -2,8 +2,8 @@
 // Created by Артем on 16.02.2022.
 //
 
-#include "vk-descriptor-set-array.hpp"
-#include "../vk-descriptor.hpp"
+#include <etna/vk/descriptors/sets/vk-descriptor-set-array.hpp>
+#include <etna/vk/descriptors/vk-descriptor.hpp>
 
 void VK::DescriptorSetArray::bind_descriptor(int descriptor_set_index, uint32_t binding, VK::Descriptor &descriptor) {
     auto& description = descriptor.get_description();

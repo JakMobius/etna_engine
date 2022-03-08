@@ -5,10 +5,10 @@
 #include <memory>
 #include <iostream>
 #include <set>
-#include "vk-physical-device.hpp"
-#include "../vk-surface.hpp"
-#include "../codes/vk-physical-device-type-code.hpp"
-#include "../codes/vk-version-code.hpp"
+#include <etna/vk/device/vk-physical-device.hpp>
+#include <etna/vk/vk-surface.hpp>
+#include <etna/vk/codes/vk-physical-device-type-code.hpp>
+#include <etna/vk/codes/vk-version-code.hpp>
 
 const VK::DeviceQueueFamilies* VK::PhysicalDevice::get_queue_family_indices() const {
     if(!m_queue_family_indices) {

@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-vertex-array-binding.hpp"
+#include <etna/vk/pipeline/vk-pipeline-vertex-array-binding.hpp>
 
 VK::PipelineVertexArrayBindingState::PipelineVertexArrayBindingState(VK::PipelineInputVertexState* input_vertex_state, uint32_t binding,
                                                                      uint32_t stride) :

@@ -2,7 +2,7 @@
 // Created by Артем on 25.02.2022.
 //
 
-#include "vk-buffer-factory.hpp"
+#include <etna/vk/buffer/vk-buffer-factory.hpp>
 
 VkBuffer VK::BufferFactory::create_raw_buffer(VK::Device* device) {
 

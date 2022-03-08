@@ -2,7 +2,7 @@
 // Created by Артем on 20.02.2022.
 //
 
-#include "vk-pipeline-color-blend-state.hpp"
+#include <etna/vk/pipeline/vk-pipeline-color-blend-state.hpp>
 
 VkPipelineColorBlendStateCreateInfo VK::PipelineColorBlendState::compile() {
     VkPipelineColorBlendStateCreateInfo result {};

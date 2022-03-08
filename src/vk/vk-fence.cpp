@@ -2,7 +2,7 @@
 // Created by Артем on 25.02.2022.
 //
 
-#include "vk-fence.hpp"
+#include <etna/vk/vk-fence.hpp>
 
 VK::Fence VK::Fence::create(VK::Device* device, VkFenceCreateFlags flags) {
     VkFenceCreateInfo fence_info {};

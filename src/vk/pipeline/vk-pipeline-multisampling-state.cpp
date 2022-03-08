@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-multisampling-state.hpp"
+#include <etna/vk/pipeline/vk-pipeline-multisampling-state.hpp>
 
 VK::PipelineMultisamplingState::PipelineMultisamplingState() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

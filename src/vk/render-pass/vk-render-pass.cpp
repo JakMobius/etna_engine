@@ -2,7 +2,7 @@
 // Created by Артем on 26.02.2022.
 //
 
-#include "vk-render-pass.hpp"
+#include <etna/vk/render-pass/vk-render-pass.hpp>
 
 void VK::RenderPass::destroy() {
     if(!m_handle) return;

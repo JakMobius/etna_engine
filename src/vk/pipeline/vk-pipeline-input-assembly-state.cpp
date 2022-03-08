@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-input-assembly-state.hpp"
+#include <etna/vk/pipeline/vk-pipeline-input-assembly-state.hpp>
 
 VK::PipelineInputAssemblyStates::PipelineInputAssemblyStates() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -2,7 +2,7 @@
 // Created by Артем on 19.02.2022.
 //
 
-#include "vk-pipeline-color-blend-attachment-state.hpp"
+#include <etna/vk/pipeline/vk-pipeline-color-blend-attachment-state.hpp>
 
 VK::PipelineColorAttachmentState::PipelineColorAttachmentState() {
     m_description.colorWriteMask =
