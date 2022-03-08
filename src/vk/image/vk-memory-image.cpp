@@ -1,6 +1,3 @@
-//
-// Created by Артем on 18.02.2022.
-//
 
 #include <etna/vk/image/vk-memory-image.hpp>
 

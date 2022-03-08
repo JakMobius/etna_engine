@@ -1,6 +1,3 @@
-//
-// Created by Артем on 09.02.2022.
-//
 
 #include <iostream>
 #include <etna/vk/vk-debug-callback-handler.hpp>

@@ -1,6 +1,3 @@
-//
-// Created by Артем on 16.02.2022.
-//
 
 #include <etna/vk/commands/vk-copy-buffer-to-image-command.hpp>
 #include <etna/vk/buffer/vk-buffer.hpp>

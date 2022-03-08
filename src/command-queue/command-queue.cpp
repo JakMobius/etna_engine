@@ -1,6 +1,3 @@
-//
-// Created by Артем on 02.03.2022.
-//
 
 #include "etna/command-queue/command-queue.hpp"
 #include "etna/command-queue/command-image.hpp"

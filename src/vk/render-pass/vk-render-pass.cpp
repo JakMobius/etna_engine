@@ -1,6 +1,3 @@
-//
-// Created by Артем on 26.02.2022.
-//
 
 #include <etna/vk/render-pass/vk-render-pass.hpp>
 

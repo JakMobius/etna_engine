@@ -1,6 +1,3 @@
-//
-// Created by Артем on 21.02.2022.
-//
 
 #include <etna/vk/pipeline/vk-pipeline-factory.hpp>
 

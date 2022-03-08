@@ -1,6 +1,3 @@
-//
-// Created by Артем on 20.02.2022.
-//
 
 #include <etna/vk/pipeline/vk-pipeline-color-blend-state.hpp>
 

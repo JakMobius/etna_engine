@@ -1,6 +1,3 @@
-//
-// Created by Артем on 27.02.2022.
-//
 
 #include <etna/vk/descriptors/sets/vk-descriptor-set-layout-factory.hpp>
 #include <etna/vk/descriptors/vk-descriptor-set-layout-binding.hpp>

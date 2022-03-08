@@ -1,6 +1,3 @@
-//
-// Created by Артем on 27.02.2022.
-//
 
 #include <etna/vk/swapchain/vk-swapchain.hpp>
 

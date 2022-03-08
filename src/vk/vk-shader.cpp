@@ -1,6 +1,3 @@
-//
-// Created by Артем on 17.02.2022.
-//
 
 #include <etna/vk/vk-shader.hpp>
 #include <fstream>

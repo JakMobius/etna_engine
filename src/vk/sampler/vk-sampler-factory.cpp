@@ -1,6 +1,3 @@
-//
-// Created by Артем on 23.02.2022.
-//
 
 #include <etna/vk/sampler/vk-sampler-factory.hpp>
 

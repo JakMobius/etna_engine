@@ -1,6 +1,3 @@
-//
-// Created by Артем on 09.02.2022.
-//
 
 #include <etna/vk/codes/vk-result-code.hpp>
 

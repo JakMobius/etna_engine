@@ -1,6 +1,3 @@
-//
-// Created by Артем on 09.02.2022.
-//
 
 #include <vulkan/vulkan_core.h>
 #include <etna/vk/codes/vk-physical-device-type-code.hpp>

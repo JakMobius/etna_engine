@@ -1,6 +1,3 @@
-//
-// Created by Артем on 22.02.2022.
-//
 
 #include <etna/vk/vk-attachment.hpp>
 

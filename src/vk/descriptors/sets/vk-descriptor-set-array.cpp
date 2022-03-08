@@ -1,6 +1,3 @@
-//
-// Created by Артем on 16.02.2022.
-//
 
 #include <etna/vk/descriptors/sets/vk-descriptor-set-array.hpp>
 #include <etna/vk/descriptors/vk-descriptor.hpp>
