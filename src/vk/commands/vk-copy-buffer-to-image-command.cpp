@@ -1,8 +1,8 @@
 
-#include <etna/vk/commands/vk-copy-buffer-to-image-command.hpp>
-#include <etna/vk/buffer/vk-buffer.hpp>
-#include <etna/vk/image/vk-image.hpp>
-#include <etna/vk/command-buffer/vk-command-buffer.hpp>
+#include <etna/vk-wrappers/commands/vk-copy-buffer-to-image-command.hpp>
+#include <etna/vk-wrappers/buffer/vk-buffer.hpp>
+#include <etna/vk-wrappers/image/vk-image.hpp>
+#include <etna/vk-wrappers/command-buffer/vk-command-buffer.hpp>
 
 VK::CopyBufferToImageCommand::CopyBufferToImageCommand(const VK::UnownedBuffer& buffer, const VK::UnownedImage& image) : m_buffer(buffer), m_image(image) {
 

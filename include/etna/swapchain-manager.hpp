@@ -2,12 +2,12 @@
 
 #include <set>
 #include <vulkan/vulkan_core.h>
-#include <etna/vk/vk-surface.hpp>
-#include <etna/vk/swapchain/vk-swapchain.hpp>
-#include <etna/vk/framebuffer/vk-framebuffer.hpp>
-#include <etna/vk/swapchain/vk-swapchain-factory.hpp>
-#include <etna/vk/image/view/vk-image-view-factory.hpp>
-#include <etna/vk/framebuffer/vk-framebuffer-factory.hpp>
+#include <etna/vk-wrappers/vk-surface.hpp>
+#include <etna/vk-wrappers/swapchain/vk-swapchain.hpp>
+#include <etna/vk-wrappers/framebuffer/vk-framebuffer.hpp>
+#include <etna/vk-wrappers/swapchain/vk-swapchain-factory.hpp>
+#include <etna/vk-wrappers/image/view/vk-image-view-factory.hpp>
+#include <etna/vk-wrappers/framebuffer/vk-framebuffer-factory.hpp>
 #include <etna/attachment-manager.hpp>
 
 namespace Etna {
@@ -116,6 +116,7 @@ public:
         m_attachment_manager = framebuffer_manager;
     }
 
+    std::set<uint32_t> get_family_indices() const { return m_family_indices; }
     VkExtent2D get_swapchain_extent() const { return m_swapchain_extent; }
     const VkFormat get_swapchain_image_format() const { return m_swapchain_image_format; }
     const VK::Swapchain& get_swapchain() const { return m_swapchain; }

@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-color-blend-attachment-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-color-blend-attachment-state.hpp>
 
 VK::PipelineColorAttachmentState::PipelineColorAttachmentState() {
     m_description.colorWriteMask =

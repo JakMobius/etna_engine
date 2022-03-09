@@ -1,2 +1,2 @@
 
-#include <etna/vk/resources/vk-resource.hpp>
+#include <etna/vk-wrappers/resources/vk-resource.hpp>

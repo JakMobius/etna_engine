@@ -1,7 +1,7 @@
 #pragma once
 
-#include <etna/vk/command-buffer/vk-command-pool.hpp>
-#include <etna/vk/queue/vk-queue.hpp>
+#include <etna/vk-wrappers/command-buffer/vk-command-pool.hpp>
+#include <etna/vk-wrappers/queue/vk-queue.hpp>
 #include "command-queue.hpp"
 
 namespace Etna {

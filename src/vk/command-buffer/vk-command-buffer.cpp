@@ -1,8 +1,8 @@
 
-#include <etna/vk/command-buffer/vk-command-buffer.hpp>
-#include <etna/vk/command-buffer/vk-command-pool.hpp>
-#include <etna/vk/queue/vk-queue.hpp>
-#include <etna/vk/render-pass/vk-render-pass-begin-info.hpp>
+#include <etna/vk-wrappers/command-buffer/vk-command-buffer.hpp>
+#include <etna/vk-wrappers/command-buffer/vk-command-pool.hpp>
+#include <etna/vk-wrappers/queue/vk-queue.hpp>
+#include <etna/vk-wrappers/render-pass/vk-render-pass-begin-info.hpp>
 
 void VK::CommandBufferBase::reset(VkCommandBufferResetFlags flags) {
     vkResetCommandBuffer(m_handle, flags);
@@ -24,7 +24,7 @@ void VK::CommandBufferBase::end() {
     }
 }
 
-void VK::CommandBufferBase::submit_and_wait(VK::Queue& queue, const VK::Fence& fence,
+void VK::CommandBufferBase::submit_and_wait(const VK::Queue& queue, const VK::UnownedFence& fence,
                                             std::span<VkSemaphore> signal_semaphores,
                                             std::span<VkSemaphore> wait_semaphores,
                                             std::span<VkPipelineStageFlags> wait_stages) {
@@ -33,7 +33,7 @@ void VK::CommandBufferBase::submit_and_wait(VK::Queue& queue, const VK::Fence& f
 }
 
 
-void VK::CommandBufferBase::submit(VK::Queue& queue, const VK::Fence& fence,
+void VK::CommandBufferBase::submit(const VK::Queue& queue, const VK::UnownedFence& fence,
                                    std::span<VkSemaphore> signal_semaphores,
                                    std::span<VkSemaphore> wait_semaphores,
                                    std::span<VkPipelineStageFlags> wait_stages) {

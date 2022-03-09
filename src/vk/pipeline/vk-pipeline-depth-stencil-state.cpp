@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-depth-stencil-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-depth-stencil-state.hpp>
 
 VK::PipelineDepthStencilState::PipelineDepthStencilState() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;

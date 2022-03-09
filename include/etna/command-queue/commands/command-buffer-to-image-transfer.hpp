@@ -1,8 +1,8 @@
 #pragma once
 
-#include <etna/vk/commands/vk-copy-buffer-to-image-command.hpp>
+#include <etna/vk-wrappers/commands/vk-copy-buffer-to-image-command.hpp>
 #include <etna/image.hpp>
-#include <etna/vk/buffer/vk-buffer.hpp>
+#include <etna/vk-wrappers/buffer/vk-buffer.hpp>
 #include "../command-image.hpp"
 
 namespace Etna {

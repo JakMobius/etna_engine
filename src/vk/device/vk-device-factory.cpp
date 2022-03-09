@@ -1,5 +1,5 @@
 
-#include <etna/vk/device/vk-device-factory.hpp>
+#include <etna/vk-wrappers/device/vk-device-factory.hpp>
 
 VK::DeviceFactory::DeviceFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

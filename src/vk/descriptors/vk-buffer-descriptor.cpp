@@ -1,5 +1,5 @@
 
-#include <etna/vk/descriptors/vk-buffer-descriptor.hpp>
+#include <etna/vk-wrappers/descriptors/vk-buffer-descriptor.hpp>
 
 VK::BufferDescriptor::BufferDescriptor(const VK::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size) : Descriptor() {
     m_description.dstArrayElement = 0;

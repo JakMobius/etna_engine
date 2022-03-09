@@ -1,14 +1,9 @@
 
-#include <etna/vk/image/view/vk-image-view-factory.hpp>
+#include <etna/vk-wrappers/image/view/vk-image-view-factory.hpp>
 
 VK::ImageViewFactory::ImageViewFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
     m_description.format = VK_FORMAT_UNDEFINED;
-    m_description.subresourceRange.levelCount = 1;
-    m_description.subresourceRange.layerCount = 1;
-    m_description.subresourceRange.aspectMask = VK_IMAGE_ASPECT_FLAG_BITS_MAX_ENUM;
-    m_description.subresourceRange.baseArrayLayer = 0;
-    m_description.subresourceRange.baseMipLevel = 0;
     m_description.viewType = VK_IMAGE_VIEW_TYPE_2D;
     m_description.format = VK_FORMAT_MAX_ENUM;
     m_description.components = {
@@ -17,6 +12,8 @@ VK::ImageViewFactory::ImageViewFactory() {
             VK_COMPONENT_SWIZZLE_B,
             VK_COMPONENT_SWIZZLE_A
     };
+
+    set_subresource_range({});
 }
 
 VK::ImageView VK::ImageViewFactory::create(VK::Device* device, const VK::ImageBase &image) const {

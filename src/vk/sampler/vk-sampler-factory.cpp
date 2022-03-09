@@ -1,5 +1,5 @@
 
-#include <etna/vk/sampler/vk-sampler-factory.hpp>
+#include <etna/vk-wrappers/sampler/vk-sampler-factory.hpp>
 
 VK::SamplerFactory::SamplerFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;

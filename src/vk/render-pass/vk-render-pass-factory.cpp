@@ -1,5 +1,5 @@
 
-#include <etna/vk/render-pass/vk-render-pass-factory.hpp>
+#include <etna/vk-wrappers/render-pass/vk-render-pass-factory.hpp>
 
 VK::RenderPass VK::RenderPassFactory::create(VK::Device* device) {
     m_description.attachmentCount = m_attachment_descriptions.size();

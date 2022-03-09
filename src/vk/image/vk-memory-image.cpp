@@ -1,5 +1,5 @@
 
-#include <etna/vk/image/vk-memory-image.hpp>
+#include <etna/vk-wrappers/image/vk-memory-image.hpp>
 
 VK::MemoryImage &VK::MemoryImage::operator=(VK::MemoryImage &&move_assign) noexcept {
     m_memory = std::move(move_assign.m_memory);

@@ -1,8 +1,8 @@
 #pragma once
 
 #include <etna/image.hpp>
-#include <etna/vk/commands/vk-image-blit-command.hpp>
-#include <etna/vk/barriers/vk-image-memory-barrier.hpp>
+#include <etna/vk-wrappers/commands/vk-image-blit-command.hpp>
+#include <etna/vk-wrappers/barriers/vk-image-memory-barrier.hpp>
 #include "../command-queue.hpp"
 #include "../command-image.hpp"
 

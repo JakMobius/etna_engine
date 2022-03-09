@@ -1,5 +1,5 @@
 
-#include <etna/vk/buffer/vk-buffer-factory.hpp>
+#include <etna/vk-wrappers/buffer/vk-buffer-factory.hpp>
 
 VkBuffer VK::BufferFactory::create_raw_buffer(VK::Device* device) {
 

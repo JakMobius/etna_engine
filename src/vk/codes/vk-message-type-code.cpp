@@ -1,5 +1,5 @@
 
-#include <etna/vk/codes/vk-message-type-code.hpp>
+#include <etna/vk-wrappers/codes/vk-message-type-code.hpp>
 
 const char* VK::MessageTypeCode::name(VkDebugUtilsMessageTypeFlagsEXT code) {
     switch(code) {

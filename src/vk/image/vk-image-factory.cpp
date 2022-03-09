@@ -1,5 +1,5 @@
 
-#include <etna/vk/image/vk-image-factory.hpp>
+#include <etna/vk-wrappers/image/vk-image-factory.hpp>
 
 VK::ImageFactory::ImageFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;

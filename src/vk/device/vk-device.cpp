@@ -1,6 +1,6 @@
 
-#include <etna/vk/device/vk-device.hpp>
-#include <etna/vk/queue/vk-queue.hpp>
+#include <etna/vk-wrappers/device/vk-device.hpp>
+#include <etna/vk-wrappers/queue/vk-queue.hpp>
 
 VK::Device &VK::Device::operator=(VK::Device &&move_assign) noexcept {
     if(this == &move_assign) return *this;

@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-memory.hpp>
+#include <etna/vk-wrappers/vk-memory.hpp>
 
 void VK::Memory::flush() {
     flush(0, m_size);

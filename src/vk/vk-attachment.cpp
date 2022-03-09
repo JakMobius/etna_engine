@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-attachment.hpp>
+#include <etna/vk-wrappers/vk-attachment.hpp>
 
 VK::Attachment::Attachment(VkFormat format) {
     m_description.format = format;

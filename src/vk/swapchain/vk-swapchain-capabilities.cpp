@@ -1,2 +1,2 @@
 
-#include <etna/vk/swapchain/vk-swapchain-capabilities.hpp>
+#include <etna/vk-wrappers/swapchain/vk-swapchain-capabilities.hpp>

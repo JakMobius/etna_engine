@@ -1,6 +1,6 @@
 
-#include <etna/vk/descriptors/sets/vk-descriptor-set-layout-factory.hpp>
-#include <etna/vk/descriptors/vk-descriptor-set-layout-binding.hpp>
+#include <etna/vk-wrappers/descriptors/sets/vk-descriptor-set-layout-factory.hpp>
+#include <etna/vk-wrappers/descriptors/vk-descriptor-set-layout-binding.hpp>
 
 VK::DescriptorSetLayoutFactory::DescriptorSetLayoutFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;

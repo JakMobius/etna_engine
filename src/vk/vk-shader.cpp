@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-shader.hpp>
+#include <etna/vk-wrappers/vk-shader.hpp>
 #include <fstream>
 #include <sstream>
 

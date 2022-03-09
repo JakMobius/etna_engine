@@ -5,7 +5,7 @@ include(GNUInstallDirs)
 find_package(Vulkan REQUIRED)
 
 set(CMAKE_CXX_STANDARD 20)
-set(CMAKE_CXX_FLAGS "-O0 -fsanitize=address")
+set(CMAKE_CXX_FLAGS "-O0 -g3 -fsanitize=address")
 
 file(GLOB_RECURSE sources "${CMAKE_SOURCE_DIR}/src/*.cpp" "${CMAKE_SOURCE_DIR}/src/*.hpp")
 add_library(Etna ${sources})
@@ -13,9 +13,6 @@ include_directories(${Vulkan_INCLUDE_DIR})
 include_directories(${CMAKE_SOURCE_DIR})
 
 set_target_properties(Etna PROPERTIES VERSION ${PROJECT_VERSION})
-
-#file(GLOB_RECURSE public_headers "${CMAKE_SOURCE_DIR}/include/*.hpp")
-#set_target_properties(Etna PROPERTIES PUBLIC_HEADER "${public_headers}")
 target_include_directories(Etna PRIVATE "include")
 
 configure_file(etna.pc.in etna.pc @ONLY)

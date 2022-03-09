@@ -1,5 +1,5 @@
 
-#include <etna/vk/descriptors/vk-descriptor-set-layout-binding.hpp>
+#include <etna/vk-wrappers/descriptors/vk-descriptor-set-layout-binding.hpp>
 
 VK::DescriptorSetLayoutBinding::DescriptorSetLayoutBinding(VkDescriptorType type) {
     set_descriptor_type(type);

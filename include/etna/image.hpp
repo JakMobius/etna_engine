@@ -1,9 +1,9 @@
 #pragma once
 
-#include <etna/vk/image/vk-image.hpp>
-#include <etna/vk/image/vk-image-subresource-range.hpp>
-#include <etna/vk/image/vk-memory-image.hpp>
-#include <etna/vk/image/view/vk-image-view.hpp>
+#include <etna/vk-wrappers/image/vk-image.hpp>
+#include <etna/vk-wrappers/image/vk-image-subresource-range.hpp>
+#include <etna/vk-wrappers/image/vk-memory-image.hpp>
+#include <etna/vk-wrappers/image/view/vk-image-view.hpp>
 
 namespace Etna {
 

@@ -1,2 +1,2 @@
 
-#include <etna/vk/commands/vk-command.hpp>
+#include <etna/vk-wrappers/commands/vk-command.hpp>

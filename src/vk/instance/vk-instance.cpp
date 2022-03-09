@@ -1,6 +1,6 @@
 
-#include <etna/vk/instance/vk-instance.hpp>
-#include <etna/vk/device/vk-physical-device.hpp>
+#include <etna/vk-wrappers/instance/vk-instance.hpp>
+#include <etna/vk-wrappers/device/vk-physical-device.hpp>
 
 std::vector<VkLayerProperties> VK::InstanceBase::get_supported_validation_layers() {
     uint32_t layer_count = 0;

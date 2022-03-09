@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-color-blend-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-color-blend-state.hpp>
 
 VkPipelineColorBlendStateCreateInfo VK::PipelineColorBlendState::compile() {
     VkPipelineColorBlendStateCreateInfo result {};

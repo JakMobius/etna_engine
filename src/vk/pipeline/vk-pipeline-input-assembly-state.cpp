@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-input-assembly-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-input-assembly-state.hpp>
 
 VK::PipelineInputAssemblyStates::PipelineInputAssemblyStates() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

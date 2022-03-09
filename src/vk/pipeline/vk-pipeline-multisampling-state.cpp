@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-multisampling-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-multisampling-state.hpp>
 
 VK::PipelineMultisamplingState::PipelineMultisamplingState() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;

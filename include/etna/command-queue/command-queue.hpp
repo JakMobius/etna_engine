@@ -2,8 +2,8 @@
 
 #include <unordered_map>
 #include <etna/image.hpp>
-#include <etna/vk/queue/vk-queue.hpp>
-#include <etna/vk/command-buffer/vk-command-buffer.hpp>
+#include <etna/vk-wrappers/queue/vk-queue.hpp>
+#include <etna/vk-wrappers/command-buffer/vk-command-buffer.hpp>
 
 namespace Etna {
 

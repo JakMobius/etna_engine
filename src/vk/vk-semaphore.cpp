@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-semaphore.hpp>
+#include <etna/vk-wrappers/vk-semaphore.hpp>
 
 VK::Semaphore VK::Semaphore::create(VK::Device* device, VkSemaphoreCreateFlags flags) {
     VkSemaphoreCreateInfo semaphore_info {};

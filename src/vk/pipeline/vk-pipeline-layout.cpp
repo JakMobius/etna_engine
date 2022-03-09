@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-layout.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-layout.hpp>
 
 VK::PipelineLayout
 VK::PipelineLayout::create(VK::Device* device, std::span<VkDescriptorSetLayout> descriptor_set_layouts,

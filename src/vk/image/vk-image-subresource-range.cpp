@@ -1,2 +1,2 @@
 
-#include <etna/vk/image/vk-image-subresource-range.hpp>
+#include <etna/vk-wrappers/image/vk-image-subresource-range.hpp>

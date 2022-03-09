@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-vertex-array-binding.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-vertex-array-binding.hpp>
 
 VK::PipelineVertexArrayBindingState::PipelineVertexArrayBindingState(VK::PipelineInputVertexState* input_vertex_state, uint32_t binding,
                                                                      uint32_t stride) :

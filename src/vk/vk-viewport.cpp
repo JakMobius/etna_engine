@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-viewport.hpp>
+#include <etna/vk-wrappers/vk-viewport.hpp>
 
 VK::Viewport::Viewport(float width, float height) {
     m_viewport.x = 0.0f;

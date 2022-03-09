@@ -1,5 +1,5 @@
 
-#include <etna/vk/codes/vk-severity-code.hpp>
+#include <etna/vk-wrappers/codes/vk-severity-code.hpp>
 
 
 const char* VK::SeverityCode::name(VkDebugUtilsMessageSeverityFlagBitsEXT code) {

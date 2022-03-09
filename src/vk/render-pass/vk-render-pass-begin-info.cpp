@@ -1,2 +1,2 @@
 
-#include <etna/vk/render-pass/vk-render-pass-begin-info.hpp>
+#include <etna/vk-wrappers/render-pass/vk-render-pass-begin-info.hpp>

@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-dynamic-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-dynamic-state.hpp>
 
 VkPipelineDynamicStateCreateInfo VK::PipelineDynamicState::compile() const {
     VkPipelineDynamicStateCreateInfo result = {};

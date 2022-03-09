@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-rasterization-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-rasterization-state.hpp>
 
 VK::PipelineRasterizationState::PipelineRasterizationState() {
     m_description.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;

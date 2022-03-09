@@ -1,5 +1,5 @@
 
-#include <etna/vk/image/view/vk-image-view.hpp>
+#include <etna/vk-wrappers/image/view/vk-image-view.hpp>
 
 void VK::ImageView::destroy() {
     if(!this->m_handle || !this->m_device) return;

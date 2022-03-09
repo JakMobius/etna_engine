@@ -2,7 +2,7 @@
 
 #include <etna/image.hpp>
 #include "../command-image.hpp"
-#include <etna/vk/barriers/vk-image-memory-barrier.hpp>
+#include <etna/vk-wrappers/barriers/vk-image-memory-barrier.hpp>
 
 namespace Etna {
 

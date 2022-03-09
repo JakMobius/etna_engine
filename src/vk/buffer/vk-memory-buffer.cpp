@@ -1,5 +1,5 @@
 
-#include <etna/vk/buffer/vk-memory-buffer.hpp>
+#include <etna/vk-wrappers/buffer/vk-memory-buffer.hpp>
 
 void VK::MemoryBuffer::create(uint32_t memory_type) {
     auto device = m_memory.get_device();

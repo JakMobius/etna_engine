@@ -1,5 +1,5 @@
 
-#include <etna/vk/instance/vk-instance-factory.hpp>
+#include <etna/vk-wrappers/instance/vk-instance-factory.hpp>
 
 VK::InstanceFactory::InstanceFactory() {
     m_description.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;

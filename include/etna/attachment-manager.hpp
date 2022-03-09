@@ -1,6 +1,6 @@
 #pragma once
 
-#include <etna/vk/framebuffer.hpp>
+#include <etna/vk-wrappers/framebuffer.hpp>
 
 namespace Etna {
 

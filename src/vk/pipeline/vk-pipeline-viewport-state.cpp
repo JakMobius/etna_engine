@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-viewport-state.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-viewport-state.hpp>
 
 VkPipelineViewportStateCreateInfo VK::PipelineViewportState::compile() const {
     VkPipelineViewportStateCreateInfo viewport_state {};

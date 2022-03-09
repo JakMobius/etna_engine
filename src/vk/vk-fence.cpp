@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-fence.hpp>
+#include <etna/vk-wrappers/vk-fence.hpp>
 
 VK::Fence VK::Fence::create(VK::Device* device, VkFenceCreateFlags flags) {
     VkFenceCreateInfo fence_info {};

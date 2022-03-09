@@ -1,5 +1,5 @@
 
-#include <etna/vk/codes/vk-result-code.hpp>
+#include <etna/vk-wrappers/codes/vk-result-code.hpp>
 
 const char* VK::ResultCode::name(VkResult result) {
     switch(result) {

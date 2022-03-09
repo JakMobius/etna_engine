@@ -1,6 +1,6 @@
 
 #include <iostream>
-#include <etna/vk/vk-debug-callback-handler.hpp>
+#include <etna/vk-wrappers/vk-debug-callback-handler.hpp>
 
 VkBool32 VK::vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
                   VkDebugUtilsMessageTypeFlagsEXT message_type,
@@ -12,17 +12,16 @@ VkBool32 VK::vk_debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_se
 
 }
 
-VkResult VK::DebugCallbackHandler::destroy_messenger() {
-    if(!m_handle) return VK_INCOMPLETE;
+void VK::DebugCallbackHandler::destroy() {
+    if(!m_handle) return;
 
     auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(m_instance, VK_DESTROY_DEBUG_UTILS_MESSENGER_EXT_NAME);
 
     if(func != nullptr) {
         func(m_instance, m_handle, nullptr);
         m_handle = nullptr;
-        return VK_SUCCESS;
     } else {
-        return VK_ERROR_EXTENSION_NOT_PRESENT;
+        throw std::runtime_error("could not destroy debug callback handler");
     }
 }
 
@@ -72,14 +71,6 @@ bool VK::DebugCallbackHandler::listen(VkInstance instance) {
         return false;
     }
     return true;
-}
-
-void VK::DebugCallbackHandler::stop_listening() {
-    auto result = destroy_messenger();
-
-    if(result != VK_SUCCESS) {
-        std::cout << "Error deinitializing debug messenger: " << VK::ResultCode(result) << "\n";
-    }
 }
 
 void VK::DebugCallbackHandler::dump_object(const VkDebugUtilsObjectNameInfoEXT* object) {

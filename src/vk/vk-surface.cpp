@@ -1,5 +1,5 @@
 
-#include <etna/vk/vk-surface.hpp>
+#include <etna/vk-wrappers/vk-surface.hpp>
 
 void VK::Surface::destroy() {
     if(!this->m_handle) return;

@@ -1,6 +1,6 @@
 
 #include <vulkan/vulkan_core.h>
-#include <etna/vk/codes/vk-physical-device-type-code.hpp>
+#include <etna/vk-wrappers/codes/vk-physical-device-type-code.hpp>
 
 const char* VK::PhysicalDeviceTypeCode::name(VkPhysicalDeviceType code) {
     switch(code) {

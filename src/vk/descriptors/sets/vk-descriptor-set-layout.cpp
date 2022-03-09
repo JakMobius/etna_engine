@@ -1,5 +1,5 @@
 
-#include <etna/vk/descriptors/sets/vk-descriptor-set-layout.hpp>
+#include <etna/vk-wrappers/descriptors/sets/vk-descriptor-set-layout.hpp>
 
 void VK::DescriptorSetLayout::destroy() {
     if(!this->m_handle || !this->m_device) return;

@@ -1,5 +1,5 @@
 
-#include <etna/vk/sampler/vk-sampler.hpp>
+#include <etna/vk-wrappers/sampler/vk-sampler.hpp>
 
 void VK::Sampler::destroy() {
     if(!m_handle) return;

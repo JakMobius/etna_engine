@@ -1,5 +1,5 @@
 
-#include <etna/vk/pipeline/vk-pipeline-shader-stage.hpp>
+#include <etna/vk-wrappers/pipeline/vk-pipeline-shader-stage.hpp>
 
 void VK::PipelineShaderStage::add_shader(VK::ShaderModule &shader, VkShaderStageFlagBits stage) {
     m_shader_stages.emplace_back();
