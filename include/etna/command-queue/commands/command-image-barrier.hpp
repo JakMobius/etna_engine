@@ -1,5 +1,6 @@
 #pragma once
 
+#include <climits>
 #include <etna/image.hpp>
 #include "../command-image.hpp"
 #include <etna/vk-wrappers/barriers/vk-image-memory-barrier.hpp>

@@ -7,6 +7,7 @@ class Memory;
 #include <etna/volk.hpp>
 #include <stdexcept>
 #include <etna/vk-wrappers/device/vk-device.hpp>
+#include <cstring>
 
 namespace VK {
 
