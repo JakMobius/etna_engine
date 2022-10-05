@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <stdexcept>
 #include <etna/vk-wrappers/device/vk-device.hpp>
 #include "vk-sampler.hpp"

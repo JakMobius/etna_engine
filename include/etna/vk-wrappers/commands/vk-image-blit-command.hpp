@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include "vk-command.hpp"
 #include <etna/vk-wrappers/image/vk-image.hpp>
 #include <etna/vk-wrappers/image/vk-image-subresource-layers.hpp>

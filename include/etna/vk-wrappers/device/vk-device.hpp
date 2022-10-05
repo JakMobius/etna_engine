@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/resources/vk-resource.hpp>
 #include "vk-physical-device.hpp"
 

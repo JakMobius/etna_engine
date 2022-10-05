@@ -7,7 +7,7 @@ struct DeviceQueueFamilies;
 }
 
 #include <cstdint>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <vector>
 #include <etna/vk-wrappers/device/vk-physical-device.hpp>
 #include <etna/vk-wrappers/vk-surface.hpp>

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <set>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/vk-surface.hpp>
 #include <etna/vk-wrappers/swapchain/vk-swapchain.hpp>
 #include <etna/vk-wrappers/framebuffer/vk-framebuffer.hpp>

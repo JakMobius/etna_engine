@@ -5,10 +5,10 @@
 
 namespace VK {
 
-class BufferDescriptor : public Descriptor {
+class StorageBufferDescriptor : public Descriptor {
     VkDescriptorBufferInfo m_buffer_info {};
 public:
-    BufferDescriptor(const Buffer& buffer, VkDeviceSize offset, VkDeviceSize size);
+    StorageBufferDescriptor(const Buffer& buffer, VkDeviceSize offset, VkDeviceSize size);
 };
 
 }

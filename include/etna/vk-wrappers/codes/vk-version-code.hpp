@@ -2,7 +2,7 @@
 
 #include <cstdint>
 #include <ostream>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 
 namespace VK {
 class VersionCode {

@@ -2,7 +2,8 @@
 #include <etna/vk-wrappers/pipeline/vk-pipeline-layout.hpp>
 
 VK::PipelineLayout
-VK::PipelineLayout::create(VK::Device* device, std::span<VkDescriptorSetLayout> descriptor_set_layouts,
+VK::PipelineLayout::create(VK::Device* device,
+                           std::span<VkDescriptorSetLayout> descriptor_set_layouts,
                            std::span<VkPushConstantRange> push_constant_ranges) {
     VkPipelineLayoutCreateInfo pipeline_layout_info {};
     pipeline_layout_info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include <span>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include "vk-render-pass.hpp"
 #include <etna/vk-wrappers/framebuffer.hpp>
 
@@ -21,7 +21,7 @@ public:
         return *this;
     }
 
-    RenderPassBeginInfo& set_framebuffer(const Framebuffer& framebuffer) {
+    RenderPassBeginInfo& set_framebuffer(const VK::UnownedFramebuffer& framebuffer) {
         m_description.framebuffer = framebuffer.get_handle();
         return *this;
     }

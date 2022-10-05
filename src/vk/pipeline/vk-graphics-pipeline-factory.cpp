@@ -1,5 +1,5 @@
 
-#include <etna/vk-wrappers/pipeline/vk-pipeline-factory.hpp>
+#include <etna/vk-wrappers/pipeline/vk-graphics-pipeline-factory.hpp>
 
 VK::Pipeline VK::PipelineFactory::create(const VK::PipelineLayout &pipeline_layout, const VK::RenderPass &render_pass) {
     auto vk_vertex_input_info = m_input_vertex_state.compile();

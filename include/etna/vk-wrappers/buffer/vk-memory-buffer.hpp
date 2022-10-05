@@ -28,7 +28,9 @@ public:
     void destroy();
 
     Memory& get_memory() { return m_memory; }
+    const Memory& get_memory() const { return m_memory; }
     Buffer& get_buffer() { return m_buffer; }
+    const Buffer& get_buffer() const { return m_buffer; }
 };
 
 }

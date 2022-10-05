@@ -4,7 +4,7 @@ namespace VK {
 class PipelineVertexArrayBindingState;
 }
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <vector>
 #include <etna/vk-wrappers/vk-shader.hpp>
 #include "vk-pipeline-input-vertex-state.hpp"

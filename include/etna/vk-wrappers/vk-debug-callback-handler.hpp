@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vulkan/vk_platform.h>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/codes/vk-result-code.hpp>
 #include <etna/vk-wrappers/codes/vk-object-type-code.hpp>
 #include <etna/vk-wrappers/codes/vk-severity-code.hpp>

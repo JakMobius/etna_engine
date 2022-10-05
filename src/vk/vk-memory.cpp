@@ -66,9 +66,19 @@ void VK::Memory::free() {
     m_handle = nullptr;
 }
 
-void VK::Memory::set_data(void* data, size_t size, size_t offset) {
+void VK::Memory::set_data(const void* data, size_t size, size_t offset) {
     void* mapped_ptr = map();
-    memcpy(mapped_ptr, data, size);
+    memcpy((char*)mapped_ptr + offset, data, size);
     flush(offset, size);
     unmap();
+}
+
+void VK::Memory::get_data(void* data, size_t size, size_t offset) {
+    void* mapped_ptr = map();
+    memcpy(data, (char*)mapped_ptr + offset, size);
+    unmap();
+}
+
+VK::Memory::Memory(VK::Memory &&move) noexcept: m_handle(move.m_handle), m_size(move.m_size), m_device(move.m_device), m_memory_type(move.m_memory_type) {
+    move.m_handle = nullptr;
 }

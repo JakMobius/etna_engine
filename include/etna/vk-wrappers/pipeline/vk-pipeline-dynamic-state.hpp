@@ -1,7 +1,7 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 
 namespace VK {
 

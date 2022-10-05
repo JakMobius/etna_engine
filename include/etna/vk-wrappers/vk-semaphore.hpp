@@ -1,7 +1,7 @@
 #pragma once
 
 #include <iostream>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/resources/vk-device-resource.hpp>
 
 namespace VK {

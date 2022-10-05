@@ -1,5 +1,5 @@
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/codes/vk-physical-device-type-code.hpp>
 
 const char* VK::PhysicalDeviceTypeCode::name(VkPhysicalDeviceType code) {

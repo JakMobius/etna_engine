@@ -4,7 +4,7 @@ namespace VK {
 class DescriptorSetLayoutBinding;
 }
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <vector>
 #include "vk-descriptor-set-layout.hpp"
 

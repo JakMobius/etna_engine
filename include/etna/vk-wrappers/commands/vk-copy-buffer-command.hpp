@@ -4,7 +4,7 @@ namespace VK {
 class Buffer;
 }
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include "vk-command.hpp"
 
 namespace VK {

@@ -1,22 +1,18 @@
 #pragma once
 
 #include <vector>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/vk-shader.hpp>
 
 namespace VK {
 
 class PipelineShaderStage {
-    std::vector <VkPipelineShaderStageCreateInfo> m_shader_stages {};
+    VkPipelineShaderStageCreateInfo m_shader_stage {};
 public:
+    PipelineShaderStage() = default;
+    void set_shader(const ShaderModule &shader, VkShaderStageFlagBits stage, const char* entry_point = "main");
 
-    PipelineShaderStage() {}
-
-    void add_shader(ShaderModule &shader, VkShaderStageFlagBits stage);
-
-    const std::vector <VkPipelineShaderStageCreateInfo> &get_shader_stages() {
-        return m_shader_stages;
-    }
+    const VkPipelineShaderStageCreateInfo& get_stage() { return m_shader_stage; }
 };
 
 }

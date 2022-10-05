@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vk-pipeline-shader-stage.hpp"
+#include "vk-pipeline-shader-stages.hpp"
 #include "vk-pipeline-viewport-state.hpp"
 #include "vk-pipeline-input-assembly-state.hpp"
 #include "vk-pipeline-rasterization-state.hpp"
@@ -17,7 +17,7 @@ namespace VK {
 
 class PipelineFactory {
 public:
-    PipelineShaderStage m_shader_stages {};
+    PipelineShaderStages m_shader_stages {};
     PipelineInputVertexState m_input_vertex_state {};
     PipelineViewportState m_viewport_state {};
     PipelineInputAssemblyStates m_input_assembly {};

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <span>
 #include "vk-memory-buffer.hpp"
 #include "vk-buffer-factory.hpp"
 
@@ -14,7 +15,7 @@ public:
     }
 
     template<typename T>
-    MemoryBuffer create_staging_buffer(Device* device, std::vector<T> data) {
+    MemoryBuffer create_staging_buffer(Device* device, T data) {
         VkDeviceSize buffer_size = sizeof(data[0]) * data.size();
         return create_staging_buffer(device, data.data(), buffer_size);
     }

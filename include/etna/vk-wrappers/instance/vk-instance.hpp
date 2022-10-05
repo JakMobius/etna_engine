@@ -5,7 +5,7 @@ class PhysicalDevice;
 }
 
 #include <vector>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/resources/vk-resource.hpp>
 
 namespace VK {

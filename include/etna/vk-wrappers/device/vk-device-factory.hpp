@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <vector>
 #include <span>
 #include "vk-device.hpp"

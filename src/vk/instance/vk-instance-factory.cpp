@@ -26,5 +26,7 @@ VK::Instance VK::InstanceFactory::create() {
         throw std::runtime_error("failed to create instance!");
     }
 
+    volkLoadInstance(instance);
+
     return Instance { instance };
 }

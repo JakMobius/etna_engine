@@ -1,7 +1,7 @@
 #pragma once
 
 #include <span>
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/device/vk-device.hpp>
 #include <etna/vk-wrappers/resources/vk-device-resource.hpp>
 

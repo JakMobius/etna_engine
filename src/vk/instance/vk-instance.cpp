@@ -30,7 +30,7 @@ std::vector<VkExtensionProperties> VK::InstanceBase::get_extensions() {
 }
 
 void VK::Instance::destroy() {
-    if(!m_handle) return
+    if(!m_handle) return;
     vkDestroyInstance(m_handle, nullptr);
     m_handle = nullptr;
 }

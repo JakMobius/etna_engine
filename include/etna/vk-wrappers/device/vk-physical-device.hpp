@@ -4,7 +4,8 @@ namespace VK {
 class PhysicalDevice;
 }
 
-#include <vulkan/vulkan_core.h>
+#include <memory>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/queue/vk-queue-family-indices.hpp>
 #include <etna/vk-wrappers/vk-surface.hpp>
 #include <etna/vk-wrappers/swapchain/vk-swapchain-capabilities.hpp>

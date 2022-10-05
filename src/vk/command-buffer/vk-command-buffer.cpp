@@ -90,6 +90,10 @@ void VK::CommandBufferBase::draw_indexed(uint32_t index_count, uint32_t instance
     vkCmdDrawIndexed(m_handle, index_count, instance_count, first_index, vertex_offset, first_instance);
 }
 
+void VK::CommandBufferBase::draw(uint32_t vertex_count, uint32_t instance_count, uint32_t first_vertex, uint32_t first_instance) {
+    vkCmdDraw(m_handle, vertex_count, instance_count, first_vertex, first_instance);
+}
+
 void VK::CommandBufferBase::bind_pipeline(VkPipelineBindPoint bind_point, const VK::Pipeline &pipeline) {
     vkCmdBindPipeline(m_handle, bind_point, pipeline.get_handle());
 }

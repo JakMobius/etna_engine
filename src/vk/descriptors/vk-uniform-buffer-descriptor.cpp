@@ -1,7 +1,7 @@
 
-#include <etna/vk-wrappers/descriptors/vk-buffer-descriptor.hpp>
+#include <etna/vk-wrappers/descriptors/vk-uniform-buffer-descriptor.hpp>
 
-VK::BufferDescriptor::BufferDescriptor(const VK::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size) : Descriptor() {
+VK::UniformBufferDescriptor::UniformBufferDescriptor(const VK::Buffer &buffer, VkDeviceSize offset, VkDeviceSize size) : Descriptor() {
     m_description.dstArrayElement = 0;
     m_description.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
     m_description.descriptorCount = 1;

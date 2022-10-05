@@ -1,6 +1,6 @@
 #pragma once
 
-#include <vulkan/vulkan_core.h>
+#include <etna/volk.hpp>
 #include <etna/vk-wrappers/descriptors/pool/vk-descriptor-pool.hpp>
 #include <etna/vk-wrappers/descriptors/vk-descriptor.hpp>
 
